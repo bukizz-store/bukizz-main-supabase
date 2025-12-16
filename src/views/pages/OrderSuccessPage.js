@@ -9,8 +9,6 @@ const OrderSuccessPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { showNotification } = useNotificationStore();
-  const { getOrderDetails, syncOrderStatus } = useOrderStore();
 
   const [order, setOrder] = useState(location.state?.order || null);
   const [loading, setLoading] = useState(!order);
@@ -55,14 +53,14 @@ const OrderSuccessPage = () => {
     };
   }, []); // No dependencies to prevent re-runs
 
-  // Separate effect for fetching order details - prevent duplicate requests
+  // Separate effect for fetching order details - ONLY fetch ONCE with no store dependencies
   useEffect(() => {
     // Skip if order already loaded or no orderId
     if (order || !orderId || fetchAttemptedRef.current) {
       return;
     }
     
-    // Mark fetch as attempted to prevent re-attempts even if effect re-runs
+    // Mark fetch as attempted IMMEDIATELY to prevent re-attempts
     fetchAttemptedRef.current = true;
     
     let cancelled = false;
@@ -70,6 +68,8 @@ const OrderSuccessPage = () => {
     const fetchOrderData = async () => {
       try {
         setLoading(true);
+        // Get store methods directly from getState to avoid dependency array issues
+        const { getOrderDetails } = useOrderStore.getState();
         const orderData = await getOrderDetails(orderId);
         
         if (!cancelled) {
@@ -79,6 +79,7 @@ const OrderSuccessPage = () => {
         if (!cancelled) {
           console.error("Failed to fetch order details:", error);
           setError("Failed to load order details");
+          const { showNotification } = useNotificationStore.getState();
           showNotification("Failed to load order details", "error");
         }
       } finally {
@@ -93,19 +94,21 @@ const OrderSuccessPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [orderId, getOrderDetails, showNotification]);
+  }, [orderId]); // ONLY depends on orderId - no store methods!
 
   // Memoized handlers to prevent re-creation
   const handleCopyOrderNumber = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(order.orderNumber);
       setCopied(true);
+      const { showNotification } = useNotificationStore.getState();
       showNotification("Order number copied to clipboard!", "success");
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
+      const { showNotification } = useNotificationStore.getState();
       showNotification("Failed to copy order number", "error");
     }
-  }, [order?.orderNumber, showNotification]);
+  }, [order?.orderNumber]);
 
   const handleTrackOrder = useCallback(() => {
     navigate(`/orders/${orderId}/track`);
