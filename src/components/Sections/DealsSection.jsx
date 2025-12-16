@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import useApiRoutesStore from "../store/apiRoutesStore";
+import useApiRoutesStore from "../../store/apiRoutesStore";
 
 const DealsSection = () => {
   const navigate = useNavigate();

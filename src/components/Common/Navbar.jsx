@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import useAuthStore from "../store/authStore";
-import useCartStore from "../store/cartStore";
-import AuthModal from "./AuthModal";
-import CitySelector from "./CitySelector";
+import useAuthStore from "../../store/authStore";
+import useCartStore from "../../store/cartStore";
+import AuthModal from "../Auth/AuthModal";
+import CitySelector from "../Common/CitySelector";
 
 const Navbar = () => {
   const { user, isModalOpen, setModalOpen, logout } = useAuthStore();

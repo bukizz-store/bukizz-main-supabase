@@ -1,6 +1,6 @@
 import React from "react";
-import useNotificationStore from "../store/notificationStore";
-import ErrorPopup from "./ErrorPopup";
+import useNotificationStore from "../../store/notificationStore";
+import ErrorPopup from "../Common/ErrorPopup";
 
 const NotificationContainer = () => {
   const { notifications, hideNotification } = useNotificationStore();

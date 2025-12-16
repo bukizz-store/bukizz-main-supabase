@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import Card1 from "../components/Card1";
-import Category from "../components/Category";
-import DealsSection from "../components/DealsSection";
-import School from "../components/School";
-import SearchBar from "../components/SearchBar";
-import Stationary from "../components/Stationary";
-import PromoCard from "../components/PromoCard";
+import Card1 from "../../components/Cards/Card1";
+import Category from "../../components/Sections/Category";
+import DealsSection from "../../components/Sections/DealsSection";
+import School from "../../components/Sections/School";
+import SearchBar from "../../components/Common/SearchBar";
+import Stationary from "../../components/Sections/Stationary";
+import PromoCard from "../../components/Cards/PromoCard";
 
 // HomePage.js
 function HomePage() {

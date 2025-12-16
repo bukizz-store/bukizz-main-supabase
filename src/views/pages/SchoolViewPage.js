@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import DealsSection from "../components/DealsSection";
-import PromoCard from "../components/PromoCard";
-import School from "../components/School";
-import SearchBar from "../components/SearchBar";
-import Stationary from "../components/Stationary";
+import DealsSection from "../../components/Sections/DealsSection";
+import PromoCard from "../../components/Cards/PromoCard";
+import School from "../../components/Sections/School";
+import SearchBar from "../../components/Common/SearchBar";
+import Stationary from "../../components/Sections/Stationary";
 
 // SchoolViewPage.js
 function SchoolViewPage() {

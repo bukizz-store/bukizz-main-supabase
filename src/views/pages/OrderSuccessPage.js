@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "../../components/Common/Navbar";
+import Footer from "../../components/Common/Footer";
 import useOrderStore from "../store/orderStore";
 import useNotificationStore from "../store/notificationStore";
 

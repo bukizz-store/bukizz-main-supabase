@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import useUserProfileStore from "../store/userProfileStore";
-import useAuthStore from "../store/authStore";
+import { useNavigate } from "react-router-dom";
+import useUserProfileStore from "../../store/userProfileStore";
+import useAuthStore from "../../store/authStore";
 
 const UserProfile = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const {
     profile,
     addresses,
@@ -395,7 +397,10 @@ const UserProfile = () => {
               Add, edit, or delete saved addresses
             </p>
           </button>
-          <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button
+            onClick={() => navigate("/orders")}
+            className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left"
+          >
             <h3 className="font-semibold">View Order History</h3>
             <p className="text-sm text-gray-600">
               Check your past orders and status

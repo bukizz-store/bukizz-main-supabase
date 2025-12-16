@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useApiRoutesStore from "../store/apiRoutesStore";
 import useAuthStore from "../store/authStore";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/Common/SearchBar";
 
 function CategoryProductsPage() {
   const navigate = useNavigate();

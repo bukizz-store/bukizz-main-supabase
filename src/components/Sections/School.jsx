@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { schoolRoutes } from "../store/apiRoutesStore";
+import { schoolRoutes } from "../../store/apiRoutesStore";
 
 const defaultSchools = [
   {

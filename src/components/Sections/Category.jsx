@@ -1,5 +1,5 @@
 import React from "react";
-import CategoryCard from "./ReusableCard/CategoryCard";
+import CategoryCard from "../Cards/CategoryCard";
 const categories = [
   { name: "Book Sets", color: "blue" , img:"bookset_cat.svg"},
   { name: "School Uniform", color: "yellow" , img:"uniform_cat.svg" },

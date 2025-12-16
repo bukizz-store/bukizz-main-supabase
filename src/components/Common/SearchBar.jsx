@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import useUserProfileStore from "../store/userProfileStore";
-import CitySelector from "./CitySelector";
+import useUserProfileStore from "../../store/userProfileStore";
+import CitySelector from "../Common/CitySelector";
 
 const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
   const navigate = useNavigate();

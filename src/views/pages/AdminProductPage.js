@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../store/supabaseClient";
 import useAuthStore from "../store/authStore";
 import useApiRoutesStore from "../store/apiRoutesStore";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/Common/SearchBar";
 
 // Import all the new modular components
-import BasicInfoTab from "../components/Admin/BasicInfoTab";
-import ProductOptionsTab from "../components/Admin/ProductOptionsTab";
-import VariantsTab from "../components/Admin/VariantsTab";
-import AssociationsTab from "../components/Admin/AssociationsTab";
-import ImageManagementTab from "../components/Admin/ImageManagementTab";
-import BrandRetailerTab from "../components/Admin/BrandRetailerTab";
+import BasicInfoTab from "../../components/Admin/BasicInfoTab";
+import ProductOptionsTab from "../../components/Admin/ProductOptionsTab";
+import VariantsTab from "../../components/Admin/VariantsTab";
+import AssociationsTab from "../../components/Admin/AssociationsTab";
+import ImageManagementTab from "../../components/Admin/ImageManagementTab";
+import BrandRetailerTab from "../../components/Admin/BrandRetailerTab";
 
 function AdminProductPage() {
   const navigate = useNavigate();

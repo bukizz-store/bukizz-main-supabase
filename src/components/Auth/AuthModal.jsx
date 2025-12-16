@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import useAuthStore from "../store/authStore";
-import useNotificationStore from "../store/notificationStore";
+import useAuthStore from "../../store/authStore";
+import useNotificationStore from "../../store/notificationStore";
 
 const AuthModal = ({ isOpen, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);

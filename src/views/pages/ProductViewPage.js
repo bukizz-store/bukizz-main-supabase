@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BookSetCard } from "../components/ReusableCard/BookSetCard";
 import { UniformCard } from "../components/ReusableCard/UniformCard";
-import SearchBar from "../components/SearchBar";
+import SearchBar from "../../components/Common/SearchBar";
 import useUserProfileStore from "../store/userProfileStore";
 import useCartStore from "../store/cartStore";
 import NoProductPage from "../components/Product/NoProductPage";
