@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import CategoryCard from "../components/ReusableCard/CategoryCard";
-import { BookSetCard } from "../components/ReusableCard/BookSetCard";
-import { UniformCard } from "../components/ReusableCard/UniformCard";
-import useUserProfileStore from "../store/userProfileStore";
+import CategoryCard from "../../components/Cards/CategoryCard";
+import { BookSetCard } from "../../components/Cards/BookSetCard";
+import { UniformCard } from "../../components/Cards/UniformCard";
+import useUserProfileStore from "../../store/userProfileStore";
 
 const SchoolCategory = [
   { name: "Book Sets", color: "blue", img: "bookset_cat.svg" },

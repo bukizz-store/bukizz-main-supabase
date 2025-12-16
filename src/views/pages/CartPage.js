@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import SearchBar from "../../components/SearchBar";
+import SearchBar from "../../components/Common/SearchBar";
 import useCartStore from "../../store/cartStore";
 import useAuthStore from "../../store/authStore";
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import SearchBar from "../../components/SearchBar";
-import MyCitySection from "../../components/MyCitySection";
-import OrdersSection from "../../components/ReusableCard/OrdersSection";
+import SearchBar from "../../components/Common/SearchBar";
+import MyCitySection from "../../components/Sections/MyCitySection";
+import OrdersSection from "../../components/Cards/OrdersSection";
 import useUserProfileStore from "../../store/userProfileStore";
 import useAuthStore from "../../store/authStore";
 

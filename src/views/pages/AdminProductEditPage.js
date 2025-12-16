@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase } from "../store/supabaseClient";
-import useAuthStore from "../store/authStore";
-import useApiRoutesStore from "../store/apiRoutesStore";
+import { supabase } from "../../store/supabaseClient";
+import useAuthStore from "../../store/authStore";
+import useApiRoutesStore from "../../store/apiRoutesStore";
 import SearchBar from "../../components/Common/SearchBar";
 
 // Import all the modular components

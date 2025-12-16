@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../../components/Common/Navbar";
 import Footer from "../../components/Common/Footer";
-import useOrderStore from "../store/orderStore";
-import useNotificationStore from "../store/notificationStore";
+import useOrderStore from "../../store/orderStore";
+import useNotificationStore from "../../store/notificationStore";
 
 const OrderSuccessPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { showNotification } = useNotificationStore();
-  const { getOrderById, trackOrder } = useOrderStore();
+  const { getOrderDetails, syncOrderStatus } = useOrderStore();
 
   const [order, setOrder] = useState(location.state?.order || null);
   const [loading, setLoading] = useState(!order);
@@ -21,6 +21,9 @@ const OrderSuccessPage = () => {
   // Animation states - optimized to prevent flickering
   const [showConfetti, setShowConfetti] = useState(true);
   const [animationComplete, setAnimationComplete] = useState(false);
+  
+  // Track if we've already fetched to prevent duplicate requests
+  const fetchAttemptedRef = useRef(false);
 
   // Memoize confetti elements to prevent re-creation and flickering
   const confettiElements = useMemo(() => {
@@ -52,27 +55,45 @@ const OrderSuccessPage = () => {
     };
   }, []); // No dependencies to prevent re-runs
 
-  // Separate effect for fetching order details
+  // Separate effect for fetching order details - prevent duplicate requests
   useEffect(() => {
-    if (!order && orderId) {
-      fetchOrderDetails();
+    // Skip if order already loaded or no orderId
+    if (order || !orderId || fetchAttemptedRef.current) {
+      return;
     }
-  }, [orderId]); // Only depend on orderId, not order
-
-  // Memoized function to prevent re-creation
-  const fetchOrderDetails = useCallback(async () => {
-    try {
-      setLoading(true);
-      const orderData = await getOrderById(orderId);
-      setOrder(orderData);
-    } catch (error) {
-      console.error("Failed to fetch order details:", error);
-      setError("Failed to load order details");
-      showNotification("Failed to load order details", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [orderId, getOrderById, showNotification]);
+    
+    // Mark fetch as attempted to prevent re-attempts even if effect re-runs
+    fetchAttemptedRef.current = true;
+    
+    let cancelled = false;
+    
+    const fetchOrderData = async () => {
+      try {
+        setLoading(true);
+        const orderData = await getOrderDetails(orderId);
+        
+        if (!cancelled) {
+          setOrder(orderData);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to fetch order details:", error);
+          setError("Failed to load order details");
+          showNotification("Failed to load order details", "error");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchOrderData();
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, getOrderDetails, showNotification]);
 
   // Memoized handlers to prevent re-creation
   const handleCopyOrderNumber = useCallback(async () => {

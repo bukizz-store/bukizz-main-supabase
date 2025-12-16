@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import useApiRoutesStore from "../store/apiRoutesStore";
-import useAuthStore from "../store/authStore";
+import useApiRoutesStore from "../../store/apiRoutesStore";
+import useAuthStore from "../../store/authStore";
 import SearchBar from "../../components/Common/SearchBar";
 
 function ProductListPage() {
