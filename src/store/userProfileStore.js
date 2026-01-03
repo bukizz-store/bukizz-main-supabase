@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import useApiRoutesStore from "./apiRoutesStore";
 
+const BASE_URL = useApiRoutesStore.getState().baseUrl;
+
 const useUserProfileStore = create((set, get) => ({
   // Existing state
   profile: null,
@@ -327,7 +329,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        "http://localhost:5001/api/users/preferences",
+        useApiRoutesStore.getState().users.legacy.preferences,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -369,7 +371,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        "http://localhost:5001/api/users/preferences",
+        useApiRoutesStore.getState().users.legacy.preferences,
         {
           method: "PUT",
           headers: {
@@ -412,7 +414,7 @@ const useUserProfileStore = create((set, get) => ({
         return null;
       }
 
-      const response = await fetch("http://localhost:5001/api/users/stats", {
+      const response = await fetch(useApiRoutesStore.getState().users.legacy.stats, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -452,7 +454,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        "http://localhost:5001/api/users/verify-email",
+        useApiRoutesStore.getState().users.legacy.verifyEmail,
         {
           method: "POST",
           headers: {
@@ -521,9 +523,8 @@ const useUserProfileStore = create((set, get) => ({
       if (filters.sortBy) queryParams.append("sortBy", filters.sortBy);
       if (filters.sortOrder) queryParams.append("sortOrder", filters.sortOrder);
 
-      const url = `http://localhost:5001/api/v1/orders${
-        queryParams.toString() ? `?${queryParams}` : ""
-      }`;
+      const url = `${BASE_URL}/orders${queryParams.toString() ? `?${queryParams}` : ""
+        }`;
 
       const response = await fetch(url, {
         headers: {
@@ -583,7 +584,7 @@ const useUserProfileStore = create((set, get) => ({
         paymentMethod: orderData.paymentMethod,
       };
 
-      const response = await fetch("http://localhost:5001/api/v1/orders", {
+      const response = await fetch(useApiRoutesStore.getState().orders.create, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -621,7 +622,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        `http://localhost:5001/api/v1/orders/${orderId}`,
+        `${BASE_URL}/orders/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -658,7 +659,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        `http://localhost:5001/api/v1/orders/${orderId}/cancel`,
+        `${BASE_URL}/orders/${orderId}/cancel`,
         {
           method: "POST",
           headers: {
@@ -698,7 +699,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        "http://localhost:5001/api/v1/orders/stats",
+        useApiRoutesStore.getState().orders.stats,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -749,9 +750,8 @@ const useUserProfileStore = create((set, get) => ({
       if (filters.sortBy) queryParams.append("sortBy", filters.sortBy);
       if (filters.sortOrder) queryParams.append("sortOrder", filters.sortOrder);
 
-      const url = `http://localhost:5001/api/v1/products${
-        queryParams.toString() ? `?${queryParams}` : ""
-      }`;
+      const url = `${BASE_URL}/products${queryParams.toString() ? `?${queryParams}` : ""
+        }`;
 
       const response = await fetch(url, {
         headers: {
@@ -795,7 +795,7 @@ const useUserProfileStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await fetch(
-        `http://localhost:5001/api/v1/products/${productId}`,
+        `${BASE_URL}/products/${productId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -846,7 +846,7 @@ const useUserProfileStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await fetch(
-        `http://localhost:5001/api/v1/products/${productId}/variants`,
+        `${BASE_URL}/products/${productId}/variants`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -880,9 +880,8 @@ const useUserProfileStore = create((set, get) => ({
       const queryParams = new URLSearchParams();
       if (variantId) queryParams.append("variantId", variantId);
 
-      const url = `http://localhost:5001/api/v1/products/${productId}/images${
-        queryParams.toString() ? `?${queryParams}` : ""
-      }`;
+      const url = `${BASE_URL}/products/${productId}/images${queryParams.toString() ? `?${queryParams}` : ""
+        }`;
 
       const response = await fetch(url, {
         headers: {
@@ -912,7 +911,7 @@ const useUserProfileStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await fetch(
-        `http://localhost:5001/api/v1/products/featured?limit=${limit}`,
+        `${BASE_URL}/products/featured?limit=${limit}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -956,9 +955,8 @@ const useUserProfileStore = create((set, get) => ({
       if (filters.sortBy) queryParams.append("sortBy", filters.sortBy);
       if (filters.sortOrder) queryParams.append("sortOrder", filters.sortOrder);
 
-      const url = `http://localhost:5001/api/v1/schools${
-        queryParams.toString() ? `?${queryParams}` : ""
-      }`;
+      const url = `${BASE_URL}/schools${queryParams.toString() ? `?${queryParams}` : ""
+        }`;
 
       const response = await fetch(url, {
         headers: {
@@ -994,7 +992,7 @@ const useUserProfileStore = create((set, get) => ({
     try {
       const queryParams = new URLSearchParams({ lat, lng, radius, ...filters });
       const response = await fetch(
-        `http://localhost:5001/api/v1/schools/nearby?${queryParams}`,
+        `${BASE_URL}/schools/nearby?${queryParams}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1029,7 +1027,7 @@ const useUserProfileStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await fetch(
-        `http://localhost:5001/api/v1/schools/${schoolId}`,
+        `${BASE_URL}/schools/${schoolId}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1059,9 +1057,8 @@ const useUserProfileStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const queryParams = new URLSearchParams(filters);
-      const url = `http://localhost:5001/api/v1/schools/${schoolId}/catalog${
-        queryParams.toString() ? `?${queryParams}` : ""
-      }`;
+      const url = `${BASE_URL}/schools/${schoolId}/catalog${queryParams.toString() ? `?${queryParams}` : ""
+        }`;
 
       const response = await fetch(url, {
         headers: {
@@ -1116,7 +1113,7 @@ const useUserProfileStore = create((set, get) => ({
         return { items: [] };
       }
 
-      const response = await fetch("http://localhost:5001/api/v1/orders/cart", {
+      const response = await fetch(useApiRoutesStore.getState().orders.cart, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -1166,7 +1163,7 @@ const useUserProfileStore = create((set, get) => ({
       };
 
       const response = await fetch(
-        `http://localhost:5001/api/v1/orders/${orderId}/queries`,
+        `${BASE_URL}/orders/${orderId}/queries`,
         {
           method: "POST",
           headers: {
@@ -1205,7 +1202,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        `http://localhost:5001/api/v1/orders/${orderId}/queries`,
+        `${BASE_URL}/orders/${orderId}/queries`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1243,7 +1240,7 @@ const useUserProfileStore = create((set, get) => ({
     set({ loading: true, error: null });
     try {
       const response = await fetch(
-        "http://localhost:5001/api/v1/orders/calculate",
+        useApiRoutesStore.getState().orders.calculate,
         {
           method: "POST",
           headers: {
@@ -1280,7 +1277,7 @@ const useUserProfileStore = create((set, get) => ({
       if (variantId) queryParams.append("variantId", variantId);
 
       const response = await fetch(
-        `http://localhost:5001/api/v1/products/${productId}/availability?${queryParams}`,
+        `${BASE_URL}/products/${productId}/availability?${queryParams}`,
         {
           headers: {
             "Content-Type": "application/json",

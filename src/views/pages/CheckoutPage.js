@@ -6,6 +6,7 @@ import useAddressStore from "../../store/addressStore";
 import useAuthStore from "../../store/authStore";
 import useOrderStore from "../../store/orderStore";
 import useNotificationStore from "../../store/notificationStore";
+import useApiRoutesStore from "../../store/apiRoutesStore";
 
 // CheckoutPage.js
 function CheckoutPage() {
@@ -383,7 +384,7 @@ function CheckoutPage() {
       try {
         // Check pincode availability
         const response = await fetch(
-          `http://localhost:5001/api/v1/pincodes/check/${selectedAddr.postalCode}`
+          useApiRoutesStore.getState().pincodes.check(selectedAddr.postalCode)
         );
         const data = await response.json();
 

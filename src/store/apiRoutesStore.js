@@ -7,7 +7,19 @@ import { create } from "zustand";
  */
 
 // Base configuration
-const API_BASE_URL = "http://localhost:5001";
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:5001";
+    }
+    return "https://bukizz.in";
+  }
+  return "https://bukizz.in";
+};
+
+// Base configuration
+const API_BASE_URL = getBaseUrl();
 const API_VERSION = "/api/v1";
 const BASE_URL = `${API_BASE_URL}${API_VERSION}`;
 

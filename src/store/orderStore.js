@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import useApiRoutesStore from "./apiRoutesStore";
+
+const API_BASE_URL = useApiRoutesStore.getState().baseUrl;
 
 const useOrderStore = create((set, get) => ({
   // State
@@ -141,7 +144,7 @@ const useOrderStore = create((set, get) => ({
           }
 
           const response = await fetch(
-            `http://localhost:5001/api/v1/products/${item.productId}/availability?${queryParams}`,
+            `${API_BASE_URL}/products/${item.productId}/availability?${queryParams}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -182,8 +185,7 @@ const useOrderStore = create((set, get) => ({
         } else if (!result.value.available) {
           const { item, stock, requested } = result.value;
           errors.push(
-            `${item.title} - Only ${
-              stock || 0
+            `${item.title} - Only ${stock || 0
             } available, but ${requested} requested`
           );
           allInStock = false;
@@ -209,7 +211,7 @@ const useOrderStore = create((set, get) => ({
 
       const priceChecks = await Promise.allSettled(
         cartItems.map(async (item) => {
-          let url = `http://localhost:5001/api/v1/products/${item.productId}`;
+          let url = `${API_BASE_URL}/products/${item.productId}`;
 
           const response = await fetch(url, {
             headers: {
@@ -419,11 +421,11 @@ const useOrderStore = create((set, get) => ({
           // Include precise location data if available
           ...(selectedAddress.lat &&
             selectedAddress.lng && {
-              coordinates: {
-                lat: parseFloat(selectedAddress.lat),
-                lng: parseFloat(selectedAddress.lng),
-              },
-            }),
+            coordinates: {
+              lat: parseFloat(selectedAddress.lat),
+              lng: parseFloat(selectedAddress.lng),
+            },
+          }),
           // Include additional delivery metadata
           ...(selectedAddress.landmark && {
             landmark: selectedAddress.landmark,
@@ -464,7 +466,7 @@ const useOrderStore = create((set, get) => ({
 
       // Step 4: Submit order with atomic transaction
       console.log("🚀 Step 4: Submitting order...");
-      const response = await fetch("http://localhost:5001/api/v1/orders", {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -480,7 +482,7 @@ const useOrderStore = create((set, get) => ({
         if (response.status === 400) {
           throw new Error(
             errorData.message ||
-              "Invalid order data. Please check your cart and try again."
+            "Invalid order data. Please check your cart and try again."
           );
         } else if (response.status === 401) {
           throw new Error("Session expired. Please log in again.");
@@ -586,7 +588,7 @@ const useOrderStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        `http://localhost:5001/api/v1/orders/${orderId}`,
+        `${API_BASE_URL}/orders/${orderId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

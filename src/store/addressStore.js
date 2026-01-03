@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
-const API_BASE_URL = "http://localhost:5001/api/v1";
+import useApiRoutesStore from "./apiRoutesStore";
+
+const API_BASE_URL = useApiRoutesStore.getState().baseUrl;
 
 const useAddressStore = create((set, get) => ({
   // State
@@ -582,9 +584,9 @@ const useAddressStore = create((set, get) => ({
         ...addressData,
         ...(addressData.lat &&
           addressData.lng && {
-            lat: parseFloat(addressData.lat),
-            lng: parseFloat(addressData.lng),
-          }),
+          lat: parseFloat(addressData.lat),
+          lng: parseFloat(addressData.lng),
+        }),
         // Include additional metadata if available
         ...(addressData.neighborhood && {
           neighborhood: addressData.neighborhood,
@@ -649,9 +651,9 @@ const useAddressStore = create((set, get) => ({
         ...addressData,
         ...(addressData.lat &&
           addressData.lng && {
-            lat: parseFloat(addressData.lat),
-            lng: parseFloat(addressData.lng),
-          }),
+          lat: parseFloat(addressData.lat),
+          lng: parseFloat(addressData.lng),
+        }),
         // Include additional metadata if available
         ...(addressData.neighborhood && {
           neighborhood: addressData.neighborhood,
@@ -736,8 +738,8 @@ const useAddressStore = create((set, get) => ({
           state.selectedAddressId === addressId && remainingAddresses.length > 0
             ? remainingAddresses[0].id
             : state.selectedAddressId === addressId
-            ? null
-            : state.selectedAddressId;
+              ? null
+              : state.selectedAddressId;
 
         return {
           addresses: remainingAddresses,
