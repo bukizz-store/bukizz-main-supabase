@@ -8,7 +8,6 @@ import CitySelector from "../Common/CitySelector";
 const Navbar = () => {
   const { user, isModalOpen, setModalOpen, logout } = useAuthStore();
   const { cart, loadCart } = useCartStore();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
 
   // Load cart on component mount
@@ -20,31 +19,8 @@ const Navbar = () => {
   const handleProfileClick = () => {
     if (!user) {
       setModalOpen(true);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    setDropdownOpen(false);
-  };
-
-  const handleOptionClick = (option) => {
-    setDropdownOpen(false);
-    switch (option) {
-      case "Profile":
-        navigate("/profile");
-        break;
-      case "Orders":
-        navigate("/profile?tab=orders");
-        break;
-      case "My City":
-        navigate("/profile?tab=city");
-        break;
-      case "Notification":
-        navigate("/notifications");
-        break;
-      default:
-        break;
+    } else {
+      navigate("/profile");
     }
   };
 
@@ -63,25 +39,25 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="h-16 bg-white shadow-md flex items-center justify-between px-8 m-12 w-full rounded-full">
+      <div className="h-16 bg-white shadow-md flex items-center justify-between px-4 md:px-8 m-4 md:m-12 w-auto md:w-full rounded-2xl md:rounded-full">
         <button onClick={handleLogoClick} className="flex-shrink-0 hover:opacity-80">
-          <img src="/Logo.svg" alt="Bukizz Logo" className="h-12 w-auto" />
+          <img src="/Logo.svg" alt="Bukizz Logo" className="h-8 md:h-12 w-auto" />
         </button>
-        <div className="flex items-center space-x-4">
-          <button>
-            <img src="/image 54.png" alt="Menu" className="h-12 " />
+        <div className="flex items-center space-x-2 md:space-x-4">
+          <button onClick={() => navigate("/profile?tab=city")}>
+            <img src="/image 54.png" alt="Menu" className="h-8 md:h-12 " />
           </button>
           <button>
-            <img src="/image 55.png" alt="Search" className="h-12" />
+            <img src="/image 55.png" alt="Search" className="h-8 md:h-12" />
           </button>
-          
+
           <button className="text-gray-700 hover:text-blue-600 items-center flex flex-col">
             <img
               src="/notification_svg.svg"
               alt="Notification"
               className="h-6 w-6"
             />
-            <p>Notification</p>
+            <p className="hidden md:block">Notification</p>
           </button>
           <button
             onClick={handleCartClick}
@@ -95,61 +71,40 @@ const Navbar = () => {
                 </span>
               )}
             </div>
-            <p>Cart</p>
+            <p className="hidden md:block">Cart</p>
           </button>
-          <div
-            className="relative group"
-            onMouseEnter={() => user && setDropdownOpen(true)}
-            onMouseLeave={() => setDropdownOpen(false)}
-          >
+          {user ? (
             <button
               onClick={handleProfileClick}
               className="text-gray-700 hover:text-blue-600 flex flex-col items-center space-y-1"
             >
               <img src="/profile_svg.svg" alt="Profile" className="h-6 w-6" />
-              <span className="text-xs font-medium whitespace-nowrap">
-                {user ? firstName : "Profile"}
+              <span className="text-xs font-medium whitespace-nowrap hidden md:block">
+                {firstName}
               </span>
             </button>
-            {user && dropdownOpen && (
-              <div
-                className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50"
+          ) : (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="bg-blue-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center gap-2 font-medium"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                <div className="py-1">
-                  <button
-                    onClick={() => handleOptionClick("Profile")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                  >
-                    Profile
-                  </button>
-                  <button
-                    onClick={() => handleOptionClick("Orders")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                  >
-                    Orders
-                  </button>
-                  <button
-                    onClick={() => handleOptionClick("My City")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                  >
-                    My City
-                  </button>
-                  <button
-                    onClick={() => handleOptionClick("Notification")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                  >
-                    Notification
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span className="hidden md:block">Login</span>
+            </button>
+          )}
         </div>
       </div>
       <AuthModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />

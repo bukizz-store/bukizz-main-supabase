@@ -6,16 +6,18 @@ import SearchBar from "../../components/Common/SearchBar";
 import useUserProfileStore from "../../store/userProfileStore";
 import useCartStore from "../../store/cartStore";
 import NoProductPage from "../../components/Product/NoProductPage";
+import Breadcrumb from "../../components/Common/Breadcrumb";
 
 // ProductViewPage.js
 function ProductViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getProduct, searchProducts, loading, error } = useUserProfileStore();
+  const { getProduct, searchProducts, getSchool, loading, error } = useUserProfileStore();
 
   const { addToCart, loading: cartLoading, isInCart } = useCartStore();
 
   const [productData, setProductData] = useState(null);
+  const [schoolName, setSchoolName] = useState(null);
   const [currentImages, setCurrentImages] = useState([]);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(true);
@@ -30,6 +32,7 @@ function ProductViewPage() {
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [deliveryPincode, setDeliveryPincode] = useState("");
   const [productOptions, setProductOptions] = useState([]);
+  const [showCartDialog, setShowCartDialog] = useState(false);
 
   // Extract unique option groups from variants
   const extractOptionGroups = (variants) => {
@@ -234,6 +237,18 @@ function ProductViewPage() {
             // Don't block main loading for similar products failure
           });
       }
+
+      // Fetch school details if school_id exists
+      if (product.school_id) {
+        try {
+          const school = await getSchool(product.school_id);
+          if (school) {
+            setSchoolName(school.name);
+          }
+        } catch (err) {
+          console.error("Error fetching school:", err);
+        }
+      }
     } catch (err) {
       console.error("Error fetching product:", err);
       setProductError(err.message);
@@ -316,9 +331,19 @@ function ProductViewPage() {
     try {
       await addToCart(productData, selectedVariant, selectedQuantity);
       console.log("Item added to cart successfully");
+      setShowCartDialog(true);
     } catch (error) {
       console.error("Error adding item to cart:", error);
     }
+  };
+
+  const handleContinueShopping = () => {
+    setShowCartDialog(false);
+  };
+
+  const handleGoToCart = () => {
+    setShowCartDialog(false);
+    navigate("/checkout");
   };
 
   // Check if current selection is already in cart
@@ -376,19 +401,32 @@ function ProductViewPage() {
     <div className="min-h-screen bg-[#F3F8FF] flex flex-col relative">
       <SearchBar />
 
-      <div className="mx-12 my-4 mb-10 max-w flex gap-20">
-        <div className="flex gap-4 justify-start items-start w-1/2">
-          <div className="flex gap-4 flex-col justify-start items-start">
+      <div className="mx-4 md:mx-12 mt-4">
+        <Breadcrumb
+          items={[
+            { label: "Home", link: "/" },
+            ...(schoolName ? [{
+              label: schoolName,
+              link: productData.school_id ? `/school/${productData.school_id}` : null
+            }] : []),
+            { label: productData.title, link: null }
+          ]}
+        />
+      </div>
+
+      <div className="mx-4 md:mx-12 my-4 mb-10 max-w flex flex-col md:flex-row gap-8 md:gap-20">
+        <div className="flex flex-col-reverse md:flex-row gap-4 justify-start items-start w-full md:w-1/2">
+          <div className="flex gap-4 flex-row md:flex-col justify-start items-start overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
             {currentImages?.slice(0, 5).map((img, idx) => (
               <img
                 key={img.id || idx}
                 src={img.url || "https://via.placeholder.com/144x144"}
                 alt={img.altText || `${productData.title} ${idx + 1}`}
-                className="w-36 h-36 object-cover rounded-lg cursor-pointer hover:opacity-80"
+                className="w-20 h-20 md:w-36 md:h-36 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0"
               />
             ))}
           </div>
-          <div className="flex flex-col justify-start items-start">
+          <div className="flex flex-col justify-start items-start w-full">
             <img
               src={
                 currentImages?.[0]?.url ||
@@ -400,7 +438,7 @@ function ProductViewPage() {
                 productData?.primaryImage?.altText ||
                 productData.title
               }
-              className="w-96 h-96 object-cover rounded-lg"
+              className="w-full md:w-96 h-[300px] md:h-96 object-cover rounded-lg"
             />
             {loadingImages && (
               <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -410,7 +448,7 @@ function ProductViewPage() {
           </div>
         </div>
 
-        <div className="font-nunito w-1/2">
+        <div className="font-nunito w-full md:w-1/2">
           <div className="text-sm text-cyan-300 my-2">
             {(selectedVariant?.stock || 0) > 0 ? "In Stock" : "Out of Stock"}
           </div>
@@ -467,12 +505,11 @@ function ProductViewPage() {
                         onClick={() =>
                           handleOptionSelect(optionGroup.position, option.id)
                         }
-                        className={`px-4 py-2 border rounded-lg transition-all text-sm font-medium ${
-                          selectedOptions[`option${optionGroup.position}`] ===
+                        className={`px-4 py-2 border rounded-lg transition-all text-sm font-medium ${selectedOptions[`option${optionGroup.position}`] ===
                           option.id
-                            ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                            : "border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700"
-                        }`}
+                          ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                          : "border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700"
+                          }`}
                       >
                         {option.value}
                       </button>
@@ -553,17 +590,16 @@ function ProductViewPage() {
                 !selectedVariant ||
                 (selectedVariant && selectedVariant.stock < selectedQuantity)
               }
-              className={`px-6 py-3 border-2 rounded-full flex items-center gap-2 transition-all ${
-                itemInCart
-                  ? "bg-green-100 text-green-600 border-green-500"
-                  : cartLoading
+              className={`px-6 py-3 border-2 rounded-full flex items-center gap-2 transition-all ${itemInCart
+                ? "bg-green-100 text-green-600 border-green-500"
+                : cartLoading
                   ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
                   : !selectedVariant ||
                     (selectedVariant &&
                       selectedVariant.stock < selectedQuantity)
-                  ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                  : "text-blue-500 border-blue-500 hover:bg-blue-50"
-              }`}
+                    ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+                    : "text-blue-500 border-blue-500 hover:bg-blue-50"
+                }`}
             >
               {cartLoading ? (
                 <>
@@ -623,7 +659,7 @@ function ProductViewPage() {
 
             {/* Product Details */}
             <h2 className="text-2xl font-semibold my-4">Product Details</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="font-semibold">Product Type</p>
                 <p className="capitalize">{productData.product_type}</p>
@@ -705,9 +741,9 @@ function ProductViewPage() {
 
       {/* Similar Products Section */}
       {similarProducts.length > 0 && (
-        <div className="mx-12 my-10">
+        <div className="mx-4 md:mx-12 my-10">
           <h2 className="text-2xl font-semibold my-4">Similar Products</h2>
-          <div className="grid grid-cols-4 gap-6 items-center justify-center">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 items-center justify-center">
             {similarProducts.map((product, idx) => {
               const cardProps = getCardProps(product);
 
@@ -725,6 +761,63 @@ function ProductViewPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+      {/* Cart Confirmation Modal */}
+      {showCartDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Item Added to Cart!
+              </h3>
+              <p className="text-gray-600">
+                {selectedQuantity} x {productData.title} added successfully.
+              </p>
+            </div>
+            <div className="flex flex-col space-y-3">
+              <button
+                onClick={handleGoToCart}
+                className="w-full px-4 py-3 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                Go to Cart
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={handleContinueShopping}
+                className="w-full px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
           </div>
         </div>
       )}

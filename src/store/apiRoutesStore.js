@@ -162,6 +162,11 @@ const useApiRoutesStore = create((set, get) => ({
     },
   },
 
+  // ============ PINCODE ROUTES ============
+  pincodes: {
+    check: (pincode) => `${BASE_URL}/pincodes/check/${pincode}`,
+  },
+
   // ============ ORDER ROUTES ============
   orders: {
     // Order management

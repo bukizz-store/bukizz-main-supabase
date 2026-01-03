@@ -5,7 +5,8 @@ import HomePage from "./views/pages/HomePage";
 import SchoolViewPage from "./views/pages/SchoolViewPage";
 import CartPage from "./views/pages/CartPage";
 import CheckoutPage from "./views/pages/CheckoutPage";
-import OrderSuccessPage from "./views/pages/OrderSuccessPage";
+// import OrderSuccessPage from "./views/pages/OrderSuccessPage"; // Replaced
+import OrderConfirmationPage from "./views/pages/OrderConfirmationPage";
 import OrdersPage from "./views/pages/OrdersPage";
 import ProductViewPage from "./views/pages/ProductViewPage";
 import AdminProductPage from "./views/pages/AdminProductPage";
@@ -20,6 +21,7 @@ import Footer from "./components/Common/Footer";
 import NotificationContainer from "./components/Common/NotificationContainer";
 import useAuthStore from "./store/authStore";
 
+// Main App Component
 function App() {
   const { initialize, loading, isHydrated } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -70,7 +72,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/my-city" element={<MyCityPage />} />
-        <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+        <Route path="/order-success/:orderId" element={<OrderConfirmationPage />} />
         <Route path="/product" element={<ProductViewPage />} />
         <Route path="/product/:id" element={<ProductViewPage />} />
         <Route path="/products" element={<CategoryProductsPage />} />

@@ -255,11 +255,9 @@ const SchoolScreen = () => {
   const formatAddress = (school) => {
     if (school.address && typeof school.address === "object") {
       const addr = school.address;
-      return `${addr.line1 || ""} ${addr.line2 || ""}, ${
-        addr.city || school.city
-      }, ${addr.state || school.state} - ${
-        addr.postalCode || school.postalCode
-      }`.trim();
+      return `${addr.line1 || ""} ${addr.line2 || ""}, ${addr.city || school.city
+        }, ${addr.state || school.state} - ${addr.postalCode || school.postalCode
+        }`.trim();
     }
     return school.address || "Address not available";
   };
@@ -274,7 +272,7 @@ const SchoolScreen = () => {
   };
 
   return (
-    <div className="mx-12">
+    <div className="mx-4 md:mx-12">
       {/* School Header Image and Info */}
       <div className="relative max-w-7xl mx-auto rounded-lg shadow-md mb-8">
         <img
@@ -313,7 +311,7 @@ const SchoolScreen = () => {
       {/* School Categories */}
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-6">School Categories</h2>
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {SchoolCategory.map((category, idx) => (
             <CategoryCard
               key={idx}
@@ -341,8 +339,8 @@ const SchoolScreen = () => {
                 {selectedCategory === "School Uniform"
                   ? uniforms.length
                   : selectedCategory === "Book Sets"
-                  ? bookSets.length
-                  : schoolCatalog.products.filter(
+                    ? bookSets.length
+                    : schoolCatalog.products.filter(
                       (p) =>
                         p.product_type ===
                         selectedCategory.toLowerCase().replace(" ", "")
@@ -353,7 +351,7 @@ const SchoolScreen = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-6 items-center justify-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-center">
           {selectedCategory === "School Uniform" ? (
             uniforms.map((uniform, idx) => (
               <UniformCard key={idx} props={uniform} />
@@ -374,7 +372,7 @@ const SchoolScreen = () => {
       {/* School Details */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h3 className="text-xl font-bold mb-4">School Information</h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <div className="mb-3">
               <span className="font-semibold text-gray-700">Full Name:</span>
@@ -395,9 +393,8 @@ const SchoolScreen = () => {
             <div className="mb-3">
               <span className="font-semibold text-gray-700">Status:</span>
               <p
-                className={`font-medium ${
-                  schoolData.isActive ? "text-green-600" : "text-red-600"
-                }`}
+                className={`font-medium ${schoolData.isActive ? "text-green-600" : "text-red-600"
+                  }`}
               >
                 {schoolData.isActive ? "Active" : "Inactive"}
               </p>

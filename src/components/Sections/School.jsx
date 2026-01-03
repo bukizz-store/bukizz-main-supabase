@@ -159,7 +159,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
     <div className="my-6">
       {/* Search results header */}
       {showingSearchResults && (
-        <div className="mx-12 mb-4">
+        <div className="mx-4 md:mx-12 mb-4">
           {searchResults.length > 0 ? (
             <p className="text-gray-700 text-lg">
               Found{" "}
@@ -194,14 +194,14 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
       {/* Loading state */}
       {loading && !showingSearchResults && (
-        <div className="mx-12 text-center py-8">
+        <div className="mx-4 md:mx-12 text-center py-8">
           <p className="text-gray-500 text-lg">Loading schools...</p>
         </div>
       )}
 
       {/* Schools grid */}
       {displayData.length > 0 && !loading && (
-        <div className="grid grid-cols-5 gap-4 my-4 px-4 mx-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-4 px-4 mx-4 md:mx-12">
           {displayData.map((school, idx) => (
             <div
               key={school.id || idx}

@@ -244,15 +244,33 @@ const AuthModal = ({ isOpen, onClose }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 font-medium text-lg"
             >
-              {loading
-                ? "Loading..."
-                : forgotPassword
-                ? "Send Reset Email"
-                : isLogin
-                ? "Login"
-                : "Sign Up"}
+              {isLogin && !loading && !forgotPassword && (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              )}
+              <span>
+                {loading
+                  ? "Loading..."
+                  : forgotPassword
+                  ? "Send Reset Email"
+                  : isLogin
+                  ? "Login"
+                  : "Sign Up"}
+              </span>
             </button>
           </form>
 

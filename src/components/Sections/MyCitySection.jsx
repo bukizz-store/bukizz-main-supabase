@@ -1,7 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const MyCitySection = () => {
-  const [selectedCity, setSelectedCity] = useState(null);
+  const [selectedCity, setSelectedCity] = useState(() => {
+    return localStorage.getItem("selectedCity");
+  });
+  const navigate = useNavigate();
 
   const cities = [
     {
@@ -21,6 +25,7 @@ const MyCitySection = () => {
       localStorage.setItem("selectedCity", selectedCity);
       // Dispatch custom event to update other components
       window.dispatchEvent(new Event("storage"));
+      navigate("/");
     }
   };
 
@@ -40,15 +45,15 @@ const MyCitySection = () => {
           <div
             key={city.id}
             onClick={() => setSelectedCity(city.id)}
-            className={`relative rounded-xl overflow-hidden cursor-pointer transform transition-all duration-300 ${
-              selectedCity === city.id ? "ring-3 ring-blue-500 shadow-lg" : "shadow-md hover:shadow-lg"
-            }`}
+            className={`relative rounded-xl overflow-hidden cursor-pointer transform transition-all duration-300 ${selectedCity === city.id ? "ring-3 ring-blue-500 shadow-lg" : "shadow-md hover:shadow-lg"
+              }`}
           >
             {/* City image */}
             <img
               src={city.image}
               alt={city.name}
-              className="w-full h-32 object-cover"
+              className={`w-full h-64 object-cover transition-all duration-300 ${selectedCity === city.id ? "" : "grayscale"
+                }`}
             />
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
@@ -76,11 +81,10 @@ const MyCitySection = () => {
       <button
         onClick={handleSelectCity}
         disabled={!selectedCity}
-        className={`w-full px-6 py-3 rounded-full text-white font-bold text-lg transition-all duration-300 ${
-          selectedCity
-            ? "bg-blue-500 hover:bg-blue-600 cursor-pointer shadow-lg hover:shadow-xl"
-            : "bg-gray-400 cursor-not-allowed opacity-60"
-        }`}
+        className={`w-full px-6 py-3 rounded-full text-white font-bold text-lg transition-all duration-300 ${selectedCity
+          ? "bg-blue-500 hover:bg-blue-600 cursor-pointer shadow-lg hover:shadow-xl"
+          : "bg-gray-400 cursor-not-allowed opacity-60"
+          }`}
       >
         Select Your City
       </button>

@@ -10,7 +10,7 @@ import useNotificationStore from "../../store/notificationStore";
 // CheckoutPage.js
 function CheckoutPage() {
   const navigate = useNavigate();
-  
+
   // Track images that failed to load to prevent infinite retry loops
   const failedImagesRef = useRef(new Set());
 
@@ -69,7 +69,7 @@ function CheckoutPage() {
     clearGeoError,
     getCurrentLocationAndAddress,
   } = useAddressStore();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, setModalOpen } = useAuthStore();
   const {
     orderSummary,
     loading: orderLoading,
@@ -89,13 +89,13 @@ function CheckoutPage() {
   // Memoized image error handler to prevent infinite requests
   const handleImageError = useCallback((e, imageSrc) => {
     if (!imageSrc) return;
-    
+
     // Check if image already failed
     if (failedImagesRef.current.has(imageSrc)) {
       e.target.src = "/no-product-image.svg";
       return;
     }
-    
+
     // Mark as failed
     failedImagesRef.current.add(imageSrc);
     e.target.src = "/no-product-image.svg";
@@ -104,7 +104,7 @@ function CheckoutPage() {
   // Load cart and addresses on component mount
   useEffect(() => {
     let mounted = true;
-    
+
     if (isAuthenticated && mounted) {
       loadCart();
       fetchAddresses();
@@ -120,7 +120,7 @@ function CheckoutPage() {
     } else if (!isAuthenticated) {
       navigate("/");
     }
-    
+
     return () => {
       mounted = false;
     };
@@ -172,10 +172,10 @@ function CheckoutPage() {
       }
     } catch (error) {
       console.error("Failed to calculate order summary:", error);
-      showNotification(
-        "Failed to calculate order summary. Please refresh and try again.",
-        "error"
-      );
+      showNotification({
+        message: "Failed to calculate order summary. Please refresh and try again.",
+        type: "error",
+      });
     }
   };
 
@@ -187,15 +187,24 @@ function CheckoutPage() {
     }
 
     if (newQuantity > 1000) {
-      showNotification("Maximum quantity limit is 1000 per item", "error");
+      showNotification({
+        message: "Maximum quantity limit is 1000 per item",
+        type: "error"
+      });
       return;
     }
 
     try {
       await updateQuantity(productId, variantId, newQuantity);
-      showNotification("Cart updated successfully", "success");
+      showNotification({
+        message: "Cart updated successfully",
+        type: "success"
+      });
     } catch (error) {
-      showNotification("Failed to update cart. Please try again.", "error");
+      showNotification({
+        message: "Failed to update cart. Please try again.",
+        type: "error"
+      });
     }
   };
 
@@ -203,9 +212,15 @@ function CheckoutPage() {
   const handleRemoveItem = async (productId, variantId) => {
     try {
       await removeFromCart(productId, variantId);
-      showNotification("Item removed from cart", "success");
+      showNotification({
+        message: "Item removed from cart",
+        type: "success"
+      });
     } catch (error) {
-      showNotification("Failed to remove item. Please try again.", "error");
+      showNotification({
+        message: "Failed to remove item. Please try again.",
+        type: "error"
+      });
     }
   };
 
@@ -241,10 +256,10 @@ function CheckoutPage() {
         }));
       }
     } catch (error) {
-      showNotification(
-        "Failed to get current location. Please enter address manually.",
-        "error"
-      );
+      showNotification({
+        message: "Failed to get current location. Please enter address manually.",
+        type: "error",
+      });
     }
   };
 
@@ -264,37 +279,62 @@ function CheckoutPage() {
     const missingFields = requiredFields.filter((field) => !addressForm[field]);
 
     if (missingFields.length > 0) {
-      showNotification(
-        `Please fill in all required fields: ${missingFields.join(", ")}`,
-        "error"
-      );
+      showNotification({
+        message: `Please fill in all required fields: ${missingFields.join(", ")}`,
+        type: "error",
+      });
       return;
     }
 
     // Validate phone number format
     if (!/^\+?[\d\s\-\(\)]{10,15}$/.test(addressForm.phone)) {
-      showNotification("Please enter a valid phone number", "error");
+      showNotification({
+        message: "Please enter a valid phone number",
+        type: "error"
+      });
       return;
     }
 
     // Validate postal code (6 digits for India)
     if (!/^\d{6}$/.test(addressForm.postalCode)) {
-      showNotification("Please enter a valid 6-digit postal code", "error");
+      showNotification({
+        message: "Please enter a valid 6-digit postal code",
+        type: "error"
+      });
       return;
     }
 
     try {
       if (editingAddress) {
         await updateAddress(editingAddress.id, addressForm);
-        showNotification("Address updated successfully", "success");
+        showNotification({
+          message: "Address updated successfully",
+          type: "success"
+        });
       } else {
         const newAddress = await addAddress(addressForm);
+
+        if (!newAddress) {
+          setModalOpen(true);
+          showNotification({
+            message: "Please login to add an address",
+            type: "info"
+          });
+          return;
+        }
+
         selectAddress(newAddress.id);
-        showNotification("Address added successfully", "success");
+        showNotification({
+          message: "Address added successfully",
+          type: "success"
+        });
       }
       handleCancelForm();
     } catch (error) {
-      showNotification("Failed to save address. Please try again.", "error");
+      showNotification({
+        message: error.message || "Failed to save address. Please try again.",
+        type: "error",
+      });
     }
   };
 
@@ -335,10 +375,43 @@ function CheckoutPage() {
   };
 
   // Handle deliver here (select address and move to next step)
-  const handleDeliverHere = (addressId) => {
+  const handleDeliverHere = async (addressId) => {
+    // Find the address object
+    const selectedAddr = addresses.find((a) => a.id === addressId);
+
+    if (selectedAddr && selectedAddr.postalCode) {
+      try {
+        // Check pincode availability
+        const response = await fetch(
+          `http://localhost:5001/api/v1/pincodes/check/${selectedAddr.postalCode}`
+        );
+        const data = await response.json();
+
+        if (!data.success || !data.serviceable) {
+          showNotification({
+            message:
+              "This address is not deliverable. Kindly change the address and pincode.",
+            type: "error",
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Pincode check failed:", error);
+        showNotification({
+          message:
+            "Unable to verify delivery availability. Please try again.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
     selectAddress(addressId);
     setProcessState(3); // Move to payment step
-    showNotification("Delivery address selected", "success");
+    showNotification({
+      message: "Delivery address selected",
+      type: "success",
+    });
   };
 
   // Handle contact details change
@@ -429,7 +502,10 @@ function CheckoutPage() {
 
       const order = await placeOrder(orderData);
 
-      showNotification("Order placed successfully! 🎉", "success");
+      // showNotification({
+      //   message: "Order placed successfully! 🎉",
+      //   type: "success"
+      // });
 
       // Clear cart after successful order
       clearCart();
@@ -449,22 +525,25 @@ function CheckoutPage() {
         error.message.includes("stock") ||
         error.message.includes("availability")
       ) {
-        showNotification(
-          "Some items are out of stock. Please update your cart.",
-          "error"
-        );
+        showNotification({
+          message: "Some items are out of stock. Please update your cart.",
+          type: "error",
+        });
         setProcessState(1); // Go back to cart review
       } else if (error.message.includes("price")) {
-        showNotification(
-          "Product prices have changed. Please review your order.",
-          "error"
-        );
+        showNotification({
+          message: "Product prices have changed. Please review your order.",
+          type: "error",
+        });
         handleCalculateOrderSummary(); // Refresh pricing
       } else if (
         error.message.includes("authentication") ||
         error.message.includes("session")
       ) {
-        showNotification("Session expired. Please log in again.", "error");
+        showNotification({
+          message: "Session expired. Please log in again.",
+          type: "error"
+        });
         navigate("/");
       } else if (
         retryCount < maxRetries &&
@@ -472,12 +551,10 @@ function CheckoutPage() {
       ) {
         // Retry logic for network or temporary errors
         setRetryCount((prev) => prev + 1);
-        showNotification(
-          `Order placement failed. Retrying... (${
-            retryCount + 1
-          }/${maxRetries})`,
-          "warning"
-        );
+        showNotification({
+          message: `Order placement failed. Retrying... (${retryCount + 1}/${maxRetries})`,
+          type: "warning",
+        });
         setTimeout(() => handlePlaceOrder(), 2000 * (retryCount + 1)); // Exponential backoff
       } else {
         setValidationErrors([error.message]);
@@ -567,7 +644,7 @@ function CheckoutPage() {
       {/* Progress Steps */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-center space-x-8">
+          <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-4 md:gap-8">
             {[
               { step: 1, label: "Review Order", icon: "📋" },
               { step: 2, label: "Delivery Address", icon: "📍" },
@@ -575,28 +652,25 @@ function CheckoutPage() {
             ].map(({ step, label, icon }) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                    processState === step
-                      ? "bg-blue-500 text-white"
-                      : processState > step
+                  className={`flex items-center justify-center w-10 h-10 rounded-full ${processState === step
+                    ? "bg-blue-500 text-white"
+                    : processState > step
                       ? "bg-green-500 text-white"
                       : "bg-gray-200 text-gray-600"
-                  }`}
+                    }`}
                 >
                   {processState > step ? "✓" : icon}
                 </div>
                 <span
-                  className={`ml-3 text-sm font-medium ${
-                    processState === step ? "text-blue-600" : "text-gray-600"
-                  }`}
+                  className={`ml-3 text-sm font-medium ${processState === step ? "text-blue-600" : "text-gray-600"
+                    }`}
                 >
                   {label}
                 </span>
                 {step < 3 && (
                   <div
-                    className={`ml-8 w-8 h-0.5 ${
-                      processState > step ? "bg-green-500" : "bg-gray-200"
-                    }`}
+                    className={`ml-8 w-8 h-0.5 ${processState > step ? "bg-green-500" : "bg-gray-200"
+                      }`}
                   />
                 )}
               </div>
@@ -951,8 +1025,8 @@ function CheckoutPage() {
                           {addressLoading
                             ? "Saving..."
                             : editingAddress
-                            ? "Update Address"
-                            : "Add Address"}
+                              ? "Update Address"
+                              : "Add Address"}
                         </button>
 
                         <button
@@ -973,24 +1047,22 @@ function CheckoutPage() {
                     {addresses.map((address) => (
                       <div
                         key={address.id}
-                        className={`p-4 border rounded-lg transition-all cursor-pointer ${
-                          selectedAddressId === address.id
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
+                        className={`p-4 border rounded-lg transition-all cursor-pointer ${selectedAddressId === address.id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                          }`}
                         onClick={() => selectAddress(address.id)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-2">
                               <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                  address.label === "Home"
-                                    ? "bg-green-100 text-green-800"
-                                    : address.label === "Work"
+                                className={`px-2 py-1 rounded text-xs font-medium ${address.label === "Home"
+                                  ? "bg-green-100 text-green-800"
+                                  : address.label === "Work"
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-gray-100 text-gray-800"
-                                }`}
+                                  }`}
                               >
                                 {address.label}
                               </span>
@@ -1101,7 +1173,7 @@ function CheckoutPage() {
                     </button>
 
                     <button
-                      onClick={() => setProcessState(3)}
+                      onClick={() => handleDeliverHere(selectedAddressId)}
                       disabled={!selectedAddressId}
                       className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                     >
@@ -1161,9 +1233,8 @@ function CheckoutPage() {
                     <div className="space-y-3">
                       {cart.items.map((item) => (
                         <div
-                          key={`${item.productId}-${
-                            item.variantId || "default"
-                          }`}
+                          key={`${item.productId}-${item.variantId || "default"
+                            }`}
                           className="flex items-center space-x-3 text-sm"
                         >
                           <img
@@ -1274,11 +1345,10 @@ function CheckoutPage() {
                     ].map((method) => (
                       <label
                         key={method.value}
-                        className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${
-                          paymentMethod === method.value
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
+                        className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === method.value
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                          }`}
                       >
                         <input
                           type="radio"
@@ -1560,13 +1630,13 @@ function CheckoutPage() {
                   error.includes("address") ||
                   error.includes("terms")
               ) && (
-                <button
-                  onClick={handleRetryOrder}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                >
-                  Retry Order
-                </button>
-              )}
+                  <button
+                    onClick={handleRetryOrder}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    Retry Order
+                  </button>
+                )}
             </div>
           </div>
         </div>

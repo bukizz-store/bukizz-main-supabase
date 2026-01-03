@@ -108,8 +108,8 @@ const Stationary = () => {
   ];
 
   return (
-    <div className="my-6 mx-12">
-      <div className="grid grid-cols-5 gap-4">
+    <div className="my-6 mx-4 md:mx-12">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {displayProducts.slice(0, 5).map((item, idx) => (
           <div
             key={item.id || idx}

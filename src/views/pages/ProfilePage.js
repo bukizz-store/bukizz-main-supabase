@@ -25,6 +25,14 @@ function ProfilePage() {
     const tabParam = searchParams.get("tab");
     return tabParam || "profile"; // "profile", "orders" or "city"
   });
+
+  // Sync activeSection with URL search params
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam) {
+      setActiveSection(tabParam);
+    }
+  }, [searchParams]);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -35,6 +43,7 @@ function ProfilePage() {
     city: "",
     state: "",
   });
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Load profile data on component mount
   useEffect(() => {
@@ -112,8 +121,17 @@ function ProfilePage() {
   };
 
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     navigate("/");
+    setShowLogoutConfirm(false);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   if (loading && !profile) {
@@ -161,11 +179,10 @@ function ProfilePage() {
                     setActiveSection("profile");
                     setEditMode(false);
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${
-                    activeSection === "profile"
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${activeSection === "profile"
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <span>👤</span>
                   <span>My Profile</span>
@@ -173,11 +190,10 @@ function ProfilePage() {
 
                 <button
                   onClick={() => setActiveSection("orders")}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${
-                    activeSection === "orders"
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${activeSection === "orders"
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <span>📦</span>
                   <span>Orders</span>
@@ -185,11 +201,10 @@ function ProfilePage() {
 
                 <button
                   onClick={() => setActiveSection("city")}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${
-                    activeSection === "city"
-                      ? "text-blue-600 bg-blue-50"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${activeSection === "city"
+                    ? "text-blue-600 bg-blue-50"
+                    : "text-gray-700 hover:bg-gray-100"
+                    }`}
                 >
                   <span>🏙️</span>
                   <span>My city</span>
@@ -224,313 +239,302 @@ function ProfilePage() {
                     Personal Information
                   </h2>
 
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700">{error}</p>
-                </div>
-              )}
-
-              {/* Name Fields */}
-              <div className="mb-8">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      disabled={!editMode}
-                      placeholder="First Name"
-                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      disabled={!editMode}
-                      placeholder="Last Name"
-                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                      }`}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Email Field */}
-              <div className="mb-8">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  disabled={!editMode}
-                  className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                  }`}
-                />
-              </div>
-
-              {/* Phone Field */}
-              <div className="mb-8">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mobile Number
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  disabled={!editMode}
-                  className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                  }`}
-                />
-              </div>
-
-              {/* Additional Information Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                {/* Date of Birth */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                    }`}
-                  />
-                </div>
-
-                {/* Gender */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Gender
-                  </label>
-                  <select
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                    }`}
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                    <option value="prefer_not_to_say">Prefer not to say</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Location Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                {/* City */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    placeholder="City"
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                    }`}
-                  />
-                </div>
-
-                {/* State */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    disabled={!editMode}
-                    placeholder="State"
-                    className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      !editMode ? "bg-gray-50 text-gray-800" : "bg-white"
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Account Status */}
-              {!editMode && (
-                <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-600 uppercase tracking-wide">
-                        Account Status
-                      </p>
-                      <p className="text-sm font-semibold text-blue-600 mt-1">
-                        {profile?.is_active || profile?.isActive
-                          ? "Active"
-                          : "Inactive"}
-                      </p>
+                  {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <p className="text-red-700">{error}</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-600 uppercase tracking-wide">
-                        Email Status
-                      </p>
-                      <p
-                        className={`text-sm font-semibold mt-1 ${
-                          profile?.email_verified || profile?.emailVerified
-                            ? "text-green-600"
-                            : "text-orange-600"
-                        }`}
-                      >
-                        {profile?.email_verified || profile?.emailVerified
-                          ? "Verified"
-                          : "Unverified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600 uppercase tracking-wide">
-                        Phone Status
-                      </p>
-                      <p
-                        className={`text-sm font-semibold mt-1 ${
-                          profile?.phone_verified || profile?.phoneVerified
-                            ? "text-green-600"
-                            : "text-orange-600"
-                        }`}
-                      >
-                        {profile?.phone_verified || profile?.phoneVerified
-                          ? "Verified"
-                          : "Unverified"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                {editMode ? (
-                  <>
-                    <button
-                      onClick={handleSaveProfile}
-                      disabled={loading}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      {loading ? "Saving..." : "Save Changes"}
-                    </button>
-                    <button
-                      onClick={() => setEditMode(false)}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Edit Profile
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Address Section */}
-            {addresses && addresses.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                  Saved Addresses
-                </h2>
-
-                <div className="space-y-4">
-                  {addresses.map((address) => (
-                    <div
-                      key={address.id}
-                      className="p-6 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 ${
-                              address.is_default
-                                ? "border-blue-500 bg-blue-100"
-                                : "border-gray-300"
+                  {/* Name Fields */}
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleInputChange}
+                          disabled={!editMode}
+                          placeholder="First Name"
+                          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
                             }`}
-                          ></div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h3 className="font-semibold text-gray-800">
-                                {address.recipientName || "Address"}
-                              </h3>
-                              {address.label && (
-                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
-                                  {address.label}
-                                </span>
-                              )}
-                              {address.is_default && (
-                                <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
-                                  Default
-                                </span>
-                              )}
-                            </div>
-                            {address.phone && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                📞 {address.phone}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleEditAddress(address)}
-                          className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                        >
-                          EDIT
-                        </button>
+                        />
                       </div>
-
-                      <p className="text-sm text-gray-700 ml-8">
-                        {address.line1}
-                        {address.line2 && `, ${address.line2}`}
-                      </p>
-                      <p className="text-sm text-gray-700 ml-8">
-                        {address.city}
-                        {address.state && `, ${address.state}`}{" "}
-                        {address.postal_code && `- ${address.postal_code}`}
-                      </p>
-                      {address.landmark && (
-                        <p className="text-xs text-gray-500 ml-8 mt-1">
-                          📍 Landmark: {address.landmark}
-                        </p>
-                      )}
+                      <div>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleInputChange}
+                          disabled={!editMode}
+                          placeholder="Last Name"
+                          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                            }`}
+                        />
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Email Field */}
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      disabled={!editMode}
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                        }`}
+                    />
+                  </div>
+
+                  {/* Phone Field */}
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mobile Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      disabled={!editMode}
+                      className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                        }`}
+                    />
+                  </div>
+
+                  {/* Additional Information Row */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    {/* Date of Birth */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Birth
+                      </label>
+                      <input
+                        type="date"
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
+                        disabled={!editMode}
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                          }`}
+                      />
+                    </div>
+
+                    {/* Gender */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Gender
+                      </label>
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        disabled={!editMode}
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                          }`}
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer_not_to_say">Prefer not to say</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Location Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {/* City */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        disabled={!editMode}
+                        placeholder="City"
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                          }`}
+                      />
+                    </div>
+
+                    {/* State */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        State
+                      </label>
+                      <input
+                        type="text"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        disabled={!editMode}
+                        placeholder="State"
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!editMode ? "bg-gray-50 text-gray-800" : "bg-white"
+                          }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Account Status */}
+                  {!editMode && (
+                    <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">
+                            Account Status
+                          </p>
+                          <p className="text-sm font-semibold text-blue-600 mt-1">
+                            {profile?.is_active || profile?.isActive
+                              ? "Active"
+                              : "Inactive"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">
+                            Email Status
+                          </p>
+                          <p
+                            className={`text-sm font-semibold mt-1 ${profile?.email_verified || profile?.emailVerified
+                              ? "text-green-600"
+                              : "text-orange-600"
+                              }`}
+                          >
+                            {profile?.email_verified || profile?.emailVerified
+                              ? "Verified"
+                              : "Unverified"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">
+                            Phone Status
+                          </p>
+                          <p
+                            className={`text-sm font-semibold mt-1 ${profile?.phone_verified || profile?.phoneVerified
+                              ? "text-green-600"
+                              : "text-orange-600"
+                              }`}
+                          >
+                            {profile?.phone_verified || profile?.phoneVerified
+                              ? "Verified"
+                              : "Unverified"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4">
+                    {editMode ? (
+                      <>
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={loading}
+                          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          {loading ? "Saving..." : "Save Changes"}
+                        </button>
+                        <button
+                          onClick={() => setEditMode(false)}
+                          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-6 py-2 rounded-lg font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setEditMode(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Edit Profile
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+
+                {/* Address Section */}
+                {addresses && addresses.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm p-8">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                      Saved Addresses
+                    </h2>
+
+                    <div className="space-y-4">
+                      {addresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className="p-6 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 ${address.is_default
+                                  ? "border-blue-500 bg-blue-100"
+                                  : "border-gray-300"
+                                  }`}
+                              ></div>
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <h3 className="font-semibold text-gray-800">
+                                    {address.recipientName || "Address"}
+                                  </h3>
+                                  {address.label && (
+                                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+                                      {address.label}
+                                    </span>
+                                  )}
+                                  {address.is_default && (
+                                    <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                                {address.phone && (
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    📞 {address.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleEditAddress(address)}
+                              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                            >
+                              EDIT
+                            </button>
+                          </div>
+
+                          <p className="text-sm text-gray-700 ml-8">
+                            {address.line1}
+                            {address.line2 && `, ${address.line2}`}
+                          </p>
+                          <p className="text-sm text-gray-700 ml-8">
+                            {address.city}
+                            {address.state && `, ${address.state}`}{" "}
+                            {address.postal_code && `- ${address.postal_code}`}
+                          </p>
+                          {address.landmark && (
+                            <p className="text-xs text-gray-500 ml-8 mt-1">
+                              📍 Landmark: {address.landmark}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -546,6 +550,34 @@ function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 animate-fade-in">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Confirm Logout
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to log out of your account?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelLogout}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

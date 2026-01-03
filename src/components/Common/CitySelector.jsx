@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const CitySelector = () => {
   const [selectedCity, setSelectedCity] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Get the selected city from localStorage
@@ -26,12 +28,15 @@ const CitySelector = () => {
   };
 
   return (
-    <button className="flex items-center space-x-2 px-4 py-2 border-2 border-gray-800 rounded-lg hover:bg-gray-50 transition-colors">
+    <button
+      onClick={() => navigate("/profile?tab=city")}
+      className="flex items-center space-x-2 px-4 py-2 border-2 border-gray-800 rounded-lg hover:bg-gray-50 transition-colors"
+    >
       <img src="/map_svg.svg" alt="Location" className="h-10 w-10 text-red-600 filter brightness-0 saturate-200 hue-rotate-0" style={{ filter: 'invert(65%) sepia(100%) saturate(1000%) hue-rotate(360deg)' }} />
-    <div className="flex flex-col">
+      <div className="flex flex-col">
         <span className="text-sm font-semibold text-gray-800">City</span>
         <span className="text-sm font-bold text-gray-800">{getCityName()}</span>
-    </div>
+      </div>
     </button>
   );
 };
