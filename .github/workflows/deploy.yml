@@ -1,0 +1,39 @@
+name: Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main  # Or 'master', check your branch name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Deploy using SSH
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        port: 22
+        script: |
+          # 1. Go to the project folder
+          cd ~/bukizz-main-supabase
+
+          # 2. Pull the latest code from GitHub
+          git pull origin main
+
+          # 3. Install dependencies and Build
+          # (We use --force sometimes if there are version conflicts)
+          npm install
+          npm run build
+
+          # 4. Copy the new build to the public Nginx folder
+          # (We don't need sudo because we changed ownership in Step 1)
+          cp -r build/* /var/www/bukizz/
+
+          # 5. Restart Backend (Optional, but good practice)
+          pm2 restart all
+          
+          echo "Deployment Complete!"
