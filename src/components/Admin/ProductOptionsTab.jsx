@@ -26,7 +26,7 @@ const ProductOptionsTab = ({
     try {
       const apiRoutes = useApiRoutesStore.getState();
       const response = await fetch(
-        `http://localhost:3001/api/v1/products/${productId}/options`,
+        `${apiRoutes.baseUrl}/products/${productId}/options`,
         {
           headers: apiRoutes.getAuthHeaders(),
         }
@@ -88,7 +88,7 @@ const ProductOptionsTab = ({
             // Update existing attribute
             console.log("Updating existing attribute:", existingAttribute.id);
             attributeResponse = await fetch(
-              `http://localhost:3001/api/v1/products/options/${existingAttribute.id}`,
+              `${apiRoutes.baseUrl}/products/options/${existingAttribute.id}`,
               {
                 method: "PUT",
                 headers: {
@@ -102,7 +102,7 @@ const ProductOptionsTab = ({
             // Create new attribute
             console.log("Creating new attribute for product:", productId);
             attributeResponse = await fetch(
-              `http://localhost:3001/api/v1/products/${productId}/options`,
+              `${apiRoutes.baseUrl}/products/${productId}/options`,
               {
                 method: "POST",
                 headers: {
@@ -126,7 +126,7 @@ const ProductOptionsTab = ({
 
           // Fix: Correct path to get the attribute ID from response
           const attributeId = attributeResult.data?.option?.id || attributeResult.data?.id;
-          
+
           if (!attributeId) {
             console.error("No attribute ID found in response:", attributeResult);
             throw new Error("Failed to get attribute ID from server response");
@@ -147,7 +147,7 @@ const ProductOptionsTab = ({
               console.log("Sending value data:", valueData);
 
               const valueResponse = await fetch(
-                `http://localhost:3001/api/v1/products/options/${attributeId}/values`,
+                `${apiRoutes.baseUrl}/products/options/${attributeId}/values`,
                 {
                   method: "POST",
                   headers: {
@@ -186,10 +186,10 @@ const ProductOptionsTab = ({
 
       if (results.length > 0) {
         setSuccess(`Successfully saved ${results.length} product options with their values!`);
-        
+
         // Refresh the existing options
         await fetchExistingOptions();
-        
+
         // Notify parent component
         if (onOptionsUpdated) {
           onOptionsUpdated(results);
@@ -240,11 +240,10 @@ const ProductOptionsTab = ({
             type="button"
             onClick={saveProductOptions}
             disabled={loading}
-            className={`mt-2 px-4 py-2 rounded-md text-sm font-medium ${
-              loading
+            className={`mt-2 px-4 py-2 rounded-md text-sm font-medium ${loading
                 ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                 : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+              }`}
           >
             {loading ? "Saving..." : "Save Options"}
           </button>

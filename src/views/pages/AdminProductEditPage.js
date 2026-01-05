@@ -133,7 +133,7 @@ function AdminProductEditPage() {
 
       // Fetch complete product details
       const response = await fetch(
-        `http://localhost:3001/api/v1/products/${id}/complete`,
+        `${apiRoutes.baseUrl}/products/${id}/complete`,
         {
           headers: apiRoutes.getAuthHeaders(),
         }
@@ -163,8 +163,8 @@ function AdminProductEditPage() {
           product.is_active !== undefined
             ? product.is_active
             : product.isActive !== undefined
-            ? product.isActive
-            : true, // Handle both field names
+              ? product.isActive
+              : true, // Handle both field names
         metadata: product.metadata || {},
         selectedSchools: product.schoolIds || product.school_ids || [],
         selectedCategories: product.categoryIds || product.category_ids || [],
@@ -274,21 +274,21 @@ function AdminProductEditPage() {
             weight: variant.weight || 0,
             optionValue1: variant.option_value_1_ref
               ? {
-                  value: variant.option_value_1_ref.value,
-                  priceModifier: variant.option_value_1_ref.price_modifier || 0,
-                }
+                value: variant.option_value_1_ref.value,
+                priceModifier: variant.option_value_1_ref.price_modifier || 0,
+              }
               : null,
             optionValue2: variant.option_value_2_ref
               ? {
-                  value: variant.option_value_2_ref.value,
-                  priceModifier: variant.option_value_2_ref.price_modifier || 0,
-                }
+                value: variant.option_value_2_ref.value,
+                priceModifier: variant.option_value_2_ref.price_modifier || 0,
+              }
               : null,
             optionValue3: variant.option_value_3_ref
               ? {
-                  value: variant.option_value_3_ref.value,
-                  priceModifier: variant.option_value_3_ref.price_modifier || 0,
-                }
+                value: variant.option_value_3_ref.value,
+                priceModifier: variant.option_value_3_ref.price_modifier || 0,
+              }
               : null,
             optionCombination:
               [
@@ -444,11 +444,10 @@ function AdminProductEditPage() {
   // Get input class with error styling
   const getInputClassName = (fieldName, baseClass = "") => {
     const hasError = showValidation && fieldErrors[fieldName];
-    return `${baseClass} ${
-      hasError
+    return `${baseClass} ${hasError
         ? "border-red-500 focus:ring-red-500 focus:border-red-500"
         : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-    }`;
+      }`;
   };
 
   // Generate variants from options
@@ -567,7 +566,7 @@ function AdminProductEditPage() {
       if (formData.removeBrand) {
         try {
           const response = await fetch(
-            `http://localhost:3001/api/v1/products/${id}/brands/${formData.removeBrand}`,
+            `${apiRoutes.baseUrl}/products/${id}/brands/${formData.removeBrand}`,
             {
               method: "DELETE",
               headers: apiRoutes.getAuthHeaders(),
@@ -587,7 +586,7 @@ function AdminProductEditPage() {
       if (formData.removeRetailer) {
         try {
           const response = await fetch(
-            `http://localhost:3001/api/v1/products/${id}/retailer`,
+            `${apiRoutes.baseUrl}/products/${id}/retailer`,
             {
               method: "DELETE",
               headers: apiRoutes.getAuthHeaders(),
@@ -647,47 +646,47 @@ function AdminProductEditPage() {
 
         brandData: formData.brandData
           ? {
-              type: formData.brandData.type,
-              removeExisting: false, // Don't remove existing brands unless explicitly requested
-              ...(formData.brandData.type === "existing"
-                ? { brandId: formData.brandData.brandId }
-                : {
-                    name: formData.brandData.name,
-                    slug:
-                      formData.brandData.slug ||
-                      formData.brandData.name
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, "-")
-                        .replace(/(^-|-$)/g, ""),
-                    description: formData.brandData.description,
-                    country: formData.brandData.country,
-                    logoUrl: formData.brandData.logoUrl,
-                    metadata: {
-                      source: "admin_portal",
-                      updatedBy: "admin",
-                    },
-                  }),
-            }
+            type: formData.brandData.type,
+            removeExisting: false, // Don't remove existing brands unless explicitly requested
+            ...(formData.brandData.type === "existing"
+              ? { brandId: formData.brandData.brandId }
+              : {
+                name: formData.brandData.name,
+                slug:
+                  formData.brandData.slug ||
+                  formData.brandData.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/(^-|-$)/g, ""),
+                description: formData.brandData.description,
+                country: formData.brandData.country,
+                logoUrl: formData.brandData.logoUrl,
+                metadata: {
+                  source: "admin_portal",
+                  updatedBy: "admin",
+                },
+              }),
+          }
           : null,
         retailerData: formData.retailerData
           ? {
-              type: formData.retailerData.type,
-              ...(formData.retailerData.type === "existing"
-                ? { retailerId: formData.retailerData.retailerId }
-                : {
-                    name: formData.retailerData.name,
-                    contact_email: formData.retailerData.contact_email,
-                    contact_phone: formData.retailerData.contact_phone,
-                    address: formData.retailerData.address, // Can be text or JSON as per schema
-                    website: formData.retailerData.website,
-                    is_verified: false, // Default to false for new retailers
-                    metadata: {
-                      // Store any additional fields that don't exist as columns in metadata JSONB
-                      source: "admin_portal",
-                      updatedBy: "admin",
-                    },
-                  }),
-            }
+            type: formData.retailerData.type,
+            ...(formData.retailerData.type === "existing"
+              ? { retailerId: formData.retailerData.retailerId }
+              : {
+                name: formData.retailerData.name,
+                contact_email: formData.retailerData.contact_email,
+                contact_phone: formData.retailerData.contact_phone,
+                address: formData.retailerData.address, // Can be text or JSON as per schema
+                website: formData.retailerData.website,
+                is_verified: false, // Default to false for new retailers
+                metadata: {
+                  // Store any additional fields that don't exist as columns in metadata JSONB
+                  source: "admin_portal",
+                  updatedBy: "admin",
+                },
+              }),
+          }
           : null,
         variants: variants.map((variant) => ({
           id: variant.id, // Include ID for existing variants
@@ -712,7 +711,7 @@ function AdminProductEditPage() {
 
       // Use the enhanced API call method with automatic token refresh
       const result = await apiRoutes.put(
-        `http://localhost:3001/api/v1/products/${id}/comprehensive`,
+        `${apiRoutes.baseUrl}/products/${id}/comprehensive`,
         comprehensiveData
       );
 
@@ -728,8 +727,7 @@ function AdminProductEditPage() {
         );
       } else {
         setSuccess(
-          `Product "${
-            result.data.product.title
+          `Product "${result.data.product.title
           }" updated successfully with all related data! 
           - Product ID: ${result.data.product.id}
           - Images processed: ${result.data.images?.length || 0}
@@ -863,11 +861,10 @@ function AdminProductEditPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -948,11 +945,10 @@ function AdminProductEditPage() {
               <button
                 type="submit"
                 disabled={loading || !formData.title || formData.basePrice <= 0}
-                className={`px-8 py-3 rounded-md font-medium ${
-                  loading || !formData.title || formData.basePrice <= 0
+                className={`px-8 py-3 rounded-md font-medium ${loading || !formData.title || formData.basePrice <= 0
                     ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                     : "bg-green-600 text-white hover:bg-green-700"
-                }`}
+                  }`}
               >
                 {loading ? "Updating Product..." : "Update Product"}
               </button>

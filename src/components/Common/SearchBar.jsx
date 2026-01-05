@@ -140,9 +140,9 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
     loading || (isSearching && localSearchTerm.trim().length >= 2);
 
   return (
-    <div className="mx-12 my-2 mb-9 max-w">
-      <div className="flex space-x-4 ">
-        <button className="px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 w-[120px]">
+    <div className="mx-2 md:mx-12 my-2 mb-4 md:mb-9 max-w">
+      <div className="flex space-x-2 md:space-x-4 items-center justify-between">
+        <button className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 w-[120px]">
           Shop
         </button>
         <CitySelector />
@@ -150,24 +150,24 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
           <img
             src="/search_svg.svg"
             alt="Search"
-            className="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 z-10"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 z-10 text-gray-400"
           />
           <input
             type="text"
-            placeholder="Enter School name (e.g., DAV School)"
-            className="w-full px-16 py-4 rounded-2xl shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+            placeholder="Find Your School ( e.g. DPS )"
+            className="w-full px-10 md:px-16 py-2.5 md:py-4 rounded-full border border-gray-800 md:border-none shadow-none md:shadow-lg focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all duration-200 text-sm md:text-base placeholder-gray-500"
             value={localSearchTerm}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
           />
           {showLoading && (
-            <div className="absolute right-16 top-1/2 transform -translate-y-1/2 z-10">
+            <div className="absolute right-4 md:right-16 top-1/2 transform -translate-y-1/2 z-10">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
             </div>
           )}
         </div>
         <button
-          className="px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 disabled:opacity-50 transition-all duration-200"
+          className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 disabled:opacity-50 transition-all duration-200"
           onClick={handleSearchButtonClick}
           disabled={showLoading || localSearchTerm.trim().length < 1}
         >

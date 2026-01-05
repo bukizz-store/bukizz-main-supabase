@@ -165,11 +165,10 @@ function AdminProductPage() {
   // Get input class with error styling
   const getInputClassName = (fieldName, baseClass = "") => {
     const hasError = showValidation && fieldErrors[fieldName];
-    return `${baseClass} ${
-      hasError
+    return `${baseClass} ${hasError
         ? "border-red-500 focus:ring-red-500 focus:border-red-500"
         : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-    }`;
+      }`;
   };
 
   // Generate all possible variants from options
@@ -322,49 +321,49 @@ function AdminProductPage() {
         // Brand data with proper schema mapping (no is_primary field)
         brandData: formData.brandData
           ? {
-              type: formData.brandData.type,
-              ...(formData.brandData.type === "existing"
-                ? {
-                    brandId: formData.brandData.brandId,
-                  }
-                : {
-                    name: formData.brandData.name,
-                    slug: formData.brandData.slug,
-                    description: formData.brandData.description,
-                    country: formData.brandData.country,
-                    logo_url: formData.brandData.logo_url,
-                    metadata: {
-                      // Store any additional brand metadata
-                      source: "admin_portal",
-                      createdBy: "admin",
-                    },
-                  }),
-            }
+            type: formData.brandData.type,
+            ...(formData.brandData.type === "existing"
+              ? {
+                brandId: formData.brandData.brandId,
+              }
+              : {
+                name: formData.brandData.name,
+                slug: formData.brandData.slug,
+                description: formData.brandData.description,
+                country: formData.brandData.country,
+                logo_url: formData.brandData.logo_url,
+                metadata: {
+                  // Store any additional brand metadata
+                  source: "admin_portal",
+                  createdBy: "admin",
+                },
+              }),
+          }
           : null,
 
         // Retailer data with proper schema mapping (no business_type column)
         retailerData: formData.retailerData
           ? {
-              type: formData.retailerData.type,
-              ...(formData.retailerData.type === "existing"
-                ? {
-                    retailerId: formData.retailerData.retailerId,
-                  }
-                : {
-                    name: formData.retailerData.name,
-                    contact_email: formData.retailerData.contact_email,
-                    contact_phone: formData.retailerData.contact_phone,
-                    address: formData.retailerData.address, // Can be text or JSON
-                    website: formData.retailerData.website,
-                    is_verified: false, // Default to false for new retailers
-                    metadata: {
-                      // Store additional fields that don't exist as columns in metadata JSONB
-                      source: "admin_portal",
-                      createdBy: "admin",
-                      // Any extra fields can go here since your schema doesn't have them as columns
-                    },
-                  }),
-            }
+            type: formData.retailerData.type,
+            ...(formData.retailerData.type === "existing"
+              ? {
+                retailerId: formData.retailerData.retailerId,
+              }
+              : {
+                name: formData.retailerData.name,
+                contact_email: formData.retailerData.contact_email,
+                contact_phone: formData.retailerData.contact_phone,
+                address: formData.retailerData.address, // Can be text or JSON
+                website: formData.retailerData.website,
+                is_verified: false, // Default to false for new retailers
+                metadata: {
+                  // Store additional fields that don't exist as columns in metadata JSONB
+                  source: "admin_portal",
+                  createdBy: "admin",
+                  // Any extra fields can go here since your schema doesn't have them as columns
+                },
+              }),
+          }
           : null,
 
         // Variants data (if any)
@@ -381,7 +380,7 @@ function AdminProductPage() {
 
       // Single atomic API call for comprehensive product creation with proper auth headers
       const response = await fetch(
-        "http://localhost:3001/api/v1/products/comprehensive",
+        `${apiRoutes.baseUrl}/products/comprehensive`,
         {
           method: "POST",
           headers: apiRoutes.getAuthHeaders(), // This includes the Bearer token
@@ -411,8 +410,7 @@ function AdminProductPage() {
         );
       } else {
         setSuccess(
-          `Product "${
-            result.data.product.title
+          `Product "${result.data.product.title
           }" created successfully with all related data! 
           - Product ID: ${result.data.product.id}
           - Images uploaded: ${result.data.images?.length || 0}
@@ -571,11 +569,10 @@ function AdminProductPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? "border-blue-500 text-blue-600"
                       : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -650,11 +647,10 @@ function AdminProductPage() {
               <button
                 type="submit"
                 disabled={loading || !formData.title || !formData.basePrice}
-                className={`px-8 py-3 rounded-md font-medium ${
-                  loading || !formData.title || !formData.basePrice
+                className={`px-8 py-3 rounded-md font-medium ${loading || !formData.title || !formData.basePrice
                     ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                     : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
+                  }`}
               >
                 {loading ? "Creating Product..." : "Create Product"}
               </button>

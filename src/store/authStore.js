@@ -126,8 +126,8 @@ const useAuthStore = create(
             const errorData = await response.json();
             throw new Error(
               errorData.message ||
-                errorData.error ||
-                "Failed to send reset email"
+              errorData.error ||
+              "Failed to send reset email"
             );
           }
 
@@ -242,7 +242,7 @@ const useAuthStore = create(
 
           // Use direct headers to avoid circular dependency
           const response = await fetch(
-            "http://localhost:3001/api/v1/auth/refresh-token",
+            useApiRoutesStore.getState().auth.refreshToken,
             {
               method: "POST",
               headers: {
