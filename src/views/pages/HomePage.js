@@ -70,23 +70,21 @@ function HomePage() {
       <Card1 />
       <Category />
 
-      <div className="mx-4 md:mx-12 my-4 mb-10 max-w flex flex-col items-center justify-center">
-        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#7E30E1] to-[#39A7FF] text-transparent bg-clip-text text-center">
-          Pick Your School in {selectedCity}
-        </h1>
-        <p className="font-nunito font-semibold text-green text-center text-sm md:text-base">
-          Fresh Look , New Term - Grab Your Uniform Today
-        </p>
-      </div>
-
-      <div>
-        {/* a link for all schools */}
-        <div className="flex justify-end items-center mx-4 md:mx-12 mb-4">
-          {/* <h2 className="text-3xl font-bold">Schools in Gurugram</h2> */}
-          <a href="/school" className="text-blue-600 hover:underline">
+      <div className="mx-4 md:mx-12 my-4 mb-4 max-w flex flex-col items-center justify-center">
+        <div className="w-full flex flex-col md:flex-row items-center justify-center relative">
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#7E30E1] to-[#39A7FF] text-transparent bg-clip-text text-center">
+            Pick Your School in {selectedCity}
+          </h1>
+          <a
+            href="/school"
+            className="text-blue-600 hover:underline mt-2 md:mt-16 md:absolute md:right-0 text-sm md:text-base"
+          >
             View All Schools &rarr;
           </a>
         </div>
+        <p className="font-nunito font-semibold text-green text-center text-sm md:text-base mt-1">
+          Fresh Look , New Term - Grab Your Uniform Today
+        </p>
       </div>
 
       <School
@@ -98,7 +96,7 @@ function HomePage() {
       {/* Only show other sections when not actively searching */}
       {!isSearchActive && (
         <>
-          <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-8">School Essentials</h1>
+          <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
           <Stationary />
           <DealsSection />
         </>

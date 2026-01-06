@@ -39,7 +39,7 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="h-16 bg-white shadow-md flex items-center justify-between px-4 md:px-8 mx-0 mt-0 md:mb-12 md:mx-12 w-full md:w-full rounded-none md:rounded-full">
+      <div className="h-14 bg-white shadow-md flex items-center justify-between px-4 md:px-8 mx-0 mt-0 md:mb-3 md:mx-12 w-full md:w-full rounded-none md:rounded-full">
         {/* Left Side: Menu + Logo */}
         <div className="flex items-center gap-3 md:gap-4">
           {/* Menu Button - Visible on Mobile */}
@@ -105,7 +105,7 @@ const Navbar = () => {
           {user ? (
             <button
               onClick={handleProfileClick}
-              className="flex items-center gap-2 px-3 py-1.5 md:px-6 md:py-3 border border-gray-400 rounded-lg md:rounded-full bg-white hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 md:px-6 md:py-3 border border-gray-400 rounded-lg md:rounded-2xl bg-white hover:bg-gray-50 transition-colors"
             >
               <svg
                 className="w-5 h-5 text-gray-500"
@@ -123,7 +123,7 @@ const Navbar = () => {
           ) : (
             <button
               onClick={() => setModalOpen(true)}
-              className="bg-[#39A7FF] text-white px-4 py-2 md:px-6 md:py-3 rounded-md md:rounded-full hover:bg-blue-600 focus:outline-none transition-colors flex items-center gap-2 font-medium"
+              className="bg-[#39A7FF] text-white px-4 py-2 md:px-6 md:py-3 rounded-md md:rounded-md hover:bg-blue-600 focus:outline-none transition-colors flex items-center gap-2 font-medium"
             >
               <svg
                 className="w-5 h-5 hidden md:block"

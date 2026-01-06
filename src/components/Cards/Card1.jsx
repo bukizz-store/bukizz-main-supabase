@@ -3,7 +3,7 @@ import React from "react";
 // Using Google Fonts Abel
 const Card1 = () => {
   return (
-    <div className="mx-4 md:mx-12 my-4 mb-4 md:mb-8 max-w">
+    <div className="mx-4 md:mx-12 my-4 mb-4 md:mb-5 max-w">
       {/* Mobile/Tablet Banner */}
       <img
         src="/banner_2.png"
@@ -12,7 +12,7 @@ const Card1 = () => {
       />
 
       {/* Desktop Banner (Original Content) */}
-      <div className="relative h-[400px] bg-white rounded-2xl shadow-lg p-4 overflow-hidden hidden lg:flex items-center justify-between">
+      <div className="relative h-[250px] bg-white rounded-2xl shadow-lg p-4 overflow-hidden hidden lg:flex items-center justify-between">
         <div className="absolute -left-[350px] top-[-100px] transform w-[700px] h-[700px] bg-blue-500 rounded-full opacity-100"></div>
 
         <div className="relative z-10 flex flex-row h-full w-full items-center justify-between">

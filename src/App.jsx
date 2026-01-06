@@ -57,50 +57,50 @@ function App() {
 
   return (
     <Router>
-      {/* Notification Container for error/success popups */}
-      <NotificationContainer />
+      <div className="flex flex-col min-h-screen bg-[#F3F8FF]">
+        {/* Notification Container for error/success popups */}
+        <NotificationContainer />
 
-      <div className="flex justify-center bg-[#F3F8FF]">
-        <Navbar />
-      </div>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/school" element={<SchoolViewPage />} />
-        <Route path="/school/:id" element={<SchoolScreen />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/my-city" element={<MyCityPage />} />
-        <Route path="/order-success/:orderId" element={<OrderConfirmationPage />} />
-        <Route path="/product" element={<ProductViewPage />} />
-        <Route path="/product/:id" element={<ProductViewPage />} />
-        <Route path="/products" element={<CategoryProductsPage />} />
-        <Route path="/admin/products" element={<AdminProductPage />} />
-        <Route path="/admin/products/list" element={<ProductListPage />} />
-        <Route
-          path="/admin/products/edit/:id"
-          element={<AdminProductEditPage />}
-        />
-      </Routes>
-      <div className="relative mt-auto flex-col flex w-full">
-        {/* Footer Background Image - Absolute at bottom */}
-        <div className="absolute bottom-0 left-0 w-full z-0">
-          <img
-            src="/footer_back.svg"
-            alt="Background"
-            className="w-full h-auto object-cover object-bottom"
+        <div className="flex justify-center bg-[#F3F8FF] pt-6">
+          <Navbar />
+        </div>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/school" element={<SchoolViewPage />} />
+          <Route path="/school/:id" element={<SchoolScreen />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/my-city" element={<MyCityPage />} />
+          <Route path="/order-success/:orderId" element={<OrderConfirmationPage />} />
+          <Route path="/product" element={<ProductViewPage />} />
+          <Route path="/product/:id" element={<ProductViewPage />} />
+          <Route path="/products" element={<CategoryProductsPage />} />
+          <Route path="/admin/products" element={<AdminProductPage />} />
+          <Route path="/admin/products/list" element={<ProductListPage />} />
+          <Route
+            path="/admin/products/edit/:id"
+            element={<AdminProductEditPage />}
           />
-        </div>
+        </Routes>
+        <div className="relative mt-auto flex-col flex w-full">
+          {/* Footer Background Image - Absolute at bottom */}
+          <div className="absolute bottom-0 left-0 w-full z-0">
+            <img
+              src="/footer_back.svg"
+              alt="Background"
+              className="w-full h-auto object-cover object-bottom"
+            />
+          </div>
 
-        {/* Footer Content - Relative to stack on top */}
-        <div className="relative z-10 w-full">
-          <Footer />
-        </div>
+          {/* Footer Content - Relative to stack on top */}
+          <div className="relative z-10 w-full">
+            <Footer />
+          </div>
 
-        <p className="bg-white text-center relative z-20 hidden md:block">
-          © 2025 Bukizz. All rights reserved.
-        </p>
+
+        </div>
       </div>
     </Router>
   );

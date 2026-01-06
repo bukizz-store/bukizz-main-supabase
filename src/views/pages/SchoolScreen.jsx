@@ -4,6 +4,8 @@ import CategoryCard from "../../components/Cards/CategoryCard";
 import { BookSetCard } from "../../components/Cards/BookSetCard";
 import { UniformCard } from "../../components/Cards/UniformCard";
 import useUserProfileStore from "../../store/userProfileStore";
+import Stationary from "../../components/Sections/Stationary";
+import DealsSection from "../../components/Sections/DealsSection";
 
 const SchoolCategory = [
   { name: "Book Sets", color: "blue", img: "bookset_cat.svg" },
@@ -310,8 +312,7 @@ const SchoolScreen = () => {
 
       {/* School Categories */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-6">School Categories</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="flex flex-wrap justify-center gap-16">
           {SchoolCategory.map((category, idx) => (
             <CategoryCard
               key={idx}
@@ -351,7 +352,7 @@ const SchoolScreen = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-center">
+        <div className="flex flex-wrap justify-start gap-12">
           {selectedCategory === "School Uniform" ? (
             uniforms.map((uniform, idx) => (
               <UniformCard key={idx} props={uniform} />
@@ -428,6 +429,11 @@ const SchoolScreen = () => {
           </div>
         </div>
       </div>
+        <>
+          <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
+          <Stationary />
+          <DealsSection />
+        </>
     </div>
   );
 };

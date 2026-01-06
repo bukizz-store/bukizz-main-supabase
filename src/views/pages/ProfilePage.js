@@ -136,7 +136,7 @@ function ProfilePage() {
 
   if (loading && !profile) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F3F8FF]">
         <SearchBar />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
@@ -149,7 +149,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F3F8FF]">
       <SearchBar />
 
       <div className="max-w-7xl mx-auto px-4 py-8">

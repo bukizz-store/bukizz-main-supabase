@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useUserProfileStore from "../../store/userProfileStore";
 import CitySelector from "../Common/CitySelector";
+import HomePage from "../../views/pages/HomePage";
 
 const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
   const navigate = useNavigate();
@@ -140,9 +141,10 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
     loading || (isSearching && localSearchTerm.trim().length >= 2);
 
   return (
-    <div className="mx-2 md:mx-12 my-2 mb-4 md:mb-9 max-w">
+    <div className="mx-2 md:mx-12 my-2 mb-4 md:mb-4 max-w">
       <div className="flex space-x-2 md:space-x-4 items-center justify-between">
-        <button className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 w-[120px]">
+        <button onClick={() => navigate("/")} className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 w-[120px]">
+          
           Shop
         </button>
         <CitySelector />
@@ -167,7 +169,7 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
           )}
         </div>
         <button
-          className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 disabled:opacity-50 transition-all duration-200"
+          className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 transition-all duration-200"
           onClick={handleSearchButtonClick}
           disabled={showLoading || localSearchTerm.trim().length < 1}
         >
