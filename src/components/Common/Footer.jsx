@@ -8,6 +8,7 @@ const Footer = () => {
     <footer className="w-full">
       <div className="w-full px-4 md:px-0 mt-4 mb-20 md:mt-0 md:mb-0">
         <PromoCard />
+        
       </div>
       <div className="hidden md:block bg-transparent mt-0 w-full md:mx-12 mx-0 relative z-10">
         <div className="flex flex-col md:flex-row justify-between mb-4 font-nunito gap-4">
