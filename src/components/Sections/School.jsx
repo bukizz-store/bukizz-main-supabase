@@ -142,7 +142,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
   };
 
   return (
-    <div className="my-2">
+    <div className="my-6 md:my-2">
       {/* Search results header */}
       {showingSearchResults && (
         <div className="mx-4 md:mx-12 mb-4">
