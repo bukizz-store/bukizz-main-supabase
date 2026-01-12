@@ -11,7 +11,7 @@ import ProductOptionsTab from "../../components/Admin/ProductOptionsTab";
 import VariantsTab from "../../components/Admin/VariantsTab";
 import AssociationsTab from "../../components/Admin/AssociationsTab";
 import ImageManagementTab from "../../components/Admin/ImageManagementTab";
-import BrandRetailerTab from "../../components/Admin/BrandRetailerTab";
+import BrandWarehouseTab from "../../components/Admin/BrandWarehouseTab";
 
 function AdminProductEditPage() {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ function AdminProductEditPage() {
     mandatory: false,
     productImages: [],
     brandData: null,
-    retailerData: null,
+    warehouseData: null,
   });
 
   // Product Options (up to 3 attributes)
@@ -66,7 +66,8 @@ function AdminProductEditPage() {
   // Data from database
   const [schools, setSchools] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [retailers, setRetailers] = useState([]);
+  const [brands, setBrands] = useState([]);
+  // const [warehouses, setWarehouses] = useState([]); // Component fetches internally
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -112,14 +113,14 @@ function AdminProductEditPage() {
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
 
-      // Fetch retailers
-      const { data: retailersData, error: retailersError } = await supabase
-        .from("retailers")
-        .select("id, name, contact_email, contact_phone, address, website")
+      // Fetch brands
+      const { data: brandsData, error: brandsError } = await supabase
+        .from("brands")
+        .select("id, name, slug")
         .order("name");
 
-      if (retailersError) throw retailersError;
-      setRetailers(retailersData || []);
+      if (brandsError) throw brandsError;
+      setBrands(brandsData || []);
     } catch (err) {
       console.error("Error fetching reference data:", err);
       setError("Failed to load reference data");
@@ -159,6 +160,8 @@ function AdminProductEditPage() {
         productType: product.product_type || product.productType || "bookset", // Handle both field names
         basePrice: product.base_price || product.basePrice || 0, // Handle both field names
         currency: product.currency || "INR",
+        city: product.city || "", // Add city field
+        retailerId: product.retailer_id || product.retailerId, // Load retailer ID
         isActive:
           product.is_active !== undefined
             ? product.is_active
@@ -216,45 +219,32 @@ function AdminProductEditPage() {
           }
           return null;
         })(),
-        // Fix retailer data mapping - handle multiple possible response formats
-        retailerData: (() => {
-          // Check retailerDetails first (from complete API response)
-          if (product.retailerDetails) {
+        // Fix warehouse data mapping - handle multiple possible response formats
+        warehouseData: (() => {
+          // Check warehouseDetails first (from complete API response)
+          if (product.warehouseDetails) {
             return {
               type: "existing",
-              retailerId: product.retailerDetails.id,
-              retailerDetails: {
-                name: product.retailerDetails.name,
-                contact_email:
-                  product.retailerDetails.email ||
-                  product.retailerDetails.contact_email,
-                contact_phone:
-                  product.retailerDetails.phone ||
-                  product.retailerDetails.contact_phone,
-                website: product.retailerDetails.website,
-                address: product.retailerDetails.address,
+              warehouseId: product.warehouseDetails.id,
+              warehouseDetails: { // Keep extra details for UI if needed
+                name: product.warehouseDetails.name,
+                contact_email: product.warehouseDetails.contact_email,
+                contact_phone: product.warehouseDetails.contact_phone,
+                website: product.warehouseDetails.website,
+                address: product.warehouseDetails.address,
               },
+              ...product.warehouseDetails // Spread for BrandWarehouseTab expects flat properties?
+              // BrandWarehouseTab uses `formData.warehouseData` to display selected warehouse.
+              // It expects: name, contact_email, etc.
             };
           }
-          // Check basic retailer fields
-          else if (product.retailerId || product.retailer_id) {
+          // Check basic warehouse fields
+          else if (product.warehouseId || product.warehouse_id) {
             return {
               type: "existing",
-              retailerId: product.retailerId || product.retailer_id,
-              retailerDetails: {
-                name:
-                  product.retailerName ||
-                  product.retailer_name ||
-                  "Unknown Retailer",
-                contact_email:
-                  product.retailer_email || product.retailerEmail || "",
-                contact_phone:
-                  product.retailer_phone || product.retailerPhone || "",
-                website:
-                  product.retailer_website || product.retailerWebsite || "",
-                address:
-                  product.retailer_address || product.retailerAddress || "",
-              },
+              warehouseId: product.warehouseId || product.warehouse_id,
+              name: product.warehouseName || product.warehouse_name || "Unknown Warehouse",
+              contact_email: product.warehouseEmail || product.warehouse_email || "",
             };
           }
           return null;
@@ -445,8 +435,8 @@ function AdminProductEditPage() {
   const getInputClassName = (fieldName, baseClass = "") => {
     const hasError = showValidation && fieldErrors[fieldName];
     return `${baseClass} ${hasError
-        ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-        : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
       }`;
   };
 
@@ -582,11 +572,11 @@ function AdminProductEditPage() {
         }
       }
 
-      // Handle retailer removal if flagged
-      if (formData.removeRetailer) {
+      // Handle warehouse removal if flagged
+      if (formData.removeWarehouse) {
         try {
           const response = await fetch(
-            `${apiRoutes.baseUrl}/products/${id}/retailer`,
+            `${apiRoutes.baseUrl}/products/${id}/warehouse`,
             {
               method: "DELETE",
               headers: apiRoutes.getAuthHeaders(),
@@ -594,11 +584,11 @@ function AdminProductEditPage() {
           );
           if (!response.ok) {
             console.warn(
-              "Failed to remove retailer, but continuing with update"
+              "Failed to remove warehouse, but continuing with update"
             );
           }
         } catch (err) {
-          console.warn("Error removing retailer:", err);
+          console.warn("Error removing warehouse:", err);
         }
       }
 
@@ -627,9 +617,11 @@ function AdminProductEditPage() {
           productType: formData.productType,
           basePrice: parseFloat(formData.basePrice),
           currency: formData.currency,
+          city: formData.city, // Add city to payload
           isActive: formData.isActive,
           metadata: formData.metadata,
         },
+        retailerId: formData.retailerId, // Include retailer ID in update
         categories: formData.selectedCategories.map((cat) => ({ id: cat })),
 
         // Only send new images (without database IDs) for upload
@@ -668,20 +660,19 @@ function AdminProductEditPage() {
               }),
           }
           : null,
-        retailerData: formData.retailerData
+        warehouseData: formData.warehouseData
           ? {
-            type: formData.retailerData.type,
-            ...(formData.retailerData.type === "existing"
-              ? { retailerId: formData.retailerData.retailerId }
+            type: formData.warehouseData.type,
+            ...(formData.warehouseData.type === "existing"
+              ? { warehouseId: formData.warehouseData.warehouseId }
               : {
-                name: formData.retailerData.name,
-                contact_email: formData.retailerData.contact_email,
-                contact_phone: formData.retailerData.contact_phone,
-                address: formData.retailerData.address, // Can be text or JSON as per schema
-                website: formData.retailerData.website,
-                is_verified: false, // Default to false for new retailers
+                name: formData.warehouseData.name,
+                contact_email: formData.warehouseData.contact_email,
+                contact_phone: formData.warehouseData.contact_phone,
+                address: formData.warehouseData.address,
+                website: formData.warehouseData.website,
+                is_verified: false, // Default to false for new warehouses
                 metadata: {
-                  // Store any additional fields that don't exist as columns in metadata JSONB
                   source: "admin_portal",
                   updatedBy: "admin",
                 },
@@ -732,7 +723,7 @@ function AdminProductEditPage() {
           - Product ID: ${result.data.product.id}
           - Images processed: ${result.data.images?.length || 0}
           - Brands associated: ${result.data.brands?.length || 0}
-          - Retailer ${result.data.retailer ? "associated" : "not changed"}
+          - Warehouse ${result.data.warehouse ? "associated" : "not changed"}
           - Variants processed: ${result.data.variants?.length || 0}`
         );
       }
@@ -862,8 +853,8 @@ function AdminProductEditPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
                   {tab.label}
@@ -932,10 +923,10 @@ function AdminProductEditPage() {
             )}
 
             {activeTab === "branding" && (
-              <BrandRetailerTab
+              <BrandWarehouseTab
                 formData={formData}
                 setFormData={setFormData}
-                retailers={retailers}
+                brands={brands}
                 productId={id}
               />
             )}
@@ -946,8 +937,8 @@ function AdminProductEditPage() {
                 type="submit"
                 disabled={loading || !formData.title || formData.basePrice <= 0}
                 className={`px-8 py-3 rounded-md font-medium ${loading || !formData.title || formData.basePrice <= 0
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700"
+                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                  : "bg-green-600 text-white hover:bg-green-700"
                   }`}
               >
                 {loading ? "Updating Product..." : "Update Product"}

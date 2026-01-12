@@ -76,7 +76,7 @@ const Navbar = () => {
             </svg>
           </button>
 
-          <button onClick={handleLogoClick} className="flex-shrink-0 hover:opacity-80">
+          <button onClick={handleLogoClick} className="flex-shrink-0">
             <img src="/Logo.svg" alt="Bukizz Logo" className="h-12 w-auto" />
           </button>
         </div>
@@ -166,7 +166,7 @@ const Navbar = () => {
                 </span>
               )}
             </div>
-            <p className="text-[10px] md:text-base font-semibold">Cart</p>
+            <p className="text-[10px] md:text-base font-semibold hidden md:block">Cart</p>
           </button>
         </div>
       </div>

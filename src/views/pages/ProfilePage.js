@@ -5,6 +5,8 @@ import MyCitySection from "../../components/Sections/MyCitySection";
 import OrdersSection from "../../components/Cards/OrdersSection";
 import useUserProfileStore from "../../store/userProfileStore";
 import useAuthStore from "../../store/authStore";
+import { User, Package, Wallet, Folder, ChevronRight, Power } from 'lucide-react';
+import AddressManager from "../../components/Profile/AddressManager";
 
 function ProfilePage() {
   const navigate = useNavigate();
@@ -12,12 +14,11 @@ function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const {
     profile,
-    addresses,
     loading,
     error,
     getProfile,
-    getAddresses,
     updateProfile,
+    verifyEmail,
   } = useUserProfileStore();
 
   const [editMode, setEditMode] = useState(false);
@@ -55,16 +56,18 @@ function ProfilePage() {
     const loadProfileData = async () => {
       try {
         await getProfile();
-        await getAddresses();
+
       } catch (error) {
         console.error("Error loading profile data:", error);
       }
     };
 
     if (user) {
+      console.log("Profile data loaded:", profile);
       loadProfileData();
     }
-  }, [user, isAuthenticated, navigate, getProfile, getAddresses]);
+
+  }, [user, isAuthenticated, navigate, getProfile]);
 
   // Update form data when profile changes
   useEffect(() => {
@@ -115,9 +118,15 @@ function ProfilePage() {
     }
   };
 
-  const handleEditAddress = (address) => {
-    // Navigate to address editing (can be expanded based on your requirements)
-    console.log("Edit address:", address);
+
+  const handleVerifyEmail = async () => {
+    try {
+      if (profile?.emailVerified) return;
+      const result = await verifyEmail();
+      alert("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      alert("Error sending verification email: " + error.message);
+    }
   };
 
   const handleLogout = () => {
@@ -156,81 +165,107 @@ function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-20">
+            <div className="space-y-4">
               {/* Profile Header */}
-              <div className="mb-6 pb-6 border-b">
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-xl">👤</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Hello</p>
-                    <h3 className="text-lg font-semibold text-blue-600">
-                      {formData.firstName} {formData.lastName}
-                    </h3>
-                  </div>
+              <div className="bg-white rounded-lg shadow-sm p-4 flex items-center space-x-4">
+                <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center overflow-hidden">
+                  <img
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Hello,</p>
+                  <h3 className="text-md font-bold text-gray-800">
+                    {formData.firstName} {formData.lastName}
+                  </h3>
                 </div>
               </div>
 
               {/* Navigation Menu */}
-              <nav className="space-y-1">
-                <button
-                  onClick={() => {
-                    setActiveSection("profile");
-                    setEditMode(false);
-                  }}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${activeSection === "profile"
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                >
-                  <span>👤</span>
-                  <span>My Profile</span>
-                </button>
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                {/* My Orders */}
+                <div className="border-b">
+                  <button
+                    onClick={() => setActiveSection("orders")}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <Package className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-gray-500 hover:text-blue-600">MY ORDERS</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                  </button>
+                </div>
 
-                <button
-                  onClick={() => setActiveSection("orders")}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${activeSection === "orders"
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                >
-                  <span>📦</span>
-                  <span>Orders</span>
-                </button>
+                {/* Account Settings */}
+                <div className="border-b">
+                  <div className="px-6 py-4 flex items-center space-x-4">
+                    <User className="w-5 h-5 text-blue-600" />
+                    <span className="font-semibold text-gray-500">ACCOUNT SETTINGS</span>
+                  </div>
+                  <div className="pb-2">
+                    <button
+                      onClick={() => {
+                        setActiveSection("profile");
+                        setEditMode(false);
+                      }}
+                      className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "profile" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        }`}
+                    >
+                      Profile Information
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveSection("addresses");
+                        setEditMode(false);
+                      }}
+                      className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "addresses" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                        }`}
+                    >
+                      Manage Addresses
+                    </button>
+                  </div>
+                </div>
 
-                <button
-                  onClick={() => setActiveSection("city")}
-                  className={`w-full text-left px-4 py-3 rounded-lg font-medium flex items-center space-x-3 transition-colors ${activeSection === "city"
-                    ? "text-blue-600 bg-blue-50"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                >
-                  <span>🏙️</span>
-                  <span>My city</span>
-                </button>
 
-                <button
-                  onClick={() => console.log("Notifications")}
-                  className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg font-medium flex items-center space-x-3 transition-colors"
-                >
-                  <span>🔔</span>
-                  <span>Notifications</span>
-                </button>
 
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg font-medium flex items-center space-x-3 transition-colors"
-                >
-                  <span>🚪</span>
-                  <span>Logout</span>
-                </button>
-              </nav>
+                {/* My Stuff */}
+                <div className="border-b">
+                  <div className="px-6 py-4 flex items-center space-x-4">
+                    <Folder className="w-5 h-5 text-blue-600" />
+                    <span className="font-semibold text-gray-500">MY STUFF</span>
+                  </div>
+                  <div className="pb-2">
+                    <button
+                      onClick={() => setActiveSection("city")}
+                      className={`w-full text-left px-16 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors ${activeSection === "city" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600"}`}
+                    >
+                      My City
+                    </button>
+                    <button className="w-full text-left px-16 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                      All Notifications
+                    </button>
+                  </div>
+                </div>
+
+                {/* Logout */}
+                <div className="border-b last:border-b-0">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 transition-colors text-gray-500 hover:text-blue-600"
+                  >
+                    <Power className="w-5 h-5 text-blue-600" />
+                    <span className="font-semibold">Logout</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Main Content - Full Width When Active */}
-          <div className={activeSection === "profile" ? "lg:col-span-4" : "lg:col-span-4 hidden"}>
+          <div className={(activeSection === "profile" || activeSection === "addresses") ? "lg:col-span-4" : "lg:col-span-4 hidden"}>
             {activeSection === "profile" && (
               <div className="space-y-6">
                 {/* Personal Information */}
@@ -415,6 +450,15 @@ function ProfilePage() {
                               ? "Verified"
                               : "Unverified"}
                           </p>
+                          {(!profile?.email_verified && !profile?.emailVerified) && (
+                            <button
+                              onClick={handleVerifyEmail}
+                              disabled={loading}
+                              className="text-xs text-blue-600 hover:text-blue-800 underline mt-1"
+                            >
+                              Verify Now
+                            </button>
+                          )}
                         </div>
                         <div>
                           <p className="text-xs text-gray-600 uppercase tracking-wide">
@@ -463,79 +507,11 @@ function ProfilePage() {
                     )}
                   </div>
                 </div>
-
-                {/* Address Section */}
-                {addresses && addresses.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                      Saved Addresses
-                    </h2>
-
-                    <div className="space-y-4">
-                      {addresses.map((address) => (
-                        <div
-                          key={address.id}
-                          className="p-6 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
-                        >
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div
-                                className={`w-5 h-5 rounded-full border-2 ${address.is_default
-                                  ? "border-blue-500 bg-blue-100"
-                                  : "border-gray-300"
-                                  }`}
-                              ></div>
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <h3 className="font-semibold text-gray-800">
-                                    {address.recipientName || "Address"}
-                                  </h3>
-                                  {address.label && (
-                                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
-                                      {address.label}
-                                    </span>
-                                  )}
-                                  {address.is_default && (
-                                    <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
-                                      Default
-                                    </span>
-                                  )}
-                                </div>
-                                {address.phone && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    📞 {address.phone}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleEditAddress(address)}
-                              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                            >
-                              EDIT
-                            </button>
-                          </div>
-
-                          <p className="text-sm text-gray-700 ml-8">
-                            {address.line1}
-                            {address.line2 && `, ${address.line2}`}
-                          </p>
-                          <p className="text-sm text-gray-700 ml-8">
-                            {address.city}
-                            {address.state && `, ${address.state}`}{" "}
-                            {address.postal_code && `- ${address.postal_code}`}
-                          </p>
-                          {address.landmark && (
-                            <p className="text-xs text-gray-500 ml-8 mt-1">
-                              📍 Landmark: {address.landmark}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
+            )}
+
+            {activeSection === "addresses" && (
+              <AddressManager />
             )}
           </div>
 

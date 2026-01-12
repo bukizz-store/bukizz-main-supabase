@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Card1 from "../../components/Cards/Card1";
+import HomeCarousel from "../../components/Sections/HomeCarousel";
 import Category from "../../components/Sections/Category";
 import DealsSection from "../../components/Sections/DealsSection";
 import School from "../../components/Sections/School";
@@ -67,7 +67,7 @@ function HomePage() {
         searchTerm={searchTerm}
         onSearchTermChange={handleSearchTermChange}
       />
-      <Card1 />
+      <HomeCarousel />
       <Category />
 
       <div className="mx-4 md:mx-12 my-4 mb-4 max-w flex flex-col items-center justify-center">
@@ -77,12 +77,12 @@ function HomePage() {
           </h1>
           <a
             href="/school"
-            className="text-blue-600 hover:underline mt-2 md:mt-16 md:absolute md:right-0 text-sm md:text-base"
+            className="text-blue-600 hover:underline mt-28 md:mt-16 absolute right-0 text-sm md:text-base"
           >
             View All Schools &rarr;
           </a>
         </div>
-        <p className="font-nunito font-semibold text-green text-center text-sm md:text-base mt-1">
+        <p className="font-nunito font-semibold text-green text-center text-sm md:text-base md:mt-1">
           Fresh Look , New Term - Grab Your Uniform Today
         </p>
       </div>

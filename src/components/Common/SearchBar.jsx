@@ -6,7 +6,7 @@ import HomePage from "../../views/pages/HomePage";
 
 const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
   const navigate = useNavigate();
-  const { searchSchools, loading } = useUserProfileStore();
+  const { searchSchools, searchProducts, loading } = useUserProfileStore();
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm || "");
   const [isSearching, setIsSearching] = useState(false);
   const debounceTimerRef = useRef(null);
@@ -36,18 +36,34 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
 
         // Navigate to school view page if not already there
         if (window.location.pathname !== "/school") {
-          navigate("/school");
+          navigate("/school", { state: { searchTerm: trimmedSearch } });
+          return;
         }
 
-        // Perform search
-        const results = await searchSchools({
-          search: trimmedSearch,
-          limit: 50, // Get more results for search
-        });
+        // Perform search for schools and products in parallel
+        const [schoolResults, productResults] = await Promise.all([
+          searchSchools({
+            search: trimmedSearch,
+            limit: 50,
+          }).catch(err => {
+            console.error("School search failed:", err);
+            return { schools: [] };
+          }),
+          searchProducts({
+            search: trimmedSearch,
+            limit: 20,
+          }).catch(err => {
+            console.error("Product search failed:", err);
+            return { products: [] };
+          })
+        ]);
 
         // Only update results if this is still the current search
         if (lastSearchTermRef.current === trimmedSearch && onSearchResults) {
-          onSearchResults(results.schools || []);
+          onSearchResults({
+            schools: schoolResults.schools || [],
+            products: productResults.products || []
+          });
         }
       } catch (error) {
         console.error("Search failed:", error);
@@ -141,10 +157,10 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
     loading || (isSearching && localSearchTerm.trim().length >= 2);
 
   return (
-    <div className="mx-2 md:mx-12 my-2 mb-4 md:mb-4 max-w">
+    <div className="mx-2 md:mx-12 my-2 mb-1 md:mb-4 max-w">
       <div className="flex space-x-2 md:space-x-4 items-center justify-between">
         <button onClick={() => navigate("/")} className="hidden md:block px-4 py-4 rounded-lg shadow-md bg-gradient-to-r from-[#39A7FF] to-[#525CEB] text-white hover:opacity-90 w-[120px]">
-          
+
           Shop
         </button>
         <CitySelector />

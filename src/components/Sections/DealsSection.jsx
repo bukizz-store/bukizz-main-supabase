@@ -120,7 +120,7 @@ const DealsSection = () => {
   ];
 
   return (
-    <div className=" px-4 md:px-0 mx-4 md:mx-12">
+    <div className=" px-4 md:px-0 mx-0 md:mx-12">
       <h2 className="text-2xl md:text-4xl font-bold my-8 pb-4">Deals For You</h2>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="w-full md:w-[550px] bg-[#FF8C22] p-6 md:p-10 flex flex-col justify-center rounded-3xl shadow-lg font-nunito">
@@ -145,7 +145,7 @@ const DealsSection = () => {
               <img
                 src={item.img || item.primaryImage?.url}
                 alt={item.name || item.title}
-                className="w-full h-[180px] object-cover rounded-2xl "
+                className="w-full md:h-[180px] h-[150px] object-cover rounded-2xl "
               />
               <div className="px-4 py-2 flex flex-col items-start justify-start gap-1">
                 <p>{item.name || item.title}</p>

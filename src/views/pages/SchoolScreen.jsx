@@ -267,6 +267,7 @@ const SchoolScreen = () => {
   // Get default image
   const getSchoolImage = (school) => {
     return (
+      school.image ||
       school.image_url ||
       school.img ||
       "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg="
@@ -429,11 +430,11 @@ const SchoolScreen = () => {
           </div>
         </div>
       </div>
-        <>
-          <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
-          <Stationary />
-          <DealsSection />
-        </>
+      <>
+        <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
+        <Stationary />
+        <DealsSection />
+      </>
     </div>
   );
 };

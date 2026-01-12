@@ -1,9 +1,9 @@
 import React from "react";
 import CategoryCard from "../Cards/CategoryCard";
 const categories = [
-  { name: "Book Sets", color: "blue", img: "bookset_cat.svg" },
+  { name: "School BookSets", color: "blue", img: "bookset_cat.svg" },
   { name: "School Uniform", color: "yellow", img: "uniform_cat.svg" },
-  { name: "Stationery", color: "green", img: "stationary_cat.svg" },
+  // { name: "Stationery", color: "green", img: "stationary_cat.svg" },
   { name: "Admissions", color: "purple", img: "admissions_cat.svg" },
   { name: "Categories", color: "pink", img: "categories_cat.svg" },
 ];
@@ -12,7 +12,7 @@ const Category = () => {
   return (
     <div>
       {/* Mobile View */}
-      <div className="flex md:hidden overflow-x-auto gap-4 px-4 my-6 no-scrollbar pb-2">
+      <div className="flex md:hidden overflow-x-auto gap-6 md:gap-4 px-4 my-2 md:my-6 no-scrollbar pb-2 justify-center">
         {categories.map((cat, idx) => (
           <div key={idx} className="flex flex-col items-center shrink-0">
             <div
@@ -21,10 +21,10 @@ const Category = () => {
               <img
                 src={`/categories/${cat.img}`}
                 alt={cat.name}
-                className="w-24 h-24"
+                className="w-14 h-14"
               />
             </div>
-            <span className="text-xs font-bold mt-2 text-center text-gray-700">
+            <span className="text-xs mt-2 text-center text-gray-700 text-wrap w-[60px]">
               {cat.name}
             </span>
           </div>

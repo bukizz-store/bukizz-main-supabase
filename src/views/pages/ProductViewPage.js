@@ -459,7 +459,7 @@ function ProductViewPage() {
               className="w-5 h-5 invert-0 brightness-0 saturate-100 text-red-500"
             />
             <p className="text-sm">
-              {productData.retailers?.name || "Bukizz Store"}
+              {productData.warehouses?.[0]?.name || "Bukizz Store"}
             </p>
           </div>
 
@@ -692,8 +692,8 @@ function ProductViewPage() {
                 )}
               </div>
               <div>
-                <p className="font-semibold">Retailer</p>
-                <p>{productData.retailers?.name || "Bukizz"}</p>
+                <p className="font-semibold">Warehouse</p>
+                <p>{productData.warehouses?.[0]?.name || "Bukizz"}</p>
                 <div className="h-0.5 w-full bg-gray-300 my-2"></div>
 
                 <p className="font-semibold">Status</p>

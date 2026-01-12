@@ -15,10 +15,10 @@ const PromoCard = () => {
           </h2>
           <h2 className="text-sm sm:text-4xl font-bold sm:mb-4">School Needs</h2>
           <button>
-            <img src="/image 54.png" alt="Menu" className="h-4 sm:h-12 mx-4 " />
+            <img src="/image 54.png" alt="Menu" className="h-4 sm:h-12 mx-0 md:mx-4 " />
           </button>
           <button>
-            <img src="/image 55.png" alt="Search" className="h-4 sm:h-12 mx-4" />
+            <img src="/image 55.png" alt="Search" className="h-4 sm:h-12 mx-1 md:mx-4 " />
           </button>
         </div>
       </div>

@@ -454,7 +454,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(
-        useApiRoutesStore.getState().users.legacy.verifyEmail,
+        useApiRoutesStore.getState().users.verifyEmail,
         {
           method: "POST",
           headers: {
@@ -473,6 +473,39 @@ const useUserProfileStore = create((set, get) => ({
 
       // Refresh profile to get updated verification status
       await get().getProfile();
+
+      set({ loading: false, error: null });
+      return data.message;
+    } catch (error) {
+      set({
+        loading: false,
+        error: error.message,
+      });
+      throw error;
+    }
+  },
+
+  // Confirm email verification with token
+  confirmEmailVerification: async (token) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await fetch(
+        useApiRoutesStore.getState().users.verifyEmailConfirm,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ token }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to verified email");
+      }
+
+      const data = await response.json();
 
       set({ loading: false, error: null });
       return data.message;

@@ -119,7 +119,7 @@ const Stationary = () => {
             <img
               src={item.img || item.primaryImage?.url}
               alt={item.title || item.name}
-              className="w-full h-[200px] object-cover rounded-2xl"
+              className="w-full md:h-[200px] h-[150px] object-cover rounded-2xl"
             />
             <div className="px-4 py-2 flex flex-col items-start justify-start gap-1">
               <p className="font-nunito font-semibold">{item.title || item.name}</p>

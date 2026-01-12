@@ -58,6 +58,7 @@ const useApiRoutesStore = create((set, get) => ({
 
     // Account verification
     verifyEmail: `${BASE_URL}/users/verify-email`,
+    verifyEmailConfirm: `${BASE_URL}/users/verify-email/confirm`,
     verifyPhone: `${BASE_URL}/users/verify-phone`,
 
     // Account management
@@ -172,6 +173,20 @@ const useApiRoutesStore = create((set, get) => ({
       createPartnership: (schoolId) =>
         `${BASE_URL}/schools/${schoolId}/partnerships`,
     },
+  },
+
+  // ============ CATEGORY ROUTES ============
+  categories: {
+    getAll: `${BASE_URL}/categories`,
+    getById: (id) => `${BASE_URL}/categories/${id}`,
+    getBySlug: (slug) => `${BASE_URL}/categories/slug/${slug}`,
+
+    // Admin routes
+    admin: {
+      create: `${BASE_URL}/categories`,
+      update: (id) => `${BASE_URL}/categories/${id}`,
+      delete: (id) => `${BASE_URL}/categories/${id}`,
+    }
   },
 
   // ============ PINCODE ROUTES ============

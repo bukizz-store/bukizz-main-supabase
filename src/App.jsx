@@ -15,10 +15,20 @@ import ProductListPage from "./views/pages/ProductListPage";
 import CategoryProductsPage from "./views/pages/CategoryProductsPage";
 import ProfilePage from "./views/pages/ProfilePage";
 import MyCityPage from "./views/pages/MyCityPage";
+import AdminCategoryPage from "./views/pages/AdminCategoryPage";
+import VerifyEmailPage from "./views/pages/VerifyEmailPage";
+
+import ContactUsPage from "./views/pages/ContactUsPage";
+import PaymentPolicyPage from "./views/pages/PaymentPolicyPage";
+import ShippingPolicyPage from "./views/pages/ShippingPolicyPage";
+import CancellationRefundPage from "./views/pages/CancellationRefundPage";
+import TermsOfUsePage from "./views/pages/TermsOfUsePage";
+import PrivacyPolicyPage from "./views/pages/PrivacyPolicyPage";
 import Navbar from "./components/Common/Navbar";
 import SchoolScreen from "./views/pages/SchoolScreen";
 import Footer from "./components/Common/Footer";
 import NotificationContainer from "./components/Common/NotificationContainer";
+import ScrollToTop from "./components/Common/ScrollToTop";
 import useAuthStore from "./store/authStore";
 
 // Main App Component
@@ -57,11 +67,12 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-[#F3F8FF]">
         {/* Notification Container for error/success popups */}
         <NotificationContainer />
 
-        <div className="flex justify-center bg-[#F3F8FF] pt-6">
+        <div className="flex justify-center bg-[#F3F8FF] pt-0 md:pt-6">
           <Navbar />
         </div>
         <Routes>
@@ -74,15 +85,24 @@ function App() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/my-city" element={<MyCityPage />} />
           <Route path="/order-success/:orderId" element={<OrderConfirmationPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/product" element={<ProductViewPage />} />
           <Route path="/product/:id" element={<ProductViewPage />} />
           <Route path="/products" element={<CategoryProductsPage />} />
           <Route path="/admin/products" element={<AdminProductPage />} />
           <Route path="/admin/products/list" element={<ProductListPage />} />
+          <Route path="/admin/categories" element={<AdminCategoryPage />} />
           <Route
             path="/admin/products/edit/:id"
             element={<AdminProductEditPage />}
           />
+
+          <Route path="/contact-us" element={<ContactUsPage />} />
+          <Route path="/payment-policy" element={<PaymentPolicyPage />} />
+          <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+          <Route path="/cancellation-refund" element={<CancellationRefundPage />} />
+          <Route path="/terms-of-use" element={<TermsOfUsePage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         </Routes>
         <div className="relative mt-auto flex-col flex w-full">
           {/* Footer Background Image - Absolute at bottom */}
@@ -90,7 +110,7 @@ function App() {
             <img
               src="/footer_back.svg"
               alt="Background"
-              className="w-full h-auto object-cover object-bottom"
+              className="w-full h-screen md:h-auto object-cover object-bottom"
             />
           </div>
 

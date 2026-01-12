@@ -2,73 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { schoolRoutes } from "../../store/apiRoutesStore";
 
-const defaultSchools = [
-  {
-    id: "marwannah-public-school",
-    name: "Marwannah Public School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 14",
-  },
-  {
-    id: "wisdom-world-school",
-    name: "Wisdom World School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 17",
-  },
-  {
-    id: "kps-school",
-    name: "KPS School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 10",
-  },
-  {
-    id: "cr-model-public-school",
-    name: "C.R. Model Public School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 7",
-  },
-  {
-    id: "the-heritage-school",
-    name: "The Heritage School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 29",
-  },
-  {
-    id: "the-shri-ram-school",
-    name: "The Shri Ram School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 45",
-  },
-  {
-    id: "shalom-hills-international-school",
-    name: "Shalom Hills International School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 51",
-  },
-  {
-    id: "gd-goenka-public-school",
-    name: "GD Goenka Public School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 48",
-  },
-  {
-    id: "ryan-international-school",
-    name: "Ryan International School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 40",
-  },
-  {
-    id: "delhi-public-school",
-    name: "Delhi Public School",
-    img: "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-    location: "Sector 45",
-  },
-];
+
 
 const School = ({ searchResults, isSearchActive, searchTerm }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [schoolData, setSchoolData] = useState([]);
+  const [schoolsByCity, setSchoolsByCity] = useState([]);
+  const [allSchools, setAllSchools] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -110,18 +50,18 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
           id: school.id,
           name: school.name,
           img:
+            school.image ||
             school.img ||
             "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
           location: school.city || school.address?.line1 || "Location not specified",
         }));
 
         // Show first 10 schools on homepage
-        setSchoolData(schools.slice(0, 10));
+        setSchoolsByCity(schools.slice(0, 10));
         setError(null);
       } catch (err) {
         console.error("Error fetching schools by city:", err);
-        // Fallback to default schools on error
-        setSchoolData(defaultSchools.slice(0, 10));
+        setSchoolsByCity([]);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -131,7 +71,50 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
     fetchSchoolsByCity();
   }, [location.pathname, isSearchActive]);
 
-  let displayData = schoolData;
+  // Fetch all schools when on /school page
+  useEffect(() => {
+    const fetchAllSchools = async () => {
+      // Only fetch on school page and when not searching
+      if (location.pathname !== "/school" || isSearchActive) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const response = await fetch(schoolRoutes.search);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch schools: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const schoolsList = data.data?.schools || data.schools || data.data || data || [];
+
+        const schools = schoolsList.map((school) => ({
+          id: school.id,
+          name: school.name,
+          img:
+            school.image ||
+            school.img ||
+            "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
+          location: school.city || school.address?.line1 || "Location not specified",
+        }));
+
+        setAllSchools(schools);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching all schools:", err);
+        setAllSchools([]);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllSchools();
+  }, [location.pathname, isSearchActive]);
+
+  let displayData = [];
   let showingSearchResults = false;
 
   // Determine which schools to display
@@ -141,13 +124,16 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
     displayData = searchResults.map((school) => ({
       name: school.name,
       img:
+        school.image ||
         school.img ||
         "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
       location: school.city || school.location || "Location not specified",
       id: school.id || school.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
     }));
   } else if (location.pathname === "/school") {
-    displayData = defaultSchools; // Show all schools on /school route
+    displayData = allSchools; // Show fetched schools on /school route
+  } else {
+    displayData = schoolsByCity; // Show city schools on home page
   }
 
   const handleSchoolClick = (school) => {
@@ -201,7 +187,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
       {/* Schools grid */}
       {displayData.length > 0 && !loading && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 my-4 px-4 mx-4 md:mx-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 px-4 mx-0 md:mx-12">
           {displayData.map((school, idx) => (
             <div
               key={school.id || idx}
@@ -214,19 +200,25 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
                 <img
                   src={school.img}
                   alt={school.name}
-                  className="w-full h-[200px] object-cover rounded-2xl"
+                  className="w-full md:h-[200px] h-[150px] object-cover rounded-2xl"
                 />
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/70 to-transparent"></div>
-                <p className="absolute bottom-6 left-2 text-white text-lg font-semibold">
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/90 to-transparent"></div>
+                <p className="absolute bottom-6 left-2 right-2 text-white text-md truncate">
                   {school.name}
                 </p>
                 <div className="absolute bottom-2 left-2 flex items-center gap-1">
                   <img src="/map_svg.svg" alt="location" className="w-4 h-4" />
-                  <p className="text-white text-sm">{school.location}</p>
+                  <p className="text-white text-xs">{school.location}</p>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && displayData.length === 0 && !showingSearchResults && location.pathname === "/school" && (
+        <div className="mx-4 md:mx-12 text-center py-8">
+          <p className="text-gray-500 text-lg">No schools available at the moment.</p>
         </div>
       )}
     </div>

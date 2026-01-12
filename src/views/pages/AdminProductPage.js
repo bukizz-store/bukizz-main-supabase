@@ -11,7 +11,7 @@ import ProductOptionsTab from "../../components/Admin/ProductOptionsTab";
 import VariantsTab from "../../components/Admin/VariantsTab";
 import AssociationsTab from "../../components/Admin/AssociationsTab";
 import ImageManagementTab from "../../components/Admin/ImageManagementTab";
-import BrandRetailerTab from "../../components/Admin/BrandRetailerTab";
+import BrandWarehouseTab from "../../components/Admin/BrandWarehouseTab";
 
 function AdminProductPage() {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ function AdminProductPage() {
     productType: "bookset",
     basePrice: 0,
     currency: "INR",
+    city: "", // Add city field
     isActive: true,
     metadata: {},
 
@@ -38,7 +39,7 @@ function AdminProductPage() {
     // Images, Brands & Retailer
     productImages: [],
     brandData: null,
-    retailerData: null,
+    warehouseData: null,
   });
 
   // Product Options (up to 3 attributes)
@@ -70,7 +71,7 @@ function AdminProductPage() {
   // Data from database
   const [schools, setSchools] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [retailers, setRetailers] = useState([]);
+  const [brands, setBrands] = useState([]);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -109,14 +110,17 @@ function AdminProductPage() {
       if (categoriesError) throw categoriesError;
       setCategories(categoriesData || []);
 
-      // Fetch retailers
-      const { data: retailersData, error: retailersError } = await supabase
-        .from("retailers")
-        .select("id, name, contact_email, contact_phone, address, website")
+      // Fetch brands
+      const { data: brandsData, error: brandsError } = await supabase
+        .from("brands")
+        .select("id, name, slug")
         .order("name");
 
-      if (retailersError) throw retailersError;
-      setRetailers(retailersData || []);
+      if (brandsError) throw brandsError;
+      setBrands(brandsData || []);
+
+      if (brandsError) throw brandsError;
+      setBrands(brandsData || []);
     } catch (err) {
       console.error("Error fetching reference data:", err);
       setError("Failed to load reference data");
@@ -136,6 +140,9 @@ function AdminProductPage() {
     }
     if (!formData.basePrice || formData.basePrice <= 0) {
       errors.basePrice = "Base price must be greater than 0";
+    }
+    if (!formData.city.trim()) {
+      errors.city = "City is required";
     }
 
     // Optional: Add more specific validations
@@ -166,8 +173,8 @@ function AdminProductPage() {
   const getInputClassName = (fieldName, baseClass = "") => {
     const hasError = showValidation && fieldErrors[fieldName];
     return `${baseClass} ${hasError
-        ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-        : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
       }`;
   };
 
@@ -299,6 +306,7 @@ function AdminProductPage() {
           productType: formData.productType,
           basePrice: parseFloat(formData.basePrice),
           currency: formData.currency,
+          city: formData.city, // Add city to payload
           isActive: formData.isActive,
           metadata: formData.metadata,
         },
@@ -341,30 +349,31 @@ function AdminProductPage() {
           }
           : null,
 
-        // Retailer data with proper schema mapping (no business_type column)
-        retailerData: formData.retailerData
+        // Warehouse data with proper schema mapping
+        warehouseData: formData.warehouseData
           ? {
-            type: formData.retailerData.type,
-            ...(formData.retailerData.type === "existing"
+            type: formData.warehouseData.type,
+            ...(formData.warehouseData.type === "existing"
               ? {
-                retailerId: formData.retailerData.retailerId,
+                warehouseId: formData.warehouseData.warehouseId,
               }
               : {
-                name: formData.retailerData.name,
-                contact_email: formData.retailerData.contact_email,
-                contact_phone: formData.retailerData.contact_phone,
-                address: formData.retailerData.address, // Can be text or JSON
-                website: formData.retailerData.website,
-                is_verified: false, // Default to false for new retailers
+                name: formData.warehouseData.name,
+                contact_email: formData.warehouseData.contact_email,
+                contact_phone: formData.warehouseData.contact_phone,
+                address: formData.warehouseData.address,
+                website: formData.warehouseData.website,
+                is_verified: false, // Default to false for new warehouses
                 metadata: {
-                  // Store additional fields that don't exist as columns in metadata JSONB
                   source: "admin_portal",
                   createdBy: "admin",
-                  // Any extra fields can go here since your schema doesn't have them as columns
                 },
               }),
           }
           : null,
+
+        // Pass the selected retailer ID for admin-created products
+        retailerId: formData.retailerId,
 
         // Variants data (if any)
         variants: variants.map((variant) => ({
@@ -415,7 +424,7 @@ function AdminProductPage() {
           - Product ID: ${result.data.product.id}
           - Images uploaded: ${result.data.images?.length || 0}
           - Brands associated: ${result.data.brands?.length || 0}
-          - Retailer ${result.data.retailer ? "associated" : "not provided"}
+          - Warehouse ${result.data.warehouse ? "associated" : "not provided"}
           - Variants created: ${result.data.variants?.length || 0}`
         );
       }
@@ -437,7 +446,7 @@ function AdminProductPage() {
         mandatory: false,
         productImages: [],
         brandData: null,
-        retailerData: null,
+        warehouseData: null,
       });
 
       // Reset validation states
@@ -529,7 +538,7 @@ function AdminProductPage() {
     { id: "variants", label: "Variants" },
     { id: "associations", label: "Schools & Categories" },
     { id: "images", label: "Images & Media" },
-    { id: "branding", label: "Brand & Retailer" },
+    { id: "branding", label: "Brand & Warehouse" },
   ];
 
   return (
@@ -570,8 +579,8 @@ function AdminProductPage() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
                   {tab.label}
@@ -634,11 +643,10 @@ function AdminProductPage() {
             )}
 
             {activeTab === "branding" && (
-              <BrandRetailerTab
+              <BrandWarehouseTab
                 formData={formData}
                 setFormData={setFormData}
-                retailers={retailers}
-                productId={null} // null for new products
+                brands={brands}
               />
             )}
 
@@ -648,8 +656,8 @@ function AdminProductPage() {
                 type="submit"
                 disabled={loading || !formData.title || !formData.basePrice}
                 className={`px-8 py-3 rounded-md font-medium ${loading || !formData.title || !formData.basePrice
-                    ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                  ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
               >
                 {loading ? "Creating Product..." : "Create Product"}
