@@ -163,7 +163,9 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
 
           Shop
         </button>
-        <CitySelector />
+        {!(localStorage.getItem("isMobileApp") === "true" || window.location.search.includes("mode=webview")) && (
+          <CitySelector />
+        )}
         <div className="flex-grow relative">
           <img
             src="/search_svg.svg"

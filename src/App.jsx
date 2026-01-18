@@ -36,6 +36,27 @@ function App() {
   const { initialize, loading, isHydrated } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // Check for mobile app mode
+  const [isMobileApp, setIsMobileApp] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage or URL params for mobile app indicator
+    const checkMobileApp = () => {
+      const isApp = localStorage.getItem("isMobileApp") === "true" ||
+        window.location.search.includes("mode=webview");
+
+      if (isApp) {
+        setIsMobileApp(true);
+        // Persist to localStorage if it came from URL
+        if (window.location.search.includes("mode=webview")) {
+          localStorage.setItem("isMobileApp", "true");
+        }
+      }
+    };
+
+    checkMobileApp();
+  }, []);
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -68,13 +89,16 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="flex flex-col min-h-screen bg-[#F3F8FF]">
+      <div className={`flex flex-col min-h-screen bg-[#F3F8FF] ${isMobileApp ? "mobile-app-view" : ""}`}>
         {/* Notification Container for error/success popups */}
         <NotificationContainer />
 
-        <div className="flex justify-center bg-[#F3F8FF] pt-0 md:pt-6">
-          <Navbar />
-        </div>
+        {!isMobileApp && (
+          <div className="flex justify-center bg-[#F3F8FF] pt-0 md:pt-6">
+            <Navbar />
+          </div>
+        )}
+
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/school" element={<SchoolViewPage />} />
@@ -104,23 +128,24 @@ function App() {
           <Route path="/terms-of-use" element={<TermsOfUsePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         </Routes>
-        <div className="relative mt-auto flex-col flex w-full">
-          {/* Footer Background Image - Absolute at bottom */}
-          <div className="absolute bottom-0 left-0 w-full z-0">
-            <img
-              src="/footer_back.svg"
-              alt="Background"
-              className="w-full h-screen md:h-auto object-cover object-bottom"
-            />
+
+        {!isMobileApp && (
+          <div className="relative mt-auto flex-col flex w-full">
+            {/* Footer Background Image - Absolute at bottom */}
+            <div className="absolute bottom-0 left-0 w-full z-0">
+              <img
+                src="/footer_back.svg"
+                alt="Background"
+                className="w-full h-screen md:h-auto object-cover object-bottom"
+              />
+            </div>
+
+            {/* Footer Content - Relative to stack on top */}
+            <div className="relative z-10 w-full">
+              <Footer />
+            </div>
           </div>
-
-          {/* Footer Content - Relative to stack on top */}
-          <div className="relative z-10 w-full">
-            <Footer />
-          </div>
-
-
-        </div>
+        )}
       </div>
     </Router>
   );
