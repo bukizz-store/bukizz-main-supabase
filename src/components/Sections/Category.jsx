@@ -3,8 +3,8 @@ import CategoryCard from "../Cards/CategoryCard";
 const categories = [
   { name: "School BookSets", color: "blue", img: "bookset_cat.svg" },
   { name: "School Uniform", color: "yellow", img: "uniform_cat.svg" },
-  // { name: "Stationery", color: "green", img: "stationary_cat.svg" },
-  { name: "Admissions", color: "purple", img: "admissions_cat.svg" },
+  { name: "Stationery", color: "green", img: "stationary_cat.svg" },
+  // { name: "Admissions", color: "purple", img: "admissions_cat.svg" },
   { name: "Categories", color: "pink", img: "categories_cat.svg" },
 ];
 
