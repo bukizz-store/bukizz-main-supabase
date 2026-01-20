@@ -88,7 +88,7 @@ const Navbar = () => {
           <button onClick={() => navigate("/profile?tab=city")} className="hidden md:block">
             <img src="/image 54.png" alt="Menu" className="h-8 md:h-12 " />
           </button>
-          <button className="hidden md:block">
+          <button className="hidden md:block" onClick={() => window.open("https://play.google.com/store/apps/details?id=com.bukizz.main&hl=en_IN")}>
             <img src="/image 55.png" alt="Search" className="h-8 md:h-12" />
           </button>
 

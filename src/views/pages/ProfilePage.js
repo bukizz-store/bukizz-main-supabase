@@ -45,6 +45,13 @@ function ProfilePage() {
     state: "",
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isMobileApp, setIsMobileApp] = useState(false);
+
+  useEffect(() => {
+    const isApp = localStorage.getItem("isMobileApp") === "true" ||
+      window.location.search.includes("mode=webview");
+    setIsMobileApp(isApp);
+  }, []);
 
   // Load profile data on component mount
   useEffect(() => {
@@ -159,113 +166,115 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F3F8FF]">
-      <SearchBar />
+      {!isMobileApp && <SearchBar />}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <div className="space-y-4">
-              {/* Profile Header */}
-              <div className="bg-white rounded-lg shadow-sm p-4 flex items-center space-x-4">
-                <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
+          {!isMobileApp && (
+            <div className="lg:col-span-1">
+              <div className="space-y-4">
+                {/* Profile Header */}
+                <div className="bg-white rounded-lg shadow-sm p-4 flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center overflow-hidden">
+                    <img
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.firstName}`}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Hello,</p>
+                    <h3 className="text-md font-bold text-gray-800">
+                      {formData.firstName} {formData.lastName}
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500">Hello,</p>
-                  <h3 className="text-md font-bold text-gray-800">
-                    {formData.firstName} {formData.lastName}
-                  </h3>
-                </div>
-              </div>
 
-              {/* Navigation Menu */}
-              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {/* My Orders */}
-                <div className="border-b">
-                  <button
-                    onClick={() => setActiveSection("orders")}
-                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <Package className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold text-gray-500 hover:text-blue-600">MY ORDERS</span>
+                {/* Navigation Menu */}
+                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  {/* My Orders */}
+                  <div className="border-b">
+                    <button
+                      onClick={() => setActiveSection("orders")}
+                      className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <Package className="w-5 h-5 text-blue-600" />
+                        <span className="font-semibold text-gray-500 hover:text-blue-600">MY ORDERS</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+
+                  {/* Account Settings */}
+                  <div className="border-b">
+                    <div className="px-6 py-4 flex items-center space-x-4">
+                      <User className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-gray-500">ACCOUNT SETTINGS</span>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
-
-                {/* Account Settings */}
-                <div className="border-b">
-                  <div className="px-6 py-4 flex items-center space-x-4">
-                    <User className="w-5 h-5 text-blue-600" />
-                    <span className="font-semibold text-gray-500">ACCOUNT SETTINGS</span>
+                    <div className="pb-2">
+                      <button
+                        onClick={() => {
+                          setActiveSection("profile");
+                          setEditMode(false);
+                        }}
+                        className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "profile" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                          }`}
+                      >
+                        Profile Information
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSection("addresses");
+                          setEditMode(false);
+                        }}
+                        className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "addresses" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                          }`}
+                      >
+                        Manage Addresses
+                      </button>
+                    </div>
                   </div>
-                  <div className="pb-2">
+
+
+
+                  {/* My Stuff */}
+                  <div className="border-b">
+                    <div className="px-6 py-4 flex items-center space-x-4">
+                      <Folder className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-gray-500">MY STUFF</span>
+                    </div>
+                    <div className="pb-2">
+                      <button
+                        onClick={() => setActiveSection("city")}
+                        className={`w-full text-left px-16 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors ${activeSection === "city" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600"}`}
+                      >
+                        My City
+                      </button>
+                      <button className="w-full text-left px-16 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                        All Notifications
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="border-b last:border-b-0">
                     <button
-                      onClick={() => {
-                        setActiveSection("profile");
-                        setEditMode(false);
-                      }}
-                      className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "profile" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        }`}
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 transition-colors text-gray-500 hover:text-blue-600"
                     >
-                      Profile Information
-                    </button>
-                    <button
-                      onClick={() => {
-                        setActiveSection("addresses");
-                        setEditMode(false);
-                      }}
-                      className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "addresses" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
-                        }`}
-                    >
-                      Manage Addresses
+                      <Power className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold">Logout</span>
                     </button>
                   </div>
-                </div>
-
-
-
-                {/* My Stuff */}
-                <div className="border-b">
-                  <div className="px-6 py-4 flex items-center space-x-4">
-                    <Folder className="w-5 h-5 text-blue-600" />
-                    <span className="font-semibold text-gray-500">MY STUFF</span>
-                  </div>
-                  <div className="pb-2">
-                    <button
-                      onClick={() => setActiveSection("city")}
-                      className={`w-full text-left px-16 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors ${activeSection === "city" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600"}`}
-                    >
-                      My City
-                    </button>
-                    <button className="w-full text-left px-16 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                      All Notifications
-                    </button>
-                  </div>
-                </div>
-
-                {/* Logout */}
-                <div className="border-b last:border-b-0">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center space-x-4 px-6 py-4 hover:bg-gray-50 transition-colors text-gray-500 hover:text-blue-600"
-                  >
-                    <Power className="w-5 h-5 text-blue-600" />
-                    <span className="font-semibold">Logout</span>
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Main Content - Full Width When Active */}
-          <div className={(activeSection === "profile" || activeSection === "addresses") ? "lg:col-span-4" : "lg:col-span-4 hidden"}>
+          <div className={(activeSection === "profile" || activeSection === "addresses") ? (isMobileApp ? "col-span-full" : "lg:col-span-4") : "lg:col-span-4 hidden"}>
             {activeSection === "profile" && (
               <div className="space-y-6">
                 {/* Personal Information */}
@@ -516,12 +525,12 @@ function ProfilePage() {
           </div>
 
           {/* My City Section - Full Width When Active */}
-          <div className={activeSection === "city" ? "lg:col-span-4" : "lg:col-span-4 hidden"}>
+          <div className={activeSection === "city" ? (isMobileApp ? "col-span-full" : "lg:col-span-4") : "lg:col-span-4 hidden"}>
             {activeSection === "city" && <MyCitySection />}
           </div>
 
           {/* Orders Section - Full Width When Active */}
-          <div className={activeSection === "orders" ? "lg:col-span-4" : "lg:col-span-4 hidden"}>
+          <div className={activeSection === "orders" ? (isMobileApp ? "col-span-full" : "lg:col-span-4") : "lg:col-span-4 hidden"}>
             {activeSection === "orders" && <OrdersSection />}
           </div>
         </div>

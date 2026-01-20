@@ -84,6 +84,8 @@ function CheckoutPage() {
     placeOrder,
     resetOrderState,
     syncOrderStatus,
+    initiateRazorpayPayment,
+    verifyRazorpayPayment,
   } = useOrderStore();
   const { showNotification } = useNotificationStore();
 
@@ -503,25 +505,108 @@ function CheckoutPage() {
 
       const order = await placeOrder(orderData);
 
-      // showNotification({
-      //   message: "Order placed successfully! 🎉",
-      //   type: "success"
-      // });
+      // Handle Payment Flow
+      if (paymentMethod === "cod") {
+        // COD Order - Success immediately
+        clearCart();
+        navigate(`/order-success/${order.id}`, {
+          state: {
+            order,
+            message: "Your order has been placed successfully!",
+          },
+        });
+      } else {
+        // Online Payment - Initiate Razorpay
+        try {
+          const razorpayOrder = await initiateRazorpayPayment(order.id);
 
-      // Clear cart after successful order
-      clearCart();
+          const options = {
+            key: razorpayOrder.key,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            name: "Bukizz Books", // Or fetch from config
+            description: `Order #${order.orderNumber}`,
+            order_id: razorpayOrder.id,
+            prefill: {
+              name: selectedAddress.recipientName,
+              email: contactDetails.email,
+              contact: contactDetails.phone || selectedAddress.phone,
+            },
+            theme: {
+              color: "#3B82F6", // Blue-500
+            },
+            handler: async function (response) {
+              try {
+                // Verify payment on backend
+                await verifyRazorpayPayment({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderId: order.id
+                });
 
-      // Navigate to order success page
-      navigate(`/order-success/${order.id}`, {
-        state: {
-          order,
-          message: "Your order has been placed successfully!",
-        },
-      });
+                // Success
+                clearCart();
+                navigate(`/order-success/${order.id}`, {
+                  state: {
+                    order,
+                    message: "Payment successful! Your order has been placed.",
+                  },
+                });
+              } catch (verifyError) {
+                console.error("Payment verification failed:", verifyError);
+                showNotification({
+                  message: "Payment verification failed. Please contact support.",
+                  type: "error",
+                });
+                // Navigate to order page anyway, status will be pending/failed
+                clearCart();
+                navigate(`/order-success/${order.id}`, {
+                  state: {
+                    order,
+                    error: "Payment verification failed. Status is pending.",
+                  },
+                });
+              }
+            },
+            modal: {
+              ondismiss: function () {
+                showNotification({
+                  message: "Payment process cancelled. You can try again.",
+                  type: "warning",
+                });
+                // Do NOT navigate away. 
+                // The order is created but pending payment. 
+                // User can click "Place Order" again to retry (which creates a new order currently).
+              },
+            },
+          };
+
+          const rzp = new window.Razorpay(options);
+
+          rzp.on("payment.failed", function (response) {
+            console.error("Payment failed:", response.error);
+            showNotification({
+              message: `Payment failed: ${response.error.description || "Please try again."}`,
+              type: "error",
+            });
+            // Do NOT navigate away.
+          });
+
+          rzp.open();
+
+        } catch (paymentError) {
+          console.error("Payment initiation failed:", paymentError);
+          showNotification({
+            message: "Failed to initiate payment. Please try again or choose COD.",
+            type: "error",
+          });
+          // Do NOT navigate away.
+        }
+      }
     } catch (error) {
       console.error("Order placement failed:", error);
-
-      // Handle specific error scenarios with retry logic
+      // ... (rest of error handling)
       if (
         error.message.includes("stock") ||
         error.message.includes("availability")
@@ -645,15 +730,15 @@ function CheckoutPage() {
       {/* Progress Steps */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-4 md:gap-8">
+          <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2 md:gap-8">
             {[
-              { step: 1, label: "Review Order", icon: "📋" },
-              { step: 2, label: "Delivery Address", icon: "📍" },
-              { step: 3, label: "Payment & Place Order", icon: "💳" },
+              { step: 1, label: "Review Order", icon: "1" },
+              { step: 2, label: "Delivery Address", icon: "2" },
+              { step: 3, label: "Payment & Place Order", icon: "3" },
             ].map(({ step, label, icon }) => (
-              <div key={step} className="flex items-center">
+              <div key={step} className="flex flex-col md:flex-row items-center relative gap-2 md:gap-0">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full ${processState === step
+                  className={`flex items-center justify-center w-6 h-6 md:w-10 md:h-10 rounded-full ${processState === step
                     ? "bg-blue-500 text-white"
                     : processState > step
                       ? "bg-green-500 text-white"
@@ -663,14 +748,14 @@ function CheckoutPage() {
                   {processState > step ? "✓" : icon}
                 </div>
                 <span
-                  className={`ml-3 text-sm font-medium ${processState === step ? "text-blue-600" : "text-gray-600"
+                  className={`md:ml-3 text-[10px] md:text-sm font-medium text-center ${processState === step ? "text-blue-600" : "text-gray-600"
                     }`}
                 >
                   {label}
                 </span>
                 {step < 3 && (
                   <div
-                    className={`ml-8 w-8 h-0.5 ${processState > step ? "bg-green-500" : "bg-gray-200"
+                    className={`hidden md:block ml-8 w-8 h-0.5 ${processState > step ? "bg-green-500" : "bg-gray-200"
                       }`}
                   />
                 )}

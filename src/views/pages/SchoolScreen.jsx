@@ -11,7 +11,7 @@ const SchoolCategory = [
   { name: "Book Sets", color: "blue", img: "bookset_cat.svg" },
   { name: "School Uniform", color: "yellow", img: "uniform_cat.svg" },
   { name: "Stationary", color: "green", img: "stationary_cat.svg" },
-  { name: "Admissions", color: "purple", img: "admissions_cat.svg" },
+  { name: "About School", color: "pink", img: "admissions_cat.svg" },
 ];
 
 // Dynamic book sets based on school catalog
@@ -313,7 +313,7 @@ const SchoolScreen = () => {
 
       {/* School Categories */}
       <div className="mb-8">
-        <div className="flex flex-wrap justify-center gap-16">
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16">
           {SchoolCategory.map((category, idx) => (
             <CategoryCard
               key={idx}
@@ -326,110 +326,114 @@ const SchoolScreen = () => {
       </div>
 
       {/* Products Section */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">
-            {selectedCategory} for {schoolData.name}
-          </h2>
-          <div className="text-right">
-            <p className="text-gray-600">
-              {schoolData.board &&
-                `All products are ${schoolData.board} curriculum compliant`}
-            </p>
-            {schoolCatalog && schoolCatalog.products && (
-              <p className="text-sm text-gray-500">
-                {selectedCategory === "School Uniform"
-                  ? uniforms.length
-                  : selectedCategory === "Book Sets"
-                    ? bookSets.length
-                    : schoolCatalog.products.filter(
-                      (p) =>
-                        p.product_type ===
-                        selectedCategory.toLowerCase().replace(" ", "")
-                    ).length}{" "}
-                products available
+      {selectedCategory !== "About School" && (
+        <div className="mb-8 ">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">
+              {selectedCategory} for {schoolData.name}
+            </h2>
+            <div className="text-right">
+              <p className="text-gray-600">
+                {schoolData.board &&
+                  `All products are ${schoolData.board} curriculum compliant`}
               </p>
+              {schoolCatalog && schoolCatalog.products && (
+                <p className="text-sm text-gray-500">
+                  {selectedCategory === "School Uniform"
+                    ? uniforms.length
+                    : selectedCategory === "Book Sets"
+                      ? bookSets.length
+                      : schoolCatalog.products.filter(
+                        (p) =>
+                          p.product_type ===
+                          selectedCategory.toLowerCase().replace(" ", "")
+                      ).length}{" "}
+                  products available
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3 md:gap-12">
+            {selectedCategory === "School Uniform" ? (
+              uniforms.map((uniform, idx) => (
+                <UniformCard key={idx} props={uniform} />
+              ))
+            ) : selectedCategory === "Book Sets" ? (
+              bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)
+            ) : (
+              // Placeholder for other categories
+              <div className="col-span-4 text-center py-16">
+                <p className="text-gray-500 text-lg">
+                  {selectedCategory} products coming soon...
+                </p>
+              </div>
             )}
           </div>
         </div>
-
-        <div className="flex flex-wrap justify-start gap-12">
-          {selectedCategory === "School Uniform" ? (
-            uniforms.map((uniform, idx) => (
-              <UniformCard key={idx} props={uniform} />
-            ))
-          ) : selectedCategory === "Book Sets" ? (
-            bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)
-          ) : (
-            // Placeholder for other categories
-            <div className="col-span-4 text-center py-16">
-              <p className="text-gray-500 text-lg">
-                {selectedCategory} products coming soon...
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* School Details */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h3 className="text-xl font-bold mb-4">School Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">Full Name:</span>
-              <p className="text-gray-600">{schoolData.name}</p>
-            </div>
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">Board:</span>
-              <p className="text-gray-600">
-                {schoolData.board || "Not specified"}
-              </p>
-            </div>
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">Type:</span>
-              <p className="text-gray-600 capitalize">
-                {schoolData.type || "Not specified"}
-              </p>
-            </div>
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">Status:</span>
-              <p
-                className={`font-medium ${schoolData.isActive ? "text-green-600" : "text-red-600"
-                  }`}
-              >
-                {schoolData.isActive ? "Active" : "Inactive"}
-              </p>
-            </div>
-          </div>
-          <div>
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">Location:</span>
-              <p className="text-gray-600">{formatLocation(schoolData)}</p>
-            </div>
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">Address:</span>
-              <p className="text-gray-600">{formatAddress(schoolData)}</p>
-            </div>
-            {schoolData.phone && (
+      {selectedCategory === "About School" && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h3 className="text-xl font-bold mb-4">School Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
               <div className="mb-3">
-                <span className="font-semibold text-gray-700">Phone:</span>
-                <p className="text-gray-600">{schoolData.phone}</p>
+                <span className="font-semibold text-gray-700">Full Name:</span>
+                <p className="text-gray-600">{schoolData.name}</p>
               </div>
-            )}
-            {schoolData.email && (
               <div className="mb-3">
-                <span className="font-semibold text-gray-700">Email:</span>
-                <p className="text-gray-600">{schoolData.email}</p>
+                <span className="font-semibold text-gray-700">Board:</span>
+                <p className="text-gray-600">
+                  {schoolData.board || "Not specified"}
+                </p>
               </div>
-            )}
-            <div className="mb-3">
-              <span className="font-semibold text-gray-700">School ID:</span>
-              <p className="text-gray-600 text-sm font-mono">{schoolData.id}</p>
+              <div className="mb-3">
+                <span className="font-semibold text-gray-700">Type:</span>
+                <p className="text-gray-600 capitalize">
+                  {schoolData.type || "Not specified"}
+                </p>
+              </div>
+              <div className="mb-3">
+                <span className="font-semibold text-gray-700">Status:</span>
+                <p
+                  className={`font-medium ${schoolData.isActive ? "text-green-600" : "text-red-600"
+                    }`}
+                >
+                  {schoolData.isActive ? "Active" : "Inactive"}
+                </p>
+              </div>
+            </div>
+            <div>
+              <div className="mb-3">
+                <span className="font-semibold text-gray-700">Location:</span>
+                <p className="text-gray-600">{formatLocation(schoolData)}</p>
+              </div>
+              <div className="mb-3">
+                <span className="font-semibold text-gray-700">Address:</span>
+                <p className="text-gray-600">{formatAddress(schoolData)}</p>
+              </div>
+              {schoolData.phone && (
+                <div className="mb-3">
+                  <span className="font-semibold text-gray-700">Phone:</span>
+                  <p className="text-gray-600">{schoolData.phone}</p>
+                </div>
+              )}
+              {schoolData.email && (
+                <div className="mb-3">
+                  <span className="font-semibold text-gray-700">Email:</span>
+                  <p className="text-gray-600">{schoolData.email}</p>
+                </div>
+              )}
+              <div className="mb-3">
+                <span className="font-semibold text-gray-700">School ID:</span>
+                <p className="text-gray-600 text-sm font-mono">{schoolData.id}</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
       <>
         <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
         <Stationary />

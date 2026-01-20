@@ -226,6 +226,13 @@ const useApiRoutesStore = create((set, get) => ({
     },
   },
 
+  // ============ PAYMENT ROUTES ============
+  payments: {
+    createOrder: `${BASE_URL}/payments/create-order`,
+    verify: `${BASE_URL}/payments/verify`,
+    failure: `${BASE_URL}/payments/failure`,
+  },
+
   // ============ UTILITY FUNCTIONS ============
 
   /**

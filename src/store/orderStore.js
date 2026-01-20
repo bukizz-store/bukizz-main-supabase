@@ -551,30 +551,77 @@ const useOrderStore = create((set, get) => ({
     }
   },
 
-  // Process payment (placeholder for payment gateway integration)
-  processPayment: async (order, paymentMethod) => {
-    // This would integrate with actual payment gateways
-    // For now, simulate payment processing
+  // Initiate Razorpay payment
+  initiateRazorpayPayment: async (orderId) => {
+    try {
+      const token = localStorage.getItem("custom_token");
+      if (!token) throw new Error("Authentication required");
 
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (Math.random() > 0.1) {
-          // 90% success rate simulation
-          resolve({
-            paymentId: `pay_${Date.now()}`,
-            status: "completed",
-            amount: order.totalAmount,
-            method: paymentMethod,
-          });
-        } else {
-          reject(
-            new Error(
-              "Payment processing failed. Please try again or choose a different payment method."
-            )
-          );
+      const response = await fetch(
+        useApiRoutesStore.getState().payments.createOrder,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ orderId }),
         }
-      }, 2000); // Simulate payment processing time
-    });
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to initiate payment");
+      }
+
+      return data.data;
+    } catch (error) {
+      console.error("Razorpay initiation failed:", error);
+      throw error;
+    }
+  },
+
+  // Verify Razorpay payment
+  verifyRazorpayPayment: async (paymentData) => {
+    try {
+      const token = localStorage.getItem("custom_token");
+      if (!token) throw new Error("Authentication required");
+
+      const response = await fetch(
+        useApiRoutesStore.getState().payments.verify,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(paymentData),
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Payment verification failed");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Payment verification failed:", error);
+      throw error;
+    }
+  },
+
+  // Process payment (Updated to handle different methods)
+  processPayment: async (order, paymentMethod) => {
+    // For online payments, this is handled by the component via initiateRazorpayPayment
+    // helping to keep the store focused on data and API interactions
+    if (paymentMethod === "cod") {
+      return { status: "pending", method: "cod" };
+    }
+
+    // For other methods, we expect the flow to be handled externally
+    // or this function to be extended
+    return { status: "pending", method: paymentMethod };
   },
 
   // Get order details after placement
