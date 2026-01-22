@@ -138,7 +138,13 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
   const handleSchoolClick = (school) => {
     // Navigate to individual school page
-    navigate(`/school/${school.id}`);
+    const searchParams = new URLSearchParams(location.search);
+    const category = searchParams.get("category");
+    if (category) {
+      navigate(`/school/${school.id}?category=${category}`);
+    } else {
+      navigate(`/school/${school.id}`);
+    }
   };
 
   return (

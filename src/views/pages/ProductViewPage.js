@@ -401,28 +401,15 @@ function ProductViewPage() {
     <div className="min-h-screen bg-[#F3F8FF] flex flex-col relative">
       <SearchBar />
 
-      <div className="mx-4 md:mx-12 mt-4">
-        <Breadcrumb
-          items={[
-            { label: "Home", link: "/" },
-            ...(schoolName ? [{
-              label: schoolName,
-              link: productData.school_id ? `/school/${productData.school_id}` : null
-            }] : []),
-            { label: productData.title, link: null }
-          ]}
-        />
-      </div>
-
-      <div className="mx-4 md:mx-12 my-4 mb-10 max-w flex flex-col md:flex-row gap-8 md:gap-20">
-        <div className="flex flex-col-reverse md:flex-row gap-4 justify-start items-start w-full md:w-1/2">
+      <div className="mx-4 md:mx-12 mb-10 max-w flex flex-col md:flex-row gap-4 md:gap-10">
+        <div className="flex flex-col-reverse md:flex-row gap-4 justify-start items-start w-full md:w-[33%]">
           <div className="flex gap-4 flex-row md:flex-col justify-start items-start overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
             {currentImages?.slice(0, 5).map((img, idx) => (
               <img
                 key={img.id || idx}
                 src={img.url || "https://via.placeholder.com/144x144"}
                 alt={img.altText || `${productData.title} ${idx + 1}`}
-                className="w-20 h-20 md:w-36 md:h-36 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0"
+                className="w-10 h-10 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0"
               />
             ))}
           </div>
@@ -445,11 +432,62 @@ function ProductViewPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             )}
+            <div className="flex gap-4 my-6">
+              <button
+                onClick={handleAddToCart}
+                disabled={
+                  cartLoading ||
+                  !selectedVariant ||
+                  (selectedVariant && selectedVariant.stock < selectedQuantity)
+                }
+                className={`px-6 py-3 border-2 rounded-2xl flex items-center gap-2 transition-all ${itemInCart
+                  ? "bg-green-100 text-green-600 border-green-500"
+                  : cartLoading
+                    ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+                    : !selectedVariant ||
+                      (selectedVariant &&
+                        selectedVariant.stock < selectedQuantity)
+                      ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+                      : "text-blue-500 border-blue-500 hover:bg-blue-50"
+                  }`}
+              >
+                {cartLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    Adding...
+                  </>
+                ) : itemInCart ? (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    Add to Cart
+                    <img src="/cart_svg.svg" alt="cart" className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+              <button className="px-12 py-3 bg-sky-500 text-white rounded-2xl hover:bg-sky-600">
+                ₹ Buy Now
+              </button>
+            </div>
           </div>
+
         </div>
 
         <div className="font-nunito w-full md:w-1/2">
-          <div className="text-sm text-cyan-300 my-2">
+          {/* <div className="text-sm text-cyan-300 my-2">
             {(selectedVariant?.stock || 0) > 0 ? "In Stock" : "Out of Stock"}
           </div>
           <div className="flex gap-3">
@@ -461,9 +499,19 @@ function ProductViewPage() {
             <p className="text-sm">
               {productData.warehouses?.[0]?.name || "Bukizz Store"}
             </p>
-          </div>
+          </div> */}
 
-          <h1 className="text-4xl font-bold my-4">
+          <h1 className="text-2xl font-normal">
+            <Breadcrumb
+              items={[
+                { label: "Home", link: "/" },
+                ...(schoolName ? [{
+                  label: schoolName,
+                  link: productData.school_id ? `/school/${productData.school_id}` : null
+                }] : []),
+                { label: productData.title, link: null }
+              ]}
+            />
             {productData.title}
             {productData.metadata?.grade && (
               <span className="text-2xl text-gray-600 ml-2">
@@ -472,9 +520,9 @@ function ProductViewPage() {
             )}
           </h1>
 
-          <div className="flex gap-2 my-1 font-semibold">
-            <h2 className="text-3xl text-red-600">
-              -
+          <span className="text-sm text-green-600 font-bold">Offer Price</span>
+          <div className="flex gap-2 font-semibold">
+            <h2 className="text-2xl text-green-600">
               {Math.round(
                 ((prices.original - prices.current) / prices.original) * 100
               )}
@@ -482,20 +530,16 @@ function ProductViewPage() {
             </h2>
             <h2 className="text-3xl">₹ {prices.current}</h2>
           </div>
-          <div className="text-xl">
-            MRP ₹ {prices.original} (Inclusive of all taxes)
+          <div className="text-sm">
+            MRP ₹ <span className="line-through">{prices.original}</span> (Inclusive of all taxes)
           </div>
-
-          <div className="h-0.5 w-1/2 bg-black my-4"></div>
 
           {/* Product Options - Separate Groups */}
           {productOptions && productOptions.length > 0 && (
-            <div className="my-6">
-              <h2 className="text-2xl font-semibold my-4">Select Options</h2>
-
+            <div className="my-2">
               {productOptions.map((optionGroup, groupIndex) => (
-                <div key={groupIndex} className="mb-6">
-                  <h3 className="text-lg font-medium mb-3 text-gray-700">
+                <div key={groupIndex} className="mb-6 flex gap-4 items-center">
+                  <h3 className="text-lg font-medium text-gray-700">
                     {optionGroup.name}
                   </h3>
                   <div className="flex gap-3 flex-wrap">
@@ -582,56 +626,7 @@ function ProductViewPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4 my-6">
-            <button
-              onClick={handleAddToCart}
-              disabled={
-                cartLoading ||
-                !selectedVariant ||
-                (selectedVariant && selectedVariant.stock < selectedQuantity)
-              }
-              className={`px-6 py-3 border-2 rounded-full flex items-center gap-2 transition-all ${itemInCart
-                ? "bg-green-100 text-green-600 border-green-500"
-                : cartLoading
-                  ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                  : !selectedVariant ||
-                    (selectedVariant &&
-                      selectedVariant.stock < selectedQuantity)
-                    ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                    : "text-blue-500 border-blue-500 hover:bg-blue-50"
-                }`}
-            >
-              {cartLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  Adding...
-                </>
-              ) : itemInCart ? (
-                <>
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Added to Cart
-                </>
-              ) : (
-                <>
-                  Add to Cart
-                  <img src="/cart_svg.svg" alt="cart" className="w-5 h-5" />
-                </>
-              )}
-            </button>
-            <button className="px-6 py-3 bg-sky-500 text-white rounded-full hover:bg-sky-600">
-              Buy Now
-            </button>
-          </div>
+
 
           {/* Delivery Section */}
           <div className="my-4">

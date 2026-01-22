@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
-import MyCitySection from "../../components/Sections/MyCitySection";
+import MyCitySection from "../../components/Profile/MyCitySection";
 import OrdersSection from "../../components/Cards/OrdersSection";
 import useUserProfileStore from "../../store/userProfileStore";
 import useAuthStore from "../../store/authStore";
@@ -30,9 +30,7 @@ function ProfilePage() {
   // Sync activeSection with URL search params
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam) {
-      setActiveSection(tabParam);
-    }
+    setActiveSection(tabParam || "profile");
   }, [searchParams]);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -172,7 +170,7 @@ function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Sidebar Navigation */}
           {!isMobileApp && (
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 hidden lg:block">
               <div className="space-y-4">
                 {/* Profile Header */}
                 <div className="bg-white rounded-lg shadow-sm p-4 flex items-center space-x-4">

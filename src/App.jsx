@@ -16,6 +16,7 @@ import CategoryProductsPage from "./views/pages/CategoryProductsPage";
 import ProfilePage from "./views/pages/ProfilePage";
 import MyCityPage from "./views/pages/MyCityPage";
 import AdminCategoryPage from "./views/pages/AdminCategoryPage";
+import CategoryPage from "./views/pages/CategoryPage";
 import VerifyEmailPage from "./views/pages/VerifyEmailPage";
 
 import ContactUsPage from "./views/pages/ContactUsPage";
@@ -42,13 +43,20 @@ function App() {
   useEffect(() => {
     // Check localStorage or URL params for mobile app indicator
     const checkMobileApp = () => {
+      const searchParams = new URLSearchParams(window.location.search);
       const isApp = localStorage.getItem("isMobileApp") === "true" ||
-        window.location.search.includes("mode=webview");
+        searchParams.has("mode") && searchParams.get("mode") === "webview";
+
+      // Check for city param
+      const cityParam = searchParams.get("city");
+      if (cityParam) {
+        localStorage.setItem("selectedCity", cityParam);
+      }
 
       if (isApp) {
         setIsMobileApp(true);
         // Persist to localStorage if it came from URL
-        if (window.location.search.includes("mode=webview")) {
+        if (searchParams.get("mode") === "webview") {
           localStorage.setItem("isMobileApp", "true");
         }
       }
@@ -116,6 +124,7 @@ function App() {
           <Route path="/admin/products" element={<AdminProductPage />} />
           <Route path="/admin/products/list" element={<ProductListPage />} />
           <Route path="/admin/categories" element={<AdminCategoryPage />} />
+          <Route path="/category" element={<CategoryPage />} />
           <Route
             path="/admin/products/edit/:id"
             element={<AdminProductEditPage />}

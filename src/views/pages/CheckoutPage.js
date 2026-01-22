@@ -86,6 +86,7 @@ function CheckoutPage() {
     syncOrderStatus,
     initiateRazorpayPayment,
     verifyRazorpayPayment,
+    reportPaymentFailure,
   } = useOrderStore();
   const { showNotification } = useNotificationStore();
 
@@ -572,12 +573,17 @@ function CheckoutPage() {
             modal: {
               ondismiss: function () {
                 showNotification({
-                  message: "Payment process cancelled. You can try again.",
+                  message: "Payment process cancelled. Order cancelled.",
                   type: "warning",
                 });
-                // Do NOT navigate away. 
-                // The order is created but pending payment. 
-                // User can click "Place Order" again to retry (which creates a new order currently).
+
+                // Report cancellation to backend
+                reportPaymentFailure({
+                  razorpay_order_id: razorpayOrder.id,
+                  error_code: "CANCELLED",
+                  error_description: "User closed payment modal",
+                  orderId: order.id
+                });
               },
             },
           };
@@ -590,7 +596,15 @@ function CheckoutPage() {
               message: `Payment failed: ${response.error.description || "Please try again."}`,
               type: "error",
             });
-            // Do NOT navigate away.
+
+            // Report failure to backend
+            reportPaymentFailure({
+              razorpay_order_id: response.error.metadata?.order_id || razorpayOrder.id,
+              razorpay_payment_id: response.error.metadata?.payment_id,
+              error_code: response.error.code,
+              error_description: response.error.description,
+              orderId: order.id
+            });
           });
 
           rzp.open();
@@ -598,10 +612,17 @@ function CheckoutPage() {
         } catch (paymentError) {
           console.error("Payment initiation failed:", paymentError);
           showNotification({
-            message: "Failed to initiate payment. Please try again or choose COD.",
+            message: `Failed to initiate payment: ${paymentError.message || "Please try again or choose COD."}`,
             type: "error",
           });
-          // Do NOT navigate away.
+          // Also report this initiation failure if we have an order ID
+          if (order && order.id) {
+            reportPaymentFailure({
+              error_code: "INITIATION_FAILED",
+              error_description: paymentError.message,
+              orderId: order.id
+            });
+          }
         }
       }
     } catch (error) {

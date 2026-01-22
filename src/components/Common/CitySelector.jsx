@@ -23,7 +23,7 @@ const CitySelector = () => {
   // Get city display name
   const getCityName = () => {
     if (selectedCity === "kanpur") return "Kanpur";
-    if (selectedCity === "gurgaon") return "Gurgaon";
+    if (selectedCity === "gurugram") return "Gurugram";
     return "Select City";
   };
 

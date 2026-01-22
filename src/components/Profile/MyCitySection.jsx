@@ -14,8 +14,8 @@ const MyCitySection = () => {
       image: "/city/kanpur.jpg",
     },
     {
-      id: "gurgaon",
-      name: "Gurgaon",
+      id: "gurugram",
+      name: "Gurugram",
       image: "/city/gurugram.jpg",
     },
   ];

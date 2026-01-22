@@ -1,5 +1,6 @@
 import React from "react";
 import CategoryCard from "../Cards/CategoryCard";
+import { useNavigate } from "react-router-dom";
 const categories = [
   { name: "School BookSets", color: "blue", img: "bookset_cat.svg" },
   { name: "School Uniform", color: "yellow", img: "uniform_cat.svg" },
@@ -9,12 +10,28 @@ const categories = [
 ];
 
 const Category = () => {
+  const navigate = useNavigate();
+
+  const handleCategoryClick = (categoryName) => {
+    if (categoryName === "School BookSets") {
+      navigate("/school?category=bookset");
+    } else if (categoryName === "School Uniform") {
+      navigate("/school?category=uniform");
+    } else if (categoryName === "Categories") {
+      navigate("/category");
+    }
+  };
+
   return (
     <div>
       {/* Mobile View */}
       <div className="flex md:hidden overflow-x-auto gap-6 md:gap-4 px-4 my-2 md:my-6 no-scrollbar pb-2 justify-center">
         {categories.map((cat, idx) => (
-          <div key={idx} className="flex flex-col items-center shrink-0">
+          <div
+            key={idx}
+            className="flex flex-col items-center shrink-0 cursor-pointer"
+            onClick={() => handleCategoryClick(cat.name)}
+          >
             <div
               className={`rounded-full flex items-center justify-center bg-${cat.color}-300 shadow-md `}
             >
@@ -38,7 +55,10 @@ const Category = () => {
             key={idx}
             className={`flex flex-col items-center justify-center rounded-lg bg-${cat.color}-300`}
           >
-            <CategoryCard props={cat} />
+            <CategoryCard
+              props={cat}
+              onClick={() => handleCategoryClick(cat.name)}
+            />
           </div>
         ))}
       </div>

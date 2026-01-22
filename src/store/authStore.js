@@ -12,11 +12,13 @@ const useAuthStore = create(
       error: null,
       isHydrated: false, // Add flag to track hydration status
       isRefreshing: false, // Add flag to prevent multiple simultaneous refreshes
+      redirectPath: null, // Path to redirect to after successful login
 
       // Basic setters
       setUser: (user) => set({ user }),
       setLoading: (loading) => set({ loading }),
       setModalOpen: (isOpen) => set({ isModalOpen: isOpen }),
+      setRedirectPath: (path) => set({ redirectPath: path }),
       clearError: () => set({ error: null }),
       setHydrated: () => set({ isHydrated: true }),
 

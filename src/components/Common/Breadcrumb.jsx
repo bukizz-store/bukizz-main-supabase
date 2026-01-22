@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Breadcrumb = ({ items }) => {
     return (
-        <nav className="flex items-center text-sm font-medium text-gray-500 my-4" aria-label="Breadcrumb">
+        <nav className="flex my-1 items-start text-sm font-medium text-gray-500 " aria-label="Breadcrumb">
             <ol className="flex items-center space-x-2">
                 {items.map((item, index) => (
                     <li key={index} className="flex items-center">
@@ -21,11 +21,11 @@ const Breadcrumb = ({ items }) => {
                             </svg>
                         )}
                         {item.link ? (
-                            <Link to={item.link} className="hover:text-blue-600 transition-colors">
+                            <Link to={item.link} className="hover:text-blue-600 transition-colors text-gray-400">
                                 {item.label}
                             </Link>
                         ) : (
-                            <span className={`${index === items.length - 1 ? "text-gray-900 font-semibold" : ""}`}>
+                            <span className={`${index === items.length - 1 ? "text-gray-400 font-semibold" : ""}`}>
                                 {item.label}
                             </span>
                         )}

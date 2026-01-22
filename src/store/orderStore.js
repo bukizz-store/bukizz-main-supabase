@@ -611,6 +611,30 @@ const useOrderStore = create((set, get) => ({
     }
   },
 
+  // Report payment failure to backend
+  reportPaymentFailure: async (failureData) => {
+    try {
+      const token = localStorage.getItem("custom_token");
+      if (!token) return; // Can't report if not logged in
+
+      // We use the failure endpoint from apiRoutes or hardcode if not available yet
+      // Assuming /api/v1/payments/failure based on paymentController
+      const url = `${API_BASE_URL}/payments/failure`;
+
+      await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(failureData),
+      });
+    } catch (error) {
+      console.error("Failed to report payment failure:", error);
+      // Non-blocking, just log
+    }
+  },
+
   // Process payment (Updated to handle different methods)
   processPayment: async (order, paymentMethod) => {
     // For online payments, this is handled by the component via initiateRazorpayPayment

@@ -79,7 +79,7 @@ export const BookSetCard = ({ props }) => {
         </div>
 
         <div className="absolute top-[17px] md:top-[25px] left-[6px] md:left-[8px] [font-family:'Nunito-Bold',Helvetica] font-bold text-primaryblue-700 text-xs md:text-lg tracking-[0] leading-[17px] md:leading-[25.2px] whitespace-nowrap overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
-          {((props.originalPrice - props.discountedPrice) / props.originalPrice).toFixed(2) * 100}% off
+          {((props.originalPrice - props.discountedPrice) / props.originalPrice).toFixed(1) * 100}% off
         </div>
 
         <div className="flex flex-col w-[84px] h-[16px] md:w-[123px] md:h-[23px] items-start gap-0.5 px-1 md:px-2 py-0.5 absolute top-[31px] md:top-[46px] left-0">

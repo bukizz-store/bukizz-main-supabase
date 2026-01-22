@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import CategoryCard from "../../components/Cards/CategoryCard";
 import { BookSetCard } from "../../components/Cards/BookSetCard";
 import { UniformCard } from "../../components/Cards/UniformCard";
@@ -131,6 +131,7 @@ const getUniformsForSchool = (schoolCatalog) => {
 
 const SchoolScreen = () => {
   const { id } = useParams();
+  const location = useLocation();
   const { getSchool, getSchoolCatalog, loading, error } = useUserProfileStore();
 
   const [schoolData, setSchoolData] = useState(null);
@@ -170,8 +171,17 @@ const SchoolScreen = () => {
   }, [id, getSchool, getSchoolCatalog]);
 
   useEffect(() => {
-    // Reset selected category when school changes
-    setSelectedCategory("Book Sets");
+    // Reset selected category when school changes or based on query param
+    const searchParams = new URLSearchParams(location.search);
+    const categoryParam = searchParams.get("category");
+
+    if (categoryParam === "uniform") {
+      setSelectedCategory("School Uniform");
+    } else if (categoryParam === "bookset") {
+      setSelectedCategory("Book Sets");
+    } else {
+      setSelectedCategory("Book Sets");
+    }
 
     // Clear old data immediately when school ID changes
     setSchoolData(null);
@@ -179,7 +189,7 @@ const SchoolScreen = () => {
     setSchoolError(null);
 
     fetchSchoolData();
-  }, [id, fetchSchoolData]); // Added 'id' as dependency to trigger reset on school change
+  }, [id, fetchSchoolData, location.search]); // Added 'id' and 'location.search' as dependency to trigger reset on school change
 
   // Handle category selection
   const handleCategoryClick = (categoryName) => {

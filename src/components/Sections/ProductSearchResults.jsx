@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const ProductSearchResults = ({ products, searchTerm }) => {
     const navigate = useNavigate();
+    console.log(products);
 
     if (!products || products.length === 0) {
         return null;

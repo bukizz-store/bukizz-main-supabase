@@ -4,11 +4,13 @@ import useAuthStore from "../../store/authStore";
 import useCartStore from "../../store/cartStore";
 import AuthModal from "../Auth/AuthModal";
 import CitySelector from "../Common/CitySelector";
+import MobileSidebar from "./MobileSidebar";
 
 const Navbar = () => {
   const { user, isModalOpen, setModalOpen, logout } = useAuthStore();
   const { cart, loadCart } = useCartStore();
   const navigate = useNavigate();
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   // Load cart on component mount
   useEffect(() => {
@@ -43,7 +45,7 @@ const Navbar = () => {
         {/* Left Side: Menu + Logo */}
         <div className="flex items-center gap-3 md:gap-4">
           {/* Menu Button - Visible on Mobile */}
-          <button onClick={() => navigate("/profile?tab=city")} className="md:hidden">
+          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="md:hidden">
             <svg
               width="28"
               height="28"
@@ -52,27 +54,39 @@ const Navbar = () => {
               xmlns="http://www.w3.org/2000/svg"
               className="text-black"
             >
-              <path
-                d="M4 12H20"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M4 6H20"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M4 18H20"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {isSidebarOpen ? (
+                <path
+                  d="M6 18L18 6M6 6l12 12"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : (
+                <>
+                  <path
+                    d="M4 12H20"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 6H20"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 18H20"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </>
+              )}
             </svg>
           </button>
 
@@ -170,6 +184,7 @@ const Navbar = () => {
           </button>
         </div>
       </div>
+      <MobileSidebar isOpen={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
       <AuthModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />
     </>
   );
