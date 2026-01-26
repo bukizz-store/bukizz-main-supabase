@@ -247,19 +247,30 @@ function CheckoutPage() {
   };
 
   // Handle use current location
+  // Handle use current location
   const handleUseCurrentLocation = async () => {
     try {
-      await getCurrentLocationAndAddress();
-      if (currentLocation) {
+      const { address } = await getCurrentLocationAndAddress();
+
+      if (address) {
         setAddressForm((prev) => ({
           ...prev,
-          line1: currentLocation.address || "",
-          city: currentLocation.city || "",
-          state: currentLocation.state || "",
-          postalCode: currentLocation.postalCode || "",
+          line1: address.line1 || "",
+          line2: address.line2 || "",
+          city: address.city || "",
+          state: address.state || "",
+          country: address.country || "India",
+          postalCode: address.postalCode || "",
+          landmark: address.landmark || "",
         }));
+
+        showNotification({
+          message: "Location detected successfully",
+          type: "success"
+        });
       }
     } catch (error) {
+      console.error("Location error:", error);
       showNotification({
         message: "Failed to get current location. Please enter address manually.",
         type: "error",
@@ -717,26 +728,25 @@ function CheckoutPage() {
   // Render empty cart state
   if (!cart?.items || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F3F8FF] flex flex-col">
         <SearchBar />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
-              <svg fill="currentColor" viewBox="0 0 24 24">
-                <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z" />
-              </svg>
+        <div className="container mx-auto px-4 py-4 flex-1 flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center py-8 md:py-12">
+            <div className="mb-6 md:mb-8">
+              <img
+                src="/cart.svg"
+                alt="Empty Cart"
+                className="w-48 h-48 md:w-64 md:h-64 object-contain"
+              />
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-              Your cart is empty
+            <h2 className="text-2xl md:text-4xl font-bold text-[#0051A3] mb-8 md:mb-12 text-center tracking-tight">
+              You Study, We Deliver
             </h2>
-            <p className="text-gray-600 mb-6">
-              Add some items to your cart to continue with checkout
-            </p>
             <button
               onClick={() => navigate("/")}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              className="px-8 py-3 rounded-full border-2 border-[#3B82F6] text-[#3B82F6] font-semibold text-lg hover:bg-blue-50 transition-colors duration-300"
             >
-              Continue Shopping
+              Keep Exploring
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import DealsSection from "../../components/Sections/DealsSection";
 import PromoCard from "../../components/Cards/PromoCard";
@@ -13,6 +13,34 @@ function SchoolViewPage() {
   const [searchResults, setSearchResults] = useState(null);
   const [searchTerm, setSearchTerm] = useState(location.state?.searchTerm || "");
   const [isSearchActive, setIsSearchActive] = useState(!!location.state?.searchTerm);
+  const [selectedCity, setSelectedCity] = useState("Gurugram");
+
+  useEffect(() => {
+    // Get selected city from localStorage
+    const getCityFromStorage = () => {
+      const city = localStorage.getItem("selectedCity");
+      if (city) {
+        // Map city id to display name
+        const cityNameMap = {
+          gurugram: "Gurugram",
+          kanpur: "Kanpur",
+        };
+        setSelectedCity(cityNameMap[city] || city);
+      } else {
+        setSelectedCity("Gurugram");
+      }
+    };
+
+    getCityFromStorage();
+
+    // Listen for changes in localStorage
+    const handleStorageChange = () => {
+      getCityFromStorage();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const handleSearchResults = (results) => {
     setSearchResults(results);
@@ -55,7 +83,7 @@ function SchoolViewPage() {
             ? hasResults
               ? `Search Results`
               : `No Results Found`
-            : `Pick Your School in Gurugram`}
+            : `Pick Your School in ${selectedCity}`}
         </h1>
         <p className="font-nunito font-semibold text-green">
           {isSearchActive

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom"; // navigate not needed if we open popup directly
+import useUIStore from "../../store/uiStore";
 
 const CitySelector = () => {
   const [selectedCity, setSelectedCity] = useState(null);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
+  const { openCityPopup } = useUIStore();
 
   useEffect(() => {
     // Get the selected city from localStorage
@@ -29,7 +31,7 @@ const CitySelector = () => {
 
   return (
     <button
-      onClick={() => navigate("/profile?tab=city")}
+      onClick={openCityPopup}
       className="flex items-center space-x-2 px-3 py-1.5 md:px-4 md:py-2 border-[1.5px] border-black rounded-[1rem] hover:bg-gray-50 transition-colors bg-white whitespace-nowrap h-[46px] md:h-auto"
     >
       {/* Mobile Icon: Large Red Pin */}

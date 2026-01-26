@@ -32,15 +32,26 @@ import NotificationContainer from "./components/Common/NotificationContainer";
 import ScrollToTop from "./components/Common/ScrollToTop";
 import useAuthStore from "./store/authStore";
 
+import CitySelectionPopup from "./components/Common/CitySelectionPopup";
+
+import useUIStore from "./store/uiStore";
+
 // Main App Component
 function App() {
   const { initialize, loading, isHydrated } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
+  const { isCityPopupOpen, openCityPopup, closeCityPopup } = useUIStore();
 
   // Check for mobile app mode
   const [isMobileApp, setIsMobileApp] = useState(false);
+  const { handleGoogleCallback } = useAuthStore();
 
   useEffect(() => {
+    // Handle Google OAuth callback
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      handleGoogleCallback();
+    }
+
     // Check localStorage or URL params for mobile app indicator
     const checkMobileApp = () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -51,6 +62,12 @@ function App() {
       const cityParam = searchParams.get("city");
       if (cityParam) {
         localStorage.setItem("selectedCity", cityParam);
+      } else {
+        // Check if city is selected in local storage
+        const storedCity = localStorage.getItem("selectedCity");
+        if (!storedCity) {
+          openCityPopup();
+        }
       }
 
       if (isApp) {
@@ -98,6 +115,9 @@ function App() {
     <Router>
       <ScrollToTop />
       <div className={`flex flex-col min-h-screen bg-[#F3F8FF] ${isMobileApp ? "mobile-app-view" : ""}`}>
+        {/* City Selection Popup */}
+        {isCityPopupOpen && <CitySelectionPopup onClose={closeCityPopup} />}
+
         {/* Notification Container for error/success popups */}
         <NotificationContainer />
 
@@ -111,7 +131,6 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/school" element={<SchoolViewPage />} />
           <Route path="/school/:id" element={<SchoolScreen />} />
-          <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/orders" element={<OrdersPage />} />

@@ -8,10 +8,13 @@ import useAuthStore from "../../store/authStore";
 import { User, Package, Wallet, Folder, ChevronRight, Power } from 'lucide-react';
 import AddressManager from "../../components/Profile/AddressManager";
 
+import useUIStore from "../../store/uiStore";
+
 function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { openCityPopup } = useUIStore();
   const {
     profile,
     loading,
@@ -24,13 +27,27 @@ function ProfilePage() {
   const [editMode, setEditMode] = useState(false);
   const [activeSection, setActiveSection] = useState(() => {
     const tabParam = searchParams.get("tab");
-    return tabParam || "profile"; // "profile", "orders" or "city"
+    if (tabParam === "city") return "profile"; // Fallback to profile if city tab is requested
+    return tabParam || "profile"; // "profile", "orders"
   });
 
-  // Sync activeSection with URL search params
+  // Handle City Popup
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    setActiveSection(tabParam || "profile");
+    if (tabParam === "city") {
+      openCityPopup();
+      // If we are "stuck" on city tab visually, move to profile
+      // But we can check this inside the setter or a separate check
+      if (activeSection === "city") setActiveSection("profile");
+    }
+  }, [searchParams, openCityPopup, activeSection]);
+
+  // Handle Tab State (only when URL changes)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabParam !== "city") {
+      setActiveSection(tabParam);
+    }
   }, [searchParams]);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -53,7 +70,10 @@ function ProfilePage() {
 
   // Load profile data on component mount
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Check if we are on the city tab - if so, we allow access without auth (for city selection)
+    const isCityTab = searchParams.get("tab") === "city";
+
+    if (!isAuthenticated && !isCityTab) {
       navigate("/");
       return;
     }
@@ -245,8 +265,8 @@ function ProfilePage() {
                     </div>
                     <div className="pb-2">
                       <button
-                        onClick={() => setActiveSection("city")}
-                        className={`w-full text-left px-16 py-2 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors ${activeSection === "city" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600"}`}
+                        onClick={openCityPopup}
+                        className="w-full text-left px-16 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                       >
                         My City
                       </button>

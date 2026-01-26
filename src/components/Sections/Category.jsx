@@ -53,7 +53,7 @@ const Category = () => {
         {categories.map((cat, idx) => (
           <div
             key={idx}
-            className={`flex flex-col items-center justify-center rounded-lg bg-${cat.color}-300`}
+            className={`flex flex-col items-center justify-center rounded-lg `}
           >
             <CategoryCard
               props={cat}

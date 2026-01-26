@@ -49,6 +49,7 @@ const AddressManager = () => {
     const handleUseCurrentLocation = async () => {
         try {
             const { location, address } = await getCurrentLocationAndAddress();
+            // console.log("Location and address:", location, address);
             if (address) {
                 setAddressForm((prev) => ({
                     ...prev,

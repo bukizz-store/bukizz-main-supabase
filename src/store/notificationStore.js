@@ -12,7 +12,7 @@ const useNotificationStore = create((set, get) => ({
       title: "Notification",
       message: "",
       autoClose: true,
-      duration: 5000,
+      duration: 2000,
       ...notification,
     };
 

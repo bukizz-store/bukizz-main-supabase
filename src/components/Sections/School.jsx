@@ -12,6 +12,19 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // State to track current city for auto-refresh
+  const [currentCity, setCurrentCity] = useState(() => localStorage.getItem("selectedCity"));
+
+  // Listen for storage changes to auto-refresh schools when city changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setCurrentCity(localStorage.getItem("selectedCity"));
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   // Fetch schools by city when component mounts or on home page
   useEffect(() => {
     const fetchSchoolsByCity = async () => {
@@ -26,7 +39,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
         // Default to Gurgaon if no city is selected
         if (!selectedCity) {
-          selectedCity = "gurgaon";
+          selectedCity = "gurugram";
         }
 
         // Map city id to city name for API
@@ -69,9 +82,9 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
     };
 
     fetchSchoolsByCity();
-  }, [location.pathname, isSearchActive]);
+  }, [location.pathname, isSearchActive, currentCity]);
 
-  // Fetch all schools when on /school page
+  // Fetch schools by city when on /school page (same logic as home page now)
   useEffect(() => {
     const fetchAllSchools = async () => {
       // Only fetch on school page and when not searching
@@ -81,7 +94,24 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
       try {
         setLoading(true);
-        const response = await fetch(schoolRoutes.search);
+
+        let selectedCity = localStorage.getItem("selectedCity");
+
+        // Default to Gurgaon if no city is selected
+        if (!selectedCity) {
+          selectedCity = "gurugram";
+        }
+
+        // Map city id to city name for API
+        const cityNameMap = {
+          gurgaon: "Gurgaon",
+          kanpur: "Kanpur",
+        };
+
+        const cityName = cityNameMap[selectedCity] || selectedCity;
+
+        // Fetch schools by city even on /school route
+        const response = await fetch(schoolRoutes.byCity(cityName));
 
         if (!response.ok) {
           throw new Error(`Failed to fetch schools: ${response.statusText}`);
@@ -112,7 +142,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
     };
 
     fetchAllSchools();
-  }, [location.pathname, isSearchActive]);
+  }, [location.pathname, isSearchActive, currentCity]);
 
   let displayData = [];
   let showingSearchResults = false;

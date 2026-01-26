@@ -20,7 +20,7 @@ function HomePage() {
     if (city) {
       // Map city id to display name
       const cityNameMap = {
-        gurgaon: "Gurugram",
+        gurugram: "Gurugram",
         kanpur: "Kanpur",
       };
       setSelectedCity(cityNameMap[city] || city);
@@ -33,7 +33,7 @@ function HomePage() {
       const city = localStorage.getItem("selectedCity");
       if (city) {
         const cityNameMap = {
-          gurgaon: "Gurugram",
+          gurugram: "Gurugram",
           kanpur: "Kanpur",
         };
         setSelectedCity(cityNameMap[city] || city);

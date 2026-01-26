@@ -10,17 +10,22 @@ import {
     ChevronRight,
 } from "lucide-react";
 import useAuthStore from "../../store/authStore";
+import useUIStore from "../../store/uiStore";
 
 const MobileSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
     const { user, logout, setModalOpen, setRedirectPath } = useAuthStore();
+    const { openCityPopup } = useUIStore();
 
     const handleNavigation = (path) => {
         // Protected routes that require login
         const protectedRoutes = ["/orders", "/profile"];
         const isProtected = protectedRoutes.some(route => path.startsWith(route));
 
-        if (isProtected && !user) {
+        // Check if it's the city selection, which should be public
+        const isCitySelection = path.includes("tab=city");
+
+        if (isProtected && !user && !isCitySelection) {
             setRedirectPath(path);
             setModalOpen(true);
             onClose();
@@ -125,7 +130,10 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                     </div>
 
                     <button
-                        onClick={() => handleNavigation("/profile?tab=city")}
+                        onClick={() => {
+                            openCityPopup();
+                            onClose();
+                        }}
                         className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-gray-700"
                     >
                         <div className="flex items-center gap-3">

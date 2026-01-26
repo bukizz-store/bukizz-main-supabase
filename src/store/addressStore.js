@@ -47,6 +47,7 @@ const useAddressStore = create((set, get) => ({
             heading: position.coords.heading,
             speed: position.coords.speed,
             timestamp: position.timestamp,
+            postalCode: position.coords.postalCode,
           };
 
           set({
@@ -70,6 +71,7 @@ const useAddressStore = create((set, get) => ({
                 heading: position.coords.heading,
                 speed: position.coords.speed,
                 timestamp: position.timestamp,
+                postalCode: position.coords.postalCode,
               };
 
               set({
@@ -177,6 +179,7 @@ const useAddressStore = create((set, get) => ({
       postalCode: "",
       lat: lat,
       lng: lng,
+
     };
 
     set({
@@ -200,6 +203,7 @@ const useAddressStore = create((set, get) => ({
     }
 
     const data = await response.json();
+    console.log("BigDataCloud response:", data);
 
     // Enhanced parsing for Indian addresses
     const addressData = {
@@ -359,6 +363,8 @@ const useAddressStore = create((set, get) => ({
         location.lat,
         location.lng
       );
+
+      console.log("Address data:", addressData);
 
       return {
         location,

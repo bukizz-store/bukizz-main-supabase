@@ -175,7 +175,7 @@ const SearchBar = ({ onSearchResults, searchTerm, onSearchTermChange }) => {
           <input
             type="text"
             placeholder="Find Your School ( e.g. DPS )"
-            className="w-full px-10 md:px-16 py-2.5 md:py-4 rounded-full border border-gray-800 md:border-none shadow-none md:shadow-lg focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all duration-200 text-sm md:text-base placeholder-gray-500"
+            className="w-full px-10 md:px-16 py-2.5 md:py-4 rounded-2xl border border-gray-800 md:border-none shadow-none md:shadow-lg focus:outline-none focus:ring-1 focus:ring-gray-400 transition-all duration-200 text-sm md:text-base placeholder-gray-500"
             value={localSearchTerm}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}

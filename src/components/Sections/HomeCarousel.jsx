@@ -87,19 +87,57 @@ const HomeCarousel = () => {
         }
     };
 
+    // State to manage transition effect
+    const [isTransitioning, setIsTransitioning] = useState(true);
+
+    // Extended slides with a clone of the first slide at the end for smooth looping
+    const extendedSlides = [...slides, { ...slides[0], id: 'clone-first' }];
+    const extendedSlidesMobile = [...slidesMobile, { ...slidesMobile[0], id: 'clone-first-mobile' }];
+
     // Auto-play is now handled by the progress bar animation's onAnimationEnd event
 
     const nextSlide = () => {
-        setCurrentSlide((prev) => (prev + 1) % slides.length);
+        if (currentSlide >= slides.length) return; // Prevent extra clicks during reset
+        setIsTransitioning(true);
+        setCurrentSlide((prev) => prev + 1);
     };
 
     const prevSlide = () => {
-        setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+        // If at start (0), jump to end (slide 2)
+        // Note: For smooth infinite reverse loop, we'd need a clone at start too.
+        // Current request focused on "reaches end -> 0", so we accept the rewind on Prev for now
+        // or effectively jump to last slide.
+        setIsTransitioning(true);
+        setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     };
 
     const goToSlide = (index) => {
+        setIsTransitioning(true);
         setCurrentSlide(index);
     };
+
+    // Handle seamless loop reset
+    useEffect(() => {
+        if (currentSlide === slides.length) {
+            // We reached the clone (visually looks like slide 0)
+            // Wait for transition to finish, then snap to real slide 0
+            const timer = setTimeout(() => {
+                setIsTransitioning(false);
+                setCurrentSlide(0);
+            }, 500); // Matches duration-500
+            return () => clearTimeout(timer);
+        }
+    }, [currentSlide, slides.length]);
+
+    // Re-enable transition if it was disabled
+    useEffect(() => {
+        if (!isTransitioning) {
+            // We just snapped. Next action should be animated.
+            // We don't necessarily need a timeout here if nextSlide sets isTransitioning(true)
+            // But purely reactive state is safer.
+        }
+    }, [isTransitioning]);
+
 
     return (
         <div className="mx-4 md:mx-12 my-4 mb-4 md:mb-5 max-w">
@@ -115,11 +153,11 @@ const HomeCarousel = () => {
 
                 {/* Slides Desktop*/}
                 <div
-                    className="hidden md:flex w-full h-full transition-transform duration-500 ease-out"
+                    className={`hidden md:flex w-full h-full ${isTransitioning ? 'transition-transform duration-500 ease-out' : ''}`}
                     style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                 >
-                    {slides.map((slide) => (
-                        <div key={slide.id} className="w-full h-full relative flex-shrink-0">
+                    {extendedSlides.map((slide, index) => (
+                        <div key={`${slide.id}-${index}`} className="w-full h-full relative flex-shrink-0">
                             <img
                                 src={slide.image}
                                 alt={slide.alt}
@@ -133,11 +171,11 @@ const HomeCarousel = () => {
 
                 {/* Slides Mobile*/}
                 <div
-                    className="flex md:hidden w-full h-[178px] transition-transform duration-500 ease-out"
+                    className={`flex md:hidden w-full h-[178px] ${isTransitioning ? 'transition-transform duration-500 ease-out' : ''}`}
                     style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                 >
-                    {slidesMobile.map((slide) => (
-                        <div key={slide.id} className="w-full h-full relative flex-shrink-0">
+                    {extendedSlidesMobile.map((slide, index) => (
+                        <div key={`${slide.id}-${index}`} className="w-full h-full relative flex-shrink-0">
                             <img
                                 src={slide.image}
                                 alt={slide.alt}

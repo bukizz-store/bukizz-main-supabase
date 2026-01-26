@@ -175,6 +175,9 @@ const OrdersSection = () => {
   const [actionError, setActionError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // To force re-fetch after action
 
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -188,7 +191,9 @@ const OrdersSection = () => {
           throw new Error("Authentication token not found. Please log in again.");
         }
 
-        const response = await fetch(useApiRoutesStore.getState().orders.getAll, {
+        const url = `${useApiRoutesStore.getState().orders.getAll}?page=${page}&limit=20`;
+
+        const response = await fetch(url, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -201,6 +206,7 @@ const OrdersSection = () => {
 
         const data = await response.json();
         setOrders(data.data || []);
+        setPagination(data.pagination);
       } catch (err) {
         console.error("Error fetching orders:", err);
         setError(err.message);
@@ -210,7 +216,7 @@ const OrdersSection = () => {
     };
 
     fetchOrders();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, page]);
 
   const handleCancelOrder = async () => {
     if (!selectedOrderForAction) return;
@@ -637,6 +643,39 @@ const OrdersSection = () => {
                   formatDate={formatDate}
                 />
               ))}
+
+              {/* Pagination Controls */}
+              {pagination && (pagination.totalPages > 1 || pagination.hasPrev || pagination.hasNext) && (
+                <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                    disabled={!pagination.hasPrev}
+                    className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                      ${!pagination.hasPrev
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}`}
+                  >
+                    <ChevronDown className="w-4 h-4 rotate-90" />
+                    Previous
+                  </button>
+
+                  <span className="text-sm text-gray-600 font-medium">
+                    Page {pagination.page} of {pagination.totalPages}
+                  </span>
+
+                  <button
+                    onClick={() => setPage(prev => prev + 1)}
+                    disabled={!pagination.hasNext}
+                    className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                      ${!pagination.hasNext
+                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}`}
+                  >
+                    Next
+                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>

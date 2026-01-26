@@ -41,6 +41,7 @@ const useApiRoutesStore = create((set, get) => ({
     resetPassword: `${BASE_URL}/auth/reset-password`,
     verifyToken: `${BASE_URL}/auth/verify-token`,
     getProfile: `${BASE_URL}/auth/me`,
+    googleLogin: `${BASE_URL}/auth/google-login`,
   },
 
   // ============ USER ROUTES ============

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import useApiRoutesStore from "./apiRoutesStore";
+import { supabase } from "./supabaseClient";
 
 const useAuthStore = create(
   persist(
@@ -325,6 +326,81 @@ const useAuthStore = create(
         } catch (error) {
           console.error("Token verification failed:", error);
           return { valid: false };
+        }
+      },
+
+      loginWithGoogle: async () => {
+        set({ loading: true, error: null });
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "google",
+            options: {
+              redirectTo: `${window.location.origin}/`,
+              queryParams: {
+                access_type: "offline",
+                prompt: "consent",
+              },
+            },
+          });
+          if (error) throw error;
+        } catch (error) {
+          set({ loading: false, error: error.message });
+          throw error;
+        }
+      },
+
+      handleGoogleCallback: async () => {
+        set({ loading: true });
+        try {
+          // 1. Get Supabase session
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+          if (sessionError || !session) {
+            // No session found, maybe not a callback or error
+            set({ loading: false });
+            return;
+          }
+
+          const apiRoutes = useApiRoutesStore.getState();
+
+          // 2. Send Supabase token to backend
+          const response = await fetch(apiRoutes.auth.googleLogin, {
+            method: "POST",
+            headers: apiRoutes.getBasicHeaders(),
+            body: JSON.stringify({ token: session.access_token }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Google login failed on backend");
+          }
+
+          const data = await response.json();
+
+          // 3. Store Backend Tokens
+          const tokens = data.data || data;
+          const user = tokens.user || data.user;
+
+          if (tokens.accessToken) {
+            localStorage.setItem("access_token", tokens.accessToken);
+            localStorage.setItem("custom_token", tokens.accessToken);
+          }
+          if (tokens.refreshToken) {
+            localStorage.setItem("refresh_token", tokens.refreshToken);
+          }
+
+          if (user) {
+            set({ user, loading: false, error: null, isModalOpen: false });
+          }
+
+          // Optional: Sign out from Supabase if we only want to keep backend session
+          // await supabase.auth.signOut();
+
+        } catch (error) {
+          console.error("Google Callback Error:", error);
+          set({ loading: false, error: error.message });
+          // Clear URL fragment params to prevent loop or confuse user
+          window.history.replaceState(null, '', window.location.pathname);
         }
       },
 

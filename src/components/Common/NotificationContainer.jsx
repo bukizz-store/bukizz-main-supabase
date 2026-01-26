@@ -6,13 +6,13 @@ const NotificationContainer = () => {
   const { notifications, hideNotification } = useNotificationStore();
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+    <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none">
       {notifications.map((notification, index) => (
         <div
           key={notification.id}
           className="pointer-events-auto"
           style={{
-            zIndex: 1000 + index,
+            zIndex: 9999 + index,
             marginTop: `${index * 80}px`,
           }}
         >

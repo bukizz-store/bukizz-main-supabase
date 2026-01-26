@@ -51,13 +51,13 @@ function CartPage() {
   // Memoized image error handler to prevent infinite retry loops
   const handleImageError = useCallback((e, imageSrc) => {
     if (!imageSrc) return;
-    
+
     // Check if image already failed
     if (failedImagesRef.current.has(imageSrc)) {
       e.target.src = "/api/placeholder/80/80";
       return;
     }
-    
+
     // Mark as failed
     failedImagesRef.current.add(imageSrc);
     e.target.src = "/api/placeholder/80/80";
@@ -150,31 +150,22 @@ function CartPage() {
         </div>
 
         {!cart?.items || cart.items.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-gray-400 mb-4">
-              <svg
-                className="w-24 h-24 mx-auto mb-4"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zM8 6V5a2 2 0 114 0v1H8zm2 6a1 1 0 100-2 1 1 0 000 2z"
-                  clipRule="evenodd"
-                />
-              </svg>
+          <div className="flex flex-col items-center justify-center py-12 md:py-20">
+            <div className="mb-6 md:mb-8">
+              <img
+                src="/cart.svg"
+                alt="Empty Cart"
+                className="w-48 h-48 md:w-64 md:h-64 object-contain"
+              />
             </div>
-            <h2 className="text-xl font-semibold text-gray-600 mb-2">
-              Your cart is empty
+            <h2 className="text-2xl md:text-4xl font-bold text-[#0051A3] mb-8 md:mb-12 text-center tracking-tight">
+              You Study, We Deliver
             </h2>
-            <p className="text-gray-500 mb-6">
-              Add some products to get started!
-            </p>
             <button
               onClick={() => navigate("/")}
-              className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-8 py-3 rounded-full border-2 border-[#3B82F6] text-[#3B82F6] font-semibold text-lg hover:bg-blue-50 transition-colors duration-300"
             >
-              Continue Shopping
+              Keep Exploring
             </button>
           </div>
         ) : (
@@ -416,11 +407,10 @@ function CartPage() {
                   disabled={
                     !validationResults?.isValid && validationResults !== null
                   }
-                  className={`w-full mt-6 py-3 px-4 rounded-lg font-medium transition-colors ${
-                    !validationResults?.isValid && validationResults !== null
+                  className={`w-full mt-6 py-3 px-4 rounded-lg font-medium transition-colors ${!validationResults?.isValid && validationResults !== null
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-blue-500 hover:bg-blue-600 text-white"
-                  }`}
+                    }`}
                 >
                   {!validationResults?.isValid && validationResults !== null
                     ? "Fix Cart Issues First"
