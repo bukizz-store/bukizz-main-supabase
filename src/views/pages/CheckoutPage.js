@@ -105,6 +105,94 @@ function CheckoutPage() {
     e.target.src = "/no-product-image.svg";
   }, []);
 
+  // Use a ref to store the current order for native callbacks to access
+  const currentOrderRef = useRef(null);
+
+  // Effect to handle Native Razorpay Callbacks
+  useEffect(() => {
+    // Success Callback from Native
+    window.onNativePaymentSuccess = async (responseString) => {
+      try {
+        const response = JSON.parse(responseString);
+        const order = currentOrderRef.current;
+
+        if (!order) {
+          console.error("No active order found for native payment success");
+          return;
+        }
+
+        // Verify payment on backend
+        await verifyRazorpayPayment({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          orderId: order.id
+        });
+
+        // Success
+        clearCart();
+        navigate(`/order-success/${order.id}`, {
+          state: {
+            order,
+            message: "Payment successful! Your order has been placed.",
+          },
+        });
+      } catch (error) {
+        console.error("Native Payment verification failed:", error);
+        showNotification({
+          message: "Payment verification failed. Please contact support.",
+          type: "error",
+        });
+
+        const order = currentOrderRef.current;
+        if (order) {
+          clearCart();
+          navigate(`/order-success/${order.id}`, {
+            state: {
+              order,
+              error: "Payment verification failed. Status is pending.",
+            },
+          });
+        }
+      }
+    };
+
+    // Failure Callback from Native
+    window.onNativePaymentFailure = async (responseString) => {
+      try {
+        const response = JSON.parse(responseString);
+        const order = currentOrderRef.current;
+
+        if (!order) {
+          console.error("No active order found for native payment failure");
+          return;
+        }
+
+        console.error("Native Payment failed:", response);
+        showNotification({
+          message: `Payment failed: ${response.description || "Please try again."}`,
+          type: "error",
+        });
+
+        // Report failure to backend
+        await reportPaymentFailure({
+          razorpay_order_id: response.metadata?.order_id, // Might need adjustment based on native response structure
+          razorpay_payment_id: response.metadata?.payment_id,
+          error_code: response.code,
+          error_description: response.description,
+          orderId: order.id
+        });
+      } catch (e) {
+        console.error("Error handling native payment failure:", e);
+      }
+    };
+
+    return () => {
+      window.onNativePaymentSuccess = null;
+      window.onNativePaymentFailure = null;
+    };
+  }, [navigate, clearCart, verifyRazorpayPayment, reportPaymentFailure]);
+
   // Load cart and addresses on component mount
   useEffect(() => {
     let mounted = true;
@@ -518,6 +606,8 @@ function CheckoutPage() {
       const order = await placeOrder(orderData);
 
       // Handle Payment Flow
+      // Hooks moved to top level
+
       if (paymentMethod === "cod") {
         // COD Order - Success immediately
         clearCart();
@@ -531,6 +621,9 @@ function CheckoutPage() {
         // Online Payment - Initiate Razorpay
         try {
           const razorpayOrder = await initiateRazorpayPayment(order.id);
+
+          // Store order for native callbacks
+          currentOrderRef.current = order;
 
           const options = {
             key: razorpayOrder.key,
@@ -599,26 +692,33 @@ function CheckoutPage() {
             },
           };
 
-          const rzp = new window.Razorpay(options);
+          // Check if running in Native App environment
+          if (window.RazorpayChannel) {
+            console.log("Delegating payment to Native Razorpay SDK");
+            window.RazorpayChannel.postMessage(JSON.stringify(options));
+          } else {
+            // Fallback to Web SDK
+            const rzp = new window.Razorpay(options);
 
-          rzp.on("payment.failed", function (response) {
-            console.error("Payment failed:", response.error);
-            showNotification({
-              message: `Payment failed: ${response.error.description || "Please try again."}`,
-              type: "error",
+            rzp.on("payment.failed", function (response) {
+              console.error("Payment failed:", response.error);
+              showNotification({
+                message: `Payment failed: ${response.error.description || "Please try again."}`,
+                type: "error",
+              });
+
+              // Report failure to backend
+              reportPaymentFailure({
+                razorpay_order_id: response.error.metadata?.order_id || razorpayOrder.id,
+                razorpay_payment_id: response.error.metadata?.payment_id,
+                error_code: response.error.code,
+                error_description: response.error.description,
+                orderId: order.id
+              });
             });
 
-            // Report failure to backend
-            reportPaymentFailure({
-              razorpay_order_id: response.error.metadata?.order_id || razorpayOrder.id,
-              razorpay_payment_id: response.error.metadata?.payment_id,
-              error_code: response.error.code,
-              error_description: response.error.description,
-              orderId: order.id
-            });
-          });
-
-          rzp.open();
+            rzp.open();
+          }
 
         } catch (paymentError) {
           console.error("Payment initiation failed:", paymentError);
