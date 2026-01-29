@@ -4,12 +4,12 @@ import { Link } from "react-router-dom";
 const Breadcrumb = ({ items }) => {
     return (
         <nav className="flex my-1 items-start text-sm font-medium text-gray-500 " aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2">
+            <ol className="flex items-center space-x-2 w-full overflow-hidden">
                 {items.map((item, index) => (
-                    <li key={index} className="flex items-center">
+                    <li key={index} className={`flex items-center ${index === items.length - 1 ? "min-w-0 flex-1" : "flex-shrink-0"}`}>
                         {index > 0 && (
                             <svg
-                                className="w-5 h-5 text-gray-400 mx-1"
+                                className="w-5 h-5 text-gray-400 mx-1 flex-shrink-0"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                             >
@@ -21,11 +21,11 @@ const Breadcrumb = ({ items }) => {
                             </svg>
                         )}
                         {item.link ? (
-                            <Link to={item.link} className="hover:text-blue-600 transition-colors text-gray-400">
+                            <Link to={item.link} className="hover:text-blue-600 transition-colors text-gray-400 whitespace-nowrap">
                                 {item.label}
                             </Link>
                         ) : (
-                            <span className={`${index === items.length - 1 ? "text-gray-400 font-semibold" : ""}`}>
+                            <span className={`block truncate ${index === items.length - 1 ? "text-gray-400 font-semibold" : ""}`} title={item.label}>
                                 {item.label}
                             </span>
                         )}

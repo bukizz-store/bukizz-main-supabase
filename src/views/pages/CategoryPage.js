@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import SearchBar from "../../components/Common/SearchBar";
+import Breadcrumb from "../../components/Common/Breadcrumb";
 
 const CategoryPage = () => {
     const navigate = useNavigate();
@@ -42,6 +43,14 @@ const CategoryPage = () => {
             <SearchBar />
 
             <div className="mx-4 md:mx-12 my-8">
+                <div className="mb-4">
+                    <Breadcrumb
+                        items={[
+                            { label: "Home", link: "/" },
+                            { label: "Categories", link: null },
+                        ]}
+                    />
+                </div>
                 <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
                     <div className="flex justify-between items-center mb-6">
                         <div>

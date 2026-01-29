@@ -4,127 +4,85 @@ import useApiRoutesStore from "../../store/apiRoutesStore";
 
 const Stationary = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchStationaryProducts();
+    fetchCategories();
   }, []);
 
-  const fetchStationaryProducts = async () => {
+  const fetchCategories = async () => {
     try {
       setLoading(true);
       const apiRoutes = useApiRoutesStore.getState();
 
-      const response = await fetch(
-        `${apiRoutes.products.search}?productType=stationary&limit=5`,
-        {
-          headers: apiRoutes.getAuthHeaders(),
-        }
-      );
+      // Check if categories route exists, otherwise fallback or handle error
+      let url = apiRoutes.categories?.getAll;
+      if (!url) throw new Error("Categories API route not found");
+
+      // Fetch only root categories (parent_id = null)
+      url += "?rootOnly=true";
+
+      const response = await fetch(url, {
+        headers: apiRoutes.getAuthHeaders(),
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to fetch stationary products");
+        throw new Error("Failed to fetch categories");
       }
 
       const result = await response.json();
-      setProducts(result.data?.products || []);
+      // Assuming result.data contains the { categories, pagination } object
+      setCategories(result.data?.categories || []);
       setError("");
     } catch (err) {
-      console.error("Error fetching stationary products:", err);
+      console.error("Error fetching categories:", err);
       setError(err.message);
-      // Fallback to static data if API fails
-      setProducts([
-        {
-          id: 1,
-          title: "School Bag",
-          img: "https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg?cs=srgb&dl=pexels-bertellifotografia-2905238.jpg&fm=jpg",
-          category: "stationary",
-        },
-        {
-          id: 2,
-          title: "Stationery Kit",
-          img: "https://www.thestapleberry.in/cdn/shop/files/image_70e48829-3a4a-419d-b1c6-2a3ea4fb3cf9_2048x.jpg?v=1689778176",
-          category: "stationary",
-        },
-        {
-          id: 3,
-          title: "Lunch Box",
-          img: "https://m.media-amazon.com/images/I/51eiw+NsxpL._UF1000,1000_QL80_.jpg",
-          category: "stationary",
-        },
-        {
-          id: 4,
-          title: "School Bag",
-          img: "https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg?cs=srgb&dl=pexels-bertellifotografia-2905238.jpg&fm=jpg",
-          category: "stationary",
-        },
-        {
-          id: 5,
-          title: "Stationery Kit",
-          img: "https://www.thestapleberry.in/cdn/shop/files/image_70e48829-3a4a-419d-b1c6-2a3ea4fb3cf9_2048x.jpg?v=1689778176",
-          category: "stationary",
-        },
-      ]);
+      // Fallback data if needed, or leave empty
+      setCategories([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleProductClick = (product) => {
-    // Navigate to product list filtered by category
+  const handleCategoryClick = (category) => {
+    // Navigate to product list filtered by category slug
     navigate("/products", {
-      state: { categorySlug: "stationary", source: "School Essentials" },
+      state: { categorySlug: category.slug, source: "School Essentials" },
     });
   };
 
-  const displayProducts = products.length > 0 ? products : [
-    {
-      id: 1,
-      title: "School Bag",
-      img: "https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg?cs=srgb&dl=pexels-bertellifotografia-2905238.jpg&fm=jpg",
-    },
-    {
-      id: 2,
-      title: "Stationery Kit",
-      img: "https://www.thestapleberry.in/cdn/shop/files/image_70e48829-3a4a-419d-b1c6-2a3ea4fb3cf9_2048x.jpg?v=1689778176",
-    },
-    {
-      id: 3,
-      title: "Lunch Box",
-      img: "https://m.media-amazon.com/images/I/51eiw+NsxpL._UF1000,1000_QL80_.jpg",
-    },
-    {
-      id: 4,
-      title: "School Bag",
-      img: "https://images.pexels.com/photos/2905238/pexels-photo-2905238.jpeg?cs=srgb&dl=pexels-bertellifotografia-2905238.jpg&fm=jpg",
-    },
-    {
-      id: 5,
-      title: "Stationery Kit",
-      img: "https://www.thestapleberry.in/cdn/shop/files/image_70e48829-3a4a-419d-b1c6-2a3ea4fb3cf9_2048x.jpg?v=1689778176",
-    },
-  ];
+  if (loading) {
+    return (
+      <div className="my-6 mx-4 md:mx-12 flex justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return null;
+  }
 
   return (
     <div className="my-6 mx-4 md:mx-12">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {displayProducts.slice(0, 5).map((item, idx) => (
+        {categories.map((item, idx) => (
           <div
             key={item.id || idx}
-            onClick={() => handleProductClick(item)}
-            className="relative w-full bg-white rounded-2xl shadow-lg hover:scale-105 transition-transform hover:cursor-pointer"
+            onClick={() => handleCategoryClick(item)}
+            className="relative w-full bg-white rounded-2xl shadow-lg hover:scale-105 transition-transform hover:cursor-pointer overflow-hidden flex flex-col"
           >
             <img
-              src={item.img || item.primaryImage?.url}
-              alt={item.title || item.name}
-              className="w-full md:h-[200px] h-[150px] object-cover rounded-2xl"
+              src={item.image || "/placeholder_category.png"} // Fallback image
+              alt={item.name}
+              className="w-full md:h-[200px] h-[150px] object-cover"
             />
-            <div className="px-4 py-2 flex flex-col items-start justify-start gap-1">
-              <p className="font-nunito font-semibold">{item.title || item.name}</p>
-              <p className="text-sm text-gray-500 font-nunito font-bold">
-                Min. 50% Off
+            <div className="px-4 py-3 flex flex-col items-start justify-start gap-1 flex-grow">
+              <p className="font-nunito font-semibold text-lg line-clamp-1">{item.name}</p>
+              <p className="text-sm text-gray-500 font-nunito line-clamp-2">
+                {item.description}
               </p>
             </div>
           </div>

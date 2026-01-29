@@ -66,7 +66,9 @@ function App() {
         // Check if city is selected in local storage
         const storedCity = localStorage.getItem("selectedCity");
         if (!storedCity) {
-          openCityPopup();
+          // Default to Gurugram automatically
+          localStorage.setItem("selectedCity", "gurugram");
+          // openCityPopup(); // Removed popup trigger
         }
       }
 

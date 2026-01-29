@@ -44,7 +44,7 @@ export const BookSetCard = ({ props }) => {
 
   const handleClick = () => {
     if (props.id) {
-      navigate(`/product/${props.id}`);
+      navigate(`/product/${props.id}`, { state: { school: props.school } });
     }
   };
 

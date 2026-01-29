@@ -1,5 +1,5 @@
 import React from "react";
-import CategoryCard from "../Cards/CategoryCard";
+import {CategoryCard} from "../Cards/CategoryCard";
 import { useNavigate } from "react-router-dom";
 const categories = [
   { name: "School BookSets", color: "blue", img: "bookset_cat.svg" },

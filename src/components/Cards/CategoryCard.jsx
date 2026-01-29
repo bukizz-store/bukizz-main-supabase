@@ -23,4 +23,32 @@ const CategoryCard = ({ props, onClick, isSelected = false }) => {
   );
 };
 
-export default CategoryCard;
+const CategoryCardMobile = ({ props, onClick, isSelected = false }) => {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(props.name);
+    }
+  };
+
+  return (
+    <div
+      className="flex flex-col items-center shrink-0 cursor-pointer"
+      onClick={() => handleClick()}
+    >
+      <div
+        className={`rounded-full flex items-center justify-center bg-${props.color}-300 shadow-md transition-all duration-300 ${isSelected ? `ring-4 ring-offset-2 ring-${props.color}-400 scale-110` : ""}`}
+      >
+        <img
+          src={`/categories/${props.img}`}
+          alt={props.name}
+          className="w-14 h-14"
+        />
+      </div>
+      <span className={`text-xs mt-2 text-center text-wrap w-[60px] transition-all duration-300 ${isSelected ? `font-bold text-${props.color}-600` : "text-gray-700"}`}>
+        {props.name}
+      </span>
+    </div>
+  );
+};
+
+export { CategoryCard, CategoryCardMobile };

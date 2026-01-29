@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import CategoryCard from "../../components/Cards/CategoryCard";
+import { CategoryCard, CategoryCardMobile } from "../../components/Cards/CategoryCard";
 import { BookSetCard } from "../../components/Cards/BookSetCard";
 import { UniformCard } from "../../components/Cards/UniformCard";
 import useUserProfileStore from "../../store/userProfileStore";
@@ -8,14 +8,14 @@ import Stationary from "../../components/Sections/Stationary";
 import DealsSection from "../../components/Sections/DealsSection";
 
 const SchoolCategory = [
-  { name: "Book Sets", color: "blue", img: "bookset_cat.svg" },
-  { name: "School Uniform", color: "yellow", img: "uniform_cat.svg" },
+  { name: "BookSet", color: "blue", img: "bookset_cat.svg" },
+  { name: "Uniform", color: "yellow", img: "uniform_cat.svg" },
   { name: "Stationary", color: "green", img: "stationary_cat.svg" },
-  { name: "About School", color: "pink", img: "admissions_cat.svg" },
+  { name: "About", color: "pink", img: "admissions_cat.svg" },
 ];
 
 // Dynamic book sets based on school catalog
-const getBookSetsForSchool = (schoolCatalog) => {
+const getBookSetsForSchool = (schoolCatalog, schoolData) => {
   if (schoolCatalog && schoolCatalog.products) {
     // Filter for book sets from the school's actual product catalog
     return schoolCatalog.products
@@ -27,6 +27,7 @@ const getBookSetsForSchool = (schoolCatalog) => {
         rating: 4.5, // Mock rating
         name: product.title,
         id: product.product_id,
+        school: schoolData,
       }));
   }
 
@@ -44,7 +45,7 @@ const getBookSetsForSchool = (schoolCatalog) => {
 };
 
 // Dynamic uniforms based on school catalog
-const getUniformsForSchool = (schoolCatalog) => {
+const getUniformsForSchool = (schoolCatalog, schoolData) => {
   if (schoolCatalog && schoolCatalog.products) {
     // Filter for uniforms from the school's actual product catalog
     return schoolCatalog.products
@@ -61,6 +62,7 @@ const getUniformsForSchool = (schoolCatalog) => {
           `https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=200&fit=crop&auto=format`,
         id: product.product_id,
         discount: "25% off",
+        school: schoolData,
       }));
   }
 
@@ -138,7 +140,7 @@ const SchoolScreen = () => {
   const [schoolCatalog, setSchoolCatalog] = useState(null);
   const [loadingSchool, setLoadingSchool] = useState(true);
   const [schoolError, setSchoolError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("Book Sets"); // Default to Book Sets
+  const [selectedCategory, setSelectedCategory] = useState("BookSet"); // Default to Book Sets
 
   const fetchSchoolData = useCallback(async () => {
     if (!id) return;
@@ -178,9 +180,9 @@ const SchoolScreen = () => {
     if (categoryParam === "uniform") {
       setSelectedCategory("School Uniform");
     } else if (categoryParam === "bookset") {
-      setSelectedCategory("Book Sets");
+      setSelectedCategory("BookSet");
     } else {
-      setSelectedCategory("Book Sets");
+      setSelectedCategory("BookSet");
     }
 
     // Clear old data immediately when school ID changes
@@ -252,8 +254,8 @@ const SchoolScreen = () => {
     );
   }
 
-  const bookSets = getBookSetsForSchool(schoolCatalog);
-  const uniforms = getUniformsForSchool(schoolCatalog);
+  const bookSets = getBookSetsForSchool(schoolCatalog, schoolData);
+  const uniforms = getUniformsForSchool(schoolCatalog, schoolData);
 
   // Format location display
   const formatLocation = (school) => {
@@ -287,19 +289,19 @@ const SchoolScreen = () => {
   return (
     <div className="mx-4 md:mx-12">
       {/* School Header Image and Info */}
-      <div className="relative max-w-7xl mx-auto rounded-lg shadow-md mb-8">
+      <div className="relative max-w-7xl mx-auto rounded-lg shadow-md mb-4">
         <img
           src={getSchoolImage(schoolData)}
           alt={schoolData.name}
-          className="w-full h-64 object-cover rounded-lg"
+          className="w-full sm:h-[300px] md:h-[250px] lg:h-[250px] object-cover rounded-lg"
         />
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/70 to-transparent"></div>
-        <p className="absolute bottom-6 left-6 text-white text-4xl font-semibold mb-4">
+        <p className="absolute bottom-2 left-4 text-white text-lg md:text-4xl font-semibold mb-4 truncate max-w-[calc(100%-3rem)]">
           {schoolData.name}
         </p>
-        <div className="absolute bottom-2 left-6 flex items-center gap-1">
+        <div className="absolute bottom-2 left-4 flex items-center">
           <img src="/map_svg.svg" alt="location" className="w-4 h-4" />
-          <p className="text-white text-xl">{formatLocation(schoolData)}</p>
+          <p className="text-white text-sm md:text-xl">{formatLocation(schoolData)}</p>
         </div>
 
         {/* School Info Badge */}
@@ -322,10 +324,20 @@ const SchoolScreen = () => {
       </div>
 
       {/* School Categories */}
-      <div className="mb-8">
-        <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+      <div className="mb-4">
+        <div className="hidden md:flex flex-wrap justify-center gap-6 md:gap-4">
           {SchoolCategory.map((category, idx) => (
             <CategoryCard
+              key={idx}
+              props={category}
+              onClick={() => handleCategoryClick(category.name)}
+              isSelected={selectedCategory === category.name}
+            />
+          ))}
+        </div>
+        <div className="md:hidden flex flex-wrap justify-center gap-6 md:gap-4">
+          {SchoolCategory.map((category, idx) => (
+            <CategoryCardMobile
               key={idx}
               props={category}
               onClick={() => handleCategoryClick(category.name)}
@@ -339,37 +351,19 @@ const SchoolScreen = () => {
       {selectedCategory !== "About School" && (
         <div className="mb-8 ">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-lg md:text-2xl font-bold">
               {selectedCategory} for {schoolData.name}
             </h2>
             <div className="text-right">
-              <p className="text-gray-600">
-                {schoolData.board &&
-                  `All products are ${schoolData.board} curriculum compliant`}
-              </p>
-              {schoolCatalog && schoolCatalog.products && (
-                <p className="text-sm text-gray-500">
-                  {selectedCategory === "School Uniform"
-                    ? uniforms.length
-                    : selectedCategory === "Book Sets"
-                      ? bookSets.length
-                      : schoolCatalog.products.filter(
-                        (p) =>
-                          p.product_type ===
-                          selectedCategory.toLowerCase().replace(" ", "")
-                      ).length}{" "}
-                  products available
-                </p>
-              )}
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3 md:gap-12">
+          <div className="flex flex-wrap justify-center gap-8 md:gap-12">
             {selectedCategory === "School Uniform" ? (
               uniforms.map((uniform, idx) => (
                 <UniformCard key={idx} props={uniform} />
               ))
-            ) : selectedCategory === "Book Sets" ? (
+            ) : selectedCategory === "BookSet" ? (
               bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)
             ) : (
               // Placeholder for other categories
@@ -444,11 +438,6 @@ const SchoolScreen = () => {
           </div>
         </div>
       )}
-      <>
-        <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
-        <Stationary />
-        <DealsSection />
-      </>
     </div>
   );
 };

@@ -16,11 +16,10 @@ export const UniformCard = ({ props }) => {
           alt="Star"
           src="/star.svg"
           style={{
-            filter: `brightness(0) saturate(100%) ${
-              i <= rating
+            filter: `brightness(0) saturate(100%) ${i <= rating
                 ? "invert(33%) sepia(93%) saturate(1969%) hue-rotate(202deg) brightness(96%) contrast(101%)"
                 : "invert(88%) sepia(8%) saturate(348%) hue-rotate(202deg) brightness(95%) contrast(88%)"
-            }`,
+              }`,
           }}
         />
       );
@@ -30,7 +29,7 @@ export const UniformCard = ({ props }) => {
 
   const handleClick = () => {
     if (props.id) {
-      navigate(`/product/${props.id}`);
+      navigate(`/product/${props.id}`, { state: { school: props.school } });
     }
   };
 
