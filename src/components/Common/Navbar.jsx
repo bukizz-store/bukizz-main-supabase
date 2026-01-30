@@ -19,6 +19,7 @@ const Navbar = () => {
   }, []); // Only load once on mount
 
   const handleProfileClick = () => {
+    setSidebarOpen(false);
     if (!user) {
       setModalOpen(true);
     } else {
@@ -27,10 +28,12 @@ const Navbar = () => {
   };
 
   const handleCartClick = () => {
-    navigate("/checkout");
+    setSidebarOpen(false);
+    navigate("/cart");
   };
 
   const handleLogoClick = () => {
+    setSidebarOpen(false);
     navigate("/");
   };
 
@@ -136,7 +139,10 @@ const Navbar = () => {
             </button>
           ) : (
             <button
-              onClick={() => setModalOpen(true)}
+              onClick={() => {
+                setModalOpen(true);
+                setSidebarOpen(false);
+              }}
               className="bg-[#39A7FF] text-white px-4 py-2 md:px-6 md:py-3 rounded-md md:rounded-md hover:bg-blue-600 focus:outline-none transition-colors flex items-center gap-2 font-medium"
             >
               <svg

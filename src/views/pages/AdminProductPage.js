@@ -25,6 +25,7 @@ function AdminProductPage() {
     sku: "",
     productType: "bookset",
     basePrice: 0,
+    deliveryCharge: 0,
     currency: "INR",
     city: "", // Add city field
     isActive: true,
@@ -305,6 +306,7 @@ function AdminProductPage() {
           sku: formData.sku,
           productType: formData.productType,
           basePrice: parseFloat(formData.basePrice),
+          deliveryCharge: parseFloat(formData.deliveryCharge) || 0,
           currency: formData.currency,
           city: formData.city, // Add city to payload
           isActive: formData.isActive,
@@ -437,6 +439,7 @@ function AdminProductPage() {
         sku: "",
         productType: "bookset",
         basePrice: 0,
+        deliveryCharge: 0,
         currency: "INR",
         isActive: true,
         metadata: {},

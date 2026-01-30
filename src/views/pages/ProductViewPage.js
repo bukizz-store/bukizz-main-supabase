@@ -15,7 +15,7 @@ function ProductViewPage() {
   const location = useLocation();
   const { getProduct, searchProducts, loading, error } = useUserProfileStore();
 
-  const { addToCart, loading: cartLoading, isInCart } = useCartStore();
+  const { addToCart, loading: cartLoading, isInCart, setBuyNowItem } = useCartStore();
 
   const [productData, setProductData] = useState(null);
   const [schoolName, setSchoolName] = useState(null);
@@ -351,7 +351,19 @@ function ProductViewPage() {
 
   const handleGoToCart = () => {
     setShowCartDialog(false);
-    navigate("/checkout");
+    navigate("/cart");
+  };
+
+  // Handle Buy Now - sets item and goes directly to checkout
+  const handleBuyNow = () => {
+    if (!productData) return;
+
+    try {
+      setBuyNowItem(productData, selectedVariant, selectedQuantity);
+      navigate("/checkout");
+    } catch (error) {
+      console.error("Error with Buy Now:", error);
+    }
   };
 
   // Check if current selection is already in cart
@@ -510,7 +522,18 @@ function ProductViewPage() {
                   </>
                 )}
               </button>
-              <button className="px-12 py-3 bg-sky-500 text-white rounded-2xl hover:bg-sky-600">
+              <button
+                onClick={handleBuyNow}
+                disabled={
+                  !selectedVariant ||
+                  (selectedVariant && selectedVariant.stock < selectedQuantity)
+                }
+                className={`px-12 py-3 rounded-2xl transition-all ${!selectedVariant ||
+                  (selectedVariant && selectedVariant.stock < selectedQuantity)
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-sky-500 text-white hover:bg-sky-600"
+                  }`}
+              >
                 ₹ Buy Now
               </button>
             </div>
@@ -897,7 +920,18 @@ function ProductViewPage() {
             "Add to Cart"
           )}
         </button>
-        <button className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold shadow-lg shadow-blue-200">
+        <button
+          onClick={handleBuyNow}
+          disabled={
+            !selectedVariant ||
+            (selectedVariant && selectedVariant.stock < selectedQuantity)
+          }
+          className={`flex-1 py-3 rounded-xl font-semibold shadow-lg transition-all ${!selectedVariant ||
+              (selectedVariant && selectedVariant.stock < selectedQuantity)
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+              : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
+            }`}
+        >
           Buy Now
         </button>
       </div>

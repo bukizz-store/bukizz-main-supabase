@@ -14,6 +14,10 @@ const useCartStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  // Buy Now state (for direct checkout bypassing cart)
+  buyNowItem: null,
+  isBuyNowMode: false,
+
   // Add item to cart
   addToCart: async (product, variant, quantity = 1) => {
     set({ loading: true, error: null });
@@ -60,64 +64,64 @@ const useCartStore = create((set, get) => ({
         // Build complete variant details for order processing
         const variantDetails = variant
           ? {
-              id: variant.id,
-              sku: variant.sku,
-              price: variant.price,
-              compareAtPrice:
-                variant.compare_at_price || variant.compareAtPrice,
-              stock: variant.stock,
-              weight: variant.weight,
-              metadata: variant.metadata,
-              image: variant.image,
-              // Include complete option details for order processing
-              optionValues: {
-                option1: variant.option_value_1_ref
-                  ? {
-                      id: variant.option_value_1_ref.id,
-                      value: variant.option_value_1_ref.value,
-                      attributeName:
-                        variant.option_value_1_ref.attribute_name || "Set Type",
-                      priceModifier:
-                        variant.option_value_1_ref.price_modifier || 0,
-                    }
-                  : null,
-                option2: variant.option_value_2_ref
-                  ? {
-                      id: variant.option_value_2_ref.id,
-                      value: variant.option_value_2_ref.value,
-                      attributeName:
-                        variant.option_value_2_ref.attribute_name || "Branch",
-                      priceModifier:
-                        variant.option_value_2_ref.price_modifier || 0,
-                    }
-                  : null,
-                option3: variant.option_value_3_ref
-                  ? {
-                      id: variant.option_value_3_ref.id,
-                      value: variant.option_value_3_ref.value,
-                      attributeName:
-                        variant.option_value_3_ref.attribute_name ||
-                        "Optional Subject",
-                      priceModifier:
-                        variant.option_value_3_ref.price_modifier || 0,
-                    }
-                  : null,
-              },
-              // Store raw option value IDs for backend processing
-              optionValueIds: {
-                option_value_1: variant.option_value_1_ref?.id || null,
-                option_value_2: variant.option_value_2_ref?.id || null,
-                option_value_3: variant.option_value_3_ref?.id || null,
-              },
-              // Human readable variant description
-              variantDescription: [
-                variant.option_value_1_ref?.value,
-                variant.option_value_2_ref?.value,
-                variant.option_value_3_ref?.value,
-              ]
-                .filter(Boolean)
-                .join(" • "),
-            }
+            id: variant.id,
+            sku: variant.sku,
+            price: variant.price,
+            compareAtPrice:
+              variant.compare_at_price || variant.compareAtPrice,
+            stock: variant.stock,
+            weight: variant.weight,
+            metadata: variant.metadata,
+            image: variant.image,
+            // Include complete option details for order processing
+            optionValues: {
+              option1: variant.option_value_1_ref
+                ? {
+                  id: variant.option_value_1_ref.id,
+                  value: variant.option_value_1_ref.value,
+                  attributeName:
+                    variant.option_value_1_ref.attribute_name || "Set Type",
+                  priceModifier:
+                    variant.option_value_1_ref.price_modifier || 0,
+                }
+                : null,
+              option2: variant.option_value_2_ref
+                ? {
+                  id: variant.option_value_2_ref.id,
+                  value: variant.option_value_2_ref.value,
+                  attributeName:
+                    variant.option_value_2_ref.attribute_name || "Branch",
+                  priceModifier:
+                    variant.option_value_2_ref.price_modifier || 0,
+                }
+                : null,
+              option3: variant.option_value_3_ref
+                ? {
+                  id: variant.option_value_3_ref.id,
+                  value: variant.option_value_3_ref.value,
+                  attributeName:
+                    variant.option_value_3_ref.attribute_name ||
+                    "Optional Subject",
+                  priceModifier:
+                    variant.option_value_3_ref.price_modifier || 0,
+                }
+                : null,
+            },
+            // Store raw option value IDs for backend processing
+            optionValueIds: {
+              option_value_1: variant.option_value_1_ref?.id || null,
+              option_value_2: variant.option_value_2_ref?.id || null,
+              option_value_3: variant.option_value_3_ref?.id || null,
+            },
+            // Human readable variant description
+            variantDescription: [
+              variant.option_value_1_ref?.value,
+              variant.option_value_2_ref?.value,
+              variant.option_value_3_ref?.value,
+            ]
+              .filter(Boolean)
+              .join(" • "),
+          }
           : null;
 
         // Calculate proper price with variant modifiers
@@ -171,6 +175,8 @@ const useCartStore = create((set, get) => ({
           // Store complete variant details
           variantDetails: variantDetails,
           productType: product.productType || product.product_type || "product",
+          // Delivery charge from product - try new column first, fallback to metadata for backward compatibility
+          deliveryCharge: product.deliveryCharge || product.delivery_charge || product.metadata?.deliveryCharge || 0,
         };
         updatedItems.push(newItem);
       }
@@ -437,6 +443,163 @@ const useCartStore = create((set, get) => ({
       ),
     };
   },
+
+  // Set item for Buy Now (bypasses cart, goes directly to checkout)
+  setBuyNowItem: (product, variant, quantity = 1) => {
+    try {
+      // Get proper image URL with fallback chain
+      const getProductImage = () => {
+        if (product.images && product.images.length > 0) {
+          const primaryImage = product.images.find(
+            (img) => img.isPrimary || img.is_primary
+          );
+          if (primaryImage) return primaryImage.url;
+          return product.images[0].url;
+        }
+        if (variant?.image) return variant.image;
+        if (product.mainImage) return product.mainImage;
+        if (product.image) return product.image;
+        return "/api/placeholder/300/300";
+      };
+
+      // Build complete variant details for order processing
+      const variantDetails = variant
+        ? {
+          id: variant.id,
+          sku: variant.sku,
+          price: variant.price,
+          compareAtPrice: variant.compare_at_price || variant.compareAtPrice,
+          stock: variant.stock,
+          weight: variant.weight,
+          metadata: variant.metadata,
+          image: variant.image,
+          optionValues: {
+            option1: variant.option_value_1_ref
+              ? {
+                id: variant.option_value_1_ref.id,
+                value: variant.option_value_1_ref.value,
+                attributeName: variant.option_value_1_ref.attribute_name || "Set Type",
+                priceModifier: variant.option_value_1_ref.price_modifier || 0,
+              }
+              : null,
+            option2: variant.option_value_2_ref
+              ? {
+                id: variant.option_value_2_ref.id,
+                value: variant.option_value_2_ref.value,
+                attributeName: variant.option_value_2_ref.attribute_name || "Branch",
+                priceModifier: variant.option_value_2_ref.price_modifier || 0,
+              }
+              : null,
+            option3: variant.option_value_3_ref
+              ? {
+                id: variant.option_value_3_ref.id,
+                value: variant.option_value_3_ref.value,
+                attributeName: variant.option_value_3_ref.attribute_name || "Optional Subject",
+                priceModifier: variant.option_value_3_ref.price_modifier || 0,
+              }
+              : null,
+          },
+          optionValueIds: {
+            option_value_1: variant.option_value_1_ref?.id || null,
+            option_value_2: variant.option_value_2_ref?.id || null,
+            option_value_3: variant.option_value_3_ref?.id || null,
+          },
+          variantDescription: [
+            variant.option_value_1_ref?.value,
+            variant.option_value_2_ref?.value,
+            variant.option_value_3_ref?.value,
+          ]
+            .filter(Boolean)
+            .join(" • "),
+        }
+        : null;
+
+      // Calculate proper price with variant modifiers
+      let itemPrice = variant?.price || product.basePrice || product.base_price || 0;
+      if (variant && variantDetails?.optionValues) {
+        Object.values(variantDetails.optionValues).forEach((option) => {
+          if (option?.priceModifier) {
+            itemPrice += option.priceModifier;
+          }
+        });
+      }
+      itemPrice = Math.max(0, itemPrice);
+
+      const buyNowItem = {
+        id: `${product.id}-${variant?.id || "default"}`,
+        productId: product.id,
+        variantId: variant?.id || null,
+        title: product.title || "Product Title",
+        sku: variant?.sku || product.sku || "",
+        price: itemPrice,
+        originalPrice:
+          variant?.compare_at_price ||
+          variant?.compareAtPrice ||
+          itemPrice * 1.2,
+        image: getProductImage(),
+        quantity,
+        productDetails: {
+          id: product.id,
+          title: product.title,
+          sku: product.sku,
+          productType: product.productType || product.product_type,
+          basePrice: product.basePrice || product.base_price,
+          currency: product.currency || "INR",
+          retailerId: product.retailerId || product.retailer_id,
+          retailerName: product.retailerName || product.retailer_name,
+          metadata: product.metadata || {},
+          shortDescription: product.shortDescription || product.short_description,
+          description: product.description,
+          images: product.images || [],
+        },
+        variantDetails: variantDetails,
+        productType: product.productType || product.product_type || "product",
+        deliveryCharge: product.deliveryCharge || product.delivery_charge || product.metadata?.deliveryCharge || 0,
+      };
+
+      set({ buyNowItem, isBuyNowMode: true, error: null });
+      return buyNowItem;
+    } catch (error) {
+      console.error("Error setting buy now item:", error);
+      set({ error: error.message });
+      throw error;
+    }
+  },
+
+  // Clear Buy Now item (after successful checkout or cancellation)
+  clearBuyNowItem: () => {
+    set({ buyNowItem: null, isBuyNowMode: false });
+  },
+
+  // Get items for checkout (returns buyNowItem as array or cart items)
+  getCheckoutItems: () => {
+    const { buyNowItem, isBuyNowMode, cart } = get();
+    if (isBuyNowMode && buyNowItem) {
+      return [buyNowItem];
+    }
+    return cart.items || [];
+  },
+
+  // Get checkout summary (works for both cart and buy now)
+  getCheckoutSummary: () => {
+    const { buyNowItem, isBuyNowMode, cart } = get();
+    if (isBuyNowMode && buyNowItem) {
+      const totals = calculateCartTotals([buyNowItem]);
+      return {
+        items: [buyNowItem],
+        ...totals,
+      };
+    }
+    return {
+      items: cart.items || [],
+      totalItems: cart.totalItems || 0,
+      subtotal: cart.subtotal || 0,
+      discount: cart.discount || 0,
+      deliveryCharges: cart.deliveryCharges || 0,
+      platformFees: cart.platformFees || 0,
+      totalAmount: cart.totalAmount || 0,
+    };
+  },
 }));
 
 // Helper function to calculate cart totals
@@ -461,8 +624,22 @@ const calculateCartTotals = (items) => {
   // Calculate discount (20% for demo, but cap at reasonable amount)
   const discount = Math.min(subtotal * 0.2, 500);
 
-  // Free delivery for orders above 500
-  const deliveryCharges = subtotal > 500 ? 0 : 50;
+  // Calculate delivery charges based on product types
+  // Items with explicit delivery charges (bookset/uniform/stationary with deliveryCharge in metadata)
+  const itemsWithDeliveryCharge = items.filter(item => item.deliveryCharge > 0);
+
+  let deliveryCharges = 0;
+  if (itemsWithDeliveryCharge.length > 0) {
+    // Sum delivery charges from all items that have them (per item × quantity)
+    deliveryCharges = itemsWithDeliveryCharge.reduce(
+      (sum, item) => sum + ((item.deliveryCharge || 0) * (item.quantity || 1)),
+      0
+    );
+    // Items without delivery charge get FREE delivery when items with charges are present
+  } else {
+    // Only general products: apply ₹50 if total < ₹399, else FREE
+    deliveryCharges = subtotal < 399 ? 50 : 0;
+  }
 
   // Platform fees only if there are items
   const platformFees = subtotal > 0 ? 2 : 0;

@@ -133,6 +133,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/school" element={<SchoolViewPage />} />
           <Route path="/school/:id" element={<SchoolScreen />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/orders" element={<OrdersPage />} />

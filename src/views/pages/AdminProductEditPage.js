@@ -25,6 +25,7 @@ function AdminProductEditPage() {
     sku: "",
     productType: "bookset",
     basePrice: 0,
+    deliveryCharge: 0,
     currency: "INR",
     isActive: true,
     metadata: {},
@@ -159,6 +160,7 @@ function AdminProductEditPage() {
         sku: product.sku || "",
         productType: product.product_type || product.productType || "bookset", // Handle both field names
         basePrice: product.base_price || product.basePrice || 0, // Handle both field names
+        deliveryCharge: product.delivery_charge || product.deliveryCharge || 0, // Handle both field names
         currency: product.currency || "INR",
         city: product.city || "", // Add city field
         retailerId: product.retailer_id || product.retailerId, // Load retailer ID
@@ -616,6 +618,7 @@ function AdminProductEditPage() {
           sku: formData.sku,
           productType: formData.productType,
           basePrice: parseFloat(formData.basePrice),
+          deliveryCharge: parseFloat(formData.deliveryCharge) || 0,
           currency: formData.currency,
           city: formData.city, // Add city to payload
           isActive: formData.isActive,

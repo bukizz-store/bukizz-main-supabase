@@ -305,7 +305,7 @@ const SchoolScreen = () => {
         </div>
 
         {/* School Info Badge */}
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 text-sm">
+        {/* <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 text-sm">
           <div className="flex flex-col gap-1">
             <div>
               <span className="font-semibold">Board:</span>{" "}
@@ -320,7 +320,7 @@ const SchoolScreen = () => {
               {schoolData.isActive ? "Active" : "Inactive"}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* School Categories */}
@@ -358,7 +358,7 @@ const SchoolScreen = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-8 md:gap-12">
+          <div className="flex flex-wrap justify-center gap-6 md:gap-12">
             {selectedCategory === "School Uniform" ? (
               uniforms.map((uniform, idx) => (
                 <UniformCard key={idx} props={uniform} />

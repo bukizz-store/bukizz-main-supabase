@@ -50,8 +50,17 @@ function CheckoutPage() {
   });
 
   // Store integrations
-  const { cart, updateQuantity, removeFromCart, loadCart, clearCart } =
-    useCartStore();
+  const {
+    cart,
+    updateQuantity,
+    removeFromCart,
+    loadCart,
+    clearCart,
+    getCheckoutItems,
+    getCheckoutSummary,
+    isBuyNowMode,
+    clearBuyNowItem,
+  } = useCartStore();
   const {
     addresses,
     loading: addressLoading,
@@ -130,7 +139,11 @@ function CheckoutPage() {
         });
 
         // Success
-        clearCart();
+        if (isBuyNowMode) {
+          clearBuyNowItem();
+        } else {
+          clearCart();
+        }
         navigate(`/order-success/${order.id}`, {
           state: {
             order,
@@ -146,7 +159,11 @@ function CheckoutPage() {
 
         const order = currentOrderRef.current;
         if (order) {
-          clearCart();
+          if (isBuyNowMode) {
+            clearBuyNowItem();
+          } else {
+            clearCart();
+          }
           navigate(`/order-success/${order.id}`, {
             state: {
               order,
@@ -191,7 +208,7 @@ function CheckoutPage() {
       window.onNativePaymentSuccess = null;
       window.onNativePaymentFailure = null;
     };
-  }, [navigate, clearCart, verifyRazorpayPayment, reportPaymentFailure]);
+  }, [navigate, clearCart, clearBuyNowItem, isBuyNowMode, verifyRazorpayPayment, reportPaymentFailure, showNotification]);
 
   // Load cart and addresses on component mount
   useEffect(() => {
@@ -528,9 +545,9 @@ function CheckoutPage() {
   // Validate final order before placement
   const validateFinalOrder = () => {
     const errors = [];
-
-    // Check cart
-    if (!cart?.items || cart.items.length === 0) {
+    // Check cart/checkout items
+    const checkoutItems = getCheckoutItems();
+    if (!checkoutItems || checkoutItems.length === 0) {
       errors.push("Your cart is empty");
     }
 
@@ -591,9 +608,10 @@ function CheckoutPage() {
       setValidationErrors([]);
 
       const selectedAddress = getSelectedAddress();
+      const checkoutItems = getCheckoutItems();
 
       const orderData = {
-        cartItems: cart.items,
+        cartItems: checkoutItems,
         selectedAddress,
         paymentMethod,
         contactPhone: contactDetails.phone || selectedAddress.phone,
@@ -610,7 +628,11 @@ function CheckoutPage() {
 
       if (paymentMethod === "cod") {
         // COD Order - Success immediately
-        clearCart();
+        if (isBuyNowMode) {
+          clearBuyNowItem();
+        } else {
+          clearCart();
+        }
         navigate(`/order-success/${order.id}`, {
           state: {
             order,
@@ -651,7 +673,11 @@ function CheckoutPage() {
                 });
 
                 // Success
-                clearCart();
+                if (isBuyNowMode) {
+                  clearBuyNowItem();
+                } else {
+                  clearCart();
+                }
                 navigate(`/order-success/${order.id}`, {
                   state: {
                     order,
@@ -665,7 +691,11 @@ function CheckoutPage() {
                   type: "error",
                 });
                 // Navigate to order page anyway, status will be pending/failed
-                clearCart();
+                if (isBuyNowMode) {
+                  clearBuyNowItem();
+                } else {
+                  clearCart();
+                }
                 navigate(`/order-success/${order.id}`, {
                   state: {
                     order,
@@ -788,13 +818,22 @@ function CheckoutPage() {
     handlePlaceOrder();
   };
 
-  // Calculate cart totals
-  const cartSubtotal = cart?.items
-    ? cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    : 0;
-  const cartItemCount = cart?.items
-    ? cart.items.reduce((sum, item) => sum + item.quantity, 0)
-    : 0;
+  // Scroll to top when process state changes
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "instant"
+    });
+  }, [processState]);
+
+  // Get checkout items and summary (works for both cart and buy now)
+  const checkoutItems = getCheckoutItems();
+  const checkoutSummary = getCheckoutSummary();
+
+  // Calculate totals from checkout summary
+  const cartSubtotal = checkoutSummary.subtotal || 0;
+  const cartItemCount = checkoutSummary.totalItems || 0;
 
   // Get selected address
   const selectedAddress = getSelectedAddress();
@@ -803,7 +842,7 @@ function CheckoutPage() {
   const canProceedToNext = () => {
     switch (processState) {
       case 1:
-        return cart?.items?.length > 0;
+        return checkoutItems?.length > 0;
       case 2:
         return selectedAddressId && getSelectedAddress();
       case 3:
@@ -828,11 +867,11 @@ function CheckoutPage() {
   // Render empty cart state
   if (!cart?.items || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#F3F8FF] flex flex-col">
+      <div className=" bg-[#F3F8FF] flex flex-col">
         <SearchBar />
         <div className="container mx-auto px-4 py-4 flex-1 flex flex-col items-center justify-center">
-          <div className="flex flex-col items-center justify-center py-8 md:py-12">
-            <div className="mb-6 md:mb-8">
+          <div className="flex flex-col items-center justify-center py-4 md:py-8">
+            <div className="mb-4 md:mb-6">
               <img
                 src="/cart.svg"
                 alt="Empty Cart"
@@ -844,7 +883,7 @@ function CheckoutPage() {
             </h2>
             <button
               onClick={() => navigate("/")}
-              className="px-8 py-3 rounded-full border-2 border-[#3B82F6] text-[#3B82F6] font-semibold text-lg hover:bg-blue-50 transition-colors duration-300"
+              className="px-8 py-3 rounded-full border-2 border-[#0051A3] text-[#0051A3] font-semibold text-lg hover:bg-blue-50 transition-colors duration-300"
             >
               Keep Exploring
             </button>
@@ -856,40 +895,58 @@ function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SearchBar />
+      {/* <SearchBar /> */}
 
       {/* Progress Steps */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-2 md:gap-8">
+          <div className="flex flex-nowrap items-start justify-between relative max-w-3xl mx-auto">
+            {/* Progress Bar Lines - Absolute Positioned */}
+            <div className="absolute top-3 md:top-5 left-0 w-full h-[2px] bg-gray-200 translate-y-[-50%]" />
+            <div
+              className="absolute top-3 md:top-5 left-0 h-[2px] bg-[#3B82F6] transition-all duration-300 translate-y-[-50%]"
+              style={{
+                width: processState === 1 ? '0%' : processState === 2 ? '50%' : '100%'
+              }}
+            />
+
             {[
               { step: 1, label: "Review Order", icon: "1" },
               { step: 2, label: "Delivery Address", icon: "2" },
-              { step: 3, label: "Payment & Place Order", icon: "3" },
+              { step: 3, label: "Payment", icon: "3" },
             ].map(({ step, label, icon }) => (
-              <div key={step} className="flex flex-col md:flex-row items-center relative gap-2 md:gap-0">
+              <div key={step} className="flex flex-col items-center bg-white px-2 relative z-10">
                 <div
-                  className={`flex items-center justify-center w-6 h-6 md:w-10 md:h-10 rounded-full ${processState === step
-                    ? "bg-blue-500 text-white"
-                    : processState > step
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-gray-600"
+                  className={`flex items-center justify-center w-6 h-6 md:w-10 md:h-10 rounded-full transition-colors duration-300 border-2 ${processState >= step
+                    ? "bg-[#3B82F6] border-[#3B82F6] text-white"
+                    : "bg-white border-gray-200 text-gray-400"
                     }`}
                 >
-                  {processState > step ? "✓" : icon}
+                  {processState > step ? (
+                    <svg
+                      className="w-3 h-3 md:w-5 md:h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  ) : (
+                    <span className="text-[10px] md:text-base font-medium leading-none">{icon}</span>
+                  )}
                 </div>
                 <span
-                  className={`md:ml-3 text-[10px] md:text-sm font-medium text-center ${processState === step ? "text-blue-600" : "text-gray-600"
+                  className={`mt-2 text-[10px] md:text-sm font-medium text-center ${processState >= step ? "text-gray-900" : "text-gray-400"
                     }`}
                 >
                   {label}
                 </span>
-                {step < 3 && (
-                  <div
-                    className={`hidden md:block ml-8 w-8 h-0.5 ${processState > step ? "bg-green-500" : "bg-gray-200"
-                      }`}
-                  />
-                )}
               </div>
             ))}
           </div>
@@ -933,7 +990,7 @@ function CheckoutPage() {
 
                 {/* Cart Items */}
                 <div className="space-y-4">
-                  {cart.items.map((item) => (
+                  {checkoutItems.map((item) => (
                     <div
                       key={`${item.productId}-${item.variantId || "default"}`}
                       className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -1448,7 +1505,7 @@ function CheckoutPage() {
                       Items ({cartItemCount})
                     </h4>
                     <div className="space-y-3">
-                      {cart.items.map((item) => (
+                      {checkoutItems.map((item) => (
                         <div
                           key={`${item.productId}-${item.variantId || "default"
                             }`}

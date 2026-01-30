@@ -3,124 +3,233 @@ import { useNavigate } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
 import useCartStore from "../../store/cartStore";
 import useAuthStore from "../../store/authStore";
+import useNotificationStore from "../../store/notificationStore";
 
 function CartPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, setModalOpen } = useAuthStore();
+  const { showNotification } = useNotificationStore();
   const {
     cart,
     updateQuantity,
     removeFromCart,
-    clearCart,
     validateCartItems,
     loading,
     loadCart,
+    getCheckoutSummary,
+    setBuyNowItem,
   } = useCartStore();
 
   const [validationResults, setValidationResults] = useState(null);
+  const [expandedFees, setExpandedFees] = useState(false);
+  const [expandedDiscounts, setExpandedDiscounts] = useState(false);
   const failedImagesRef = useRef(new Set());
 
   useEffect(() => {
-    // Load cart from localStorage first
     loadCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, []);
 
   useEffect(() => {
-    // Validate cart items when component loads or cart changes
     if (cart?.items?.length > 0) {
       validateCartItems().then(setValidationResults);
     } else {
       setValidationResults(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart?.items?.length]); // Only validate when items length changes, not entire items array
+  }, [cart?.items?.length]);
 
-  const handleQuantityChange = (productId, variantId, newQuantity) => {
+  const handleQuantityChange = async (productId, variantId, newQuantity) => {
     if (newQuantity < 1) {
       handleRemoveItem(productId, variantId);
       return;
     }
-    updateQuantity(productId, variantId, newQuantity);
-  };
-
-  const handleRemoveItem = (productId, variantId) => {
-    removeFromCart(productId, variantId);
-  };
-
-  // Memoized image error handler to prevent infinite retry loops
-  const handleImageError = useCallback((e, imageSrc) => {
-    if (!imageSrc) return;
-
-    // Check if image already failed
-    if (failedImagesRef.current.has(imageSrc)) {
-      e.target.src = "/api/placeholder/80/80";
+    if (newQuantity > 1000) {
+      showNotification({
+        message: "Maximum quantity limit is 1000 per item",
+        type: "error"
+      });
       return;
     }
+    try {
+      await updateQuantity(productId, variantId, newQuantity);
+    } catch (error) {
+      showNotification({
+        message: "Failed to update cart. Please try again.",
+        type: "error"
+      });
+    }
+  };
 
-    // Mark as failed
+  const handleRemoveItem = async (productId, variantId) => {
+    try {
+      await removeFromCart(productId, variantId);
+      showNotification({
+        message: "Item removed from cart",
+        type: "success"
+      });
+    } catch (error) {
+      showNotification({
+        message: "Failed to remove item. Please try again.",
+        type: "error"
+      });
+    }
+  };
+
+  const handleImageError = useCallback((e, imageSrc) => {
+    if (!imageSrc) return;
+    if (failedImagesRef.current.has(imageSrc)) {
+      e.target.src = "/no-product-image.svg";
+      return;
+    }
     failedImagesRef.current.add(imageSrc);
-    e.target.src = "/api/placeholder/80/80";
+    e.target.src = "/no-product-image.svg";
   }, []);
 
-  // Get image source with fallback chain
   const getImageSrc = useCallback((item) => {
-    // Try multiple image sources
     if (item.image && item.image !== "/placeholder.jpg") {
       return item.image;
     }
-
     if (item.productDetails?.images?.[0]?.url) {
       return item.productDetails.images[0].url;
     }
-
     if (item.variantDetails?.image) {
       return item.variantDetails.image;
     }
-
-    return "/api/placeholder/80/80";
+    return "/no-product-image.svg";
   }, []);
 
   const getVariantDisplayText = (item) => {
+    if (item.variantOptions && item.variantOptions.length > 0) {
+      return item.variantOptions
+        .map((option) => option.value)
+        .join(", ");
+    }
     if (!item.variantDetails) return null;
-
-    // Try different ways to get variant description
     if (item.variantDetails.variantDescription) {
       return item.variantDetails.variantDescription;
     }
-
     if (item.variantDetails.optionValues) {
       const options = Object.values(item.variantDetails.optionValues)
         .filter((option) => option && option.value)
         .map((option) => option.value);
-      return options.length > 0 ? options.join(" • ") : null;
+      return options.length > 0 ? options.join(", ") : null;
     }
-
     return null;
   };
 
-  const handleProceedToCheckout = () => {
+  const handlePlaceOrder = () => {
     if (!isAuthenticated) {
-      navigate("/login");
+      setModalOpen(true);
       return;
     }
-
-    // Validate cart before proceeding
     if (validationResults && !validationResults.isValid) {
-      alert("Please fix cart issues before proceeding to checkout.");
+      showNotification({
+        message: "Please fix cart issues before proceeding to checkout.",
+        type: "error"
+      });
       return;
     }
-
     navigate("/checkout");
   };
 
-  const formatPrice = (price) => {
-    return typeof price === "number" ? price.toFixed(2) : "0.00";
+  const handleBuyNow = (item) => {
+    if (!isAuthenticated) {
+      setModalOpen(true);
+      return;
+    }
+
+    try {
+      // Create product and variant objects from cart item for setBuyNowItem
+      const product = {
+        id: item.productId,
+        title: item.title,
+        sku: item.sku,
+        productType: item.productType,
+        basePrice: item.price,
+        base_price: item.price,
+        images: item.image ? [{ url: item.image, isPrimary: true }] : [],
+        metadata: item.productDetails?.metadata || {},
+        deliveryCharge: item.deliveryCharge || 0,
+      };
+
+      const variant = item.variantDetails ? {
+        id: item.variantId,
+        sku: item.variantDetails.sku,
+        price: item.price,
+        compare_at_price: item.originalPrice,
+        stock: item.variantDetails.stock,
+        image: item.variantDetails.image,
+        option_value_1_ref: item.variantDetails.optionValues?.option1 ? {
+          id: item.variantDetails.optionValues.option1.id,
+          value: item.variantDetails.optionValues.option1.value,
+          attribute_name: item.variantDetails.optionValues.option1.attributeName,
+          price_modifier: item.variantDetails.optionValues.option1.priceModifier || 0,
+        } : null,
+        option_value_2_ref: item.variantDetails.optionValues?.option2 ? {
+          id: item.variantDetails.optionValues.option2.id,
+          value: item.variantDetails.optionValues.option2.value,
+          attribute_name: item.variantDetails.optionValues.option2.attributeName,
+          price_modifier: item.variantDetails.optionValues.option2.priceModifier || 0,
+        } : null,
+        option_value_3_ref: item.variantDetails.optionValues?.option3 ? {
+          id: item.variantDetails.optionValues.option3.id,
+          value: item.variantDetails.optionValues.option3.value,
+          attribute_name: item.variantDetails.optionValues.option3.attributeName,
+          price_modifier: item.variantDetails.optionValues.option3.priceModifier || 0,
+        } : null,
+      } : null;
+
+      // Set this item as Buy Now item (bypasses rest of cart)
+      setBuyNowItem(product, variant, item.quantity);
+      navigate("/checkout");
+    } catch (error) {
+      console.error("Error with Buy Now:", error);
+      showNotification({
+        message: "Failed to proceed with Buy Now. Please try again.",
+        type: "error"
+      });
+    }
   };
+
+  // Helper function to get delivery date (estimating 3-5 days from now)
+  const getDeliveryDate = () => {
+    const today = new Date();
+    const deliveryDate = new Date(today.setDate(today.getDate() + 4));
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return deliveryDate.toLocaleDateString('en-IN', options);
+  };
+
+  // Calculate discount percentage
+  const getDiscountPercentage = (originalPrice, price) => {
+    if (!originalPrice || originalPrice <= price) return 0;
+    return Math.round(((originalPrice - price) / originalPrice) * 100);
+  };
+
+  // Get stock status
+  const getStockStatus = (item) => {
+    const stock = item.variantDetails?.stock || item.stock;
+    if (stock === 0) return { text: "Out of Stock", color: "text-red-600" };
+    if (stock && stock <= 5) return { text: `Only ${stock} left`, color: "text-orange-500" };
+    return null;
+  };
+
+  // Get checkout summary
+  const summary = getCheckoutSummary();
+
+  // Calculate MRP (total original prices)
+  const totalMRP = cart?.items?.reduce((sum, item) => {
+    const originalPrice = item.originalPrice || item.price;
+    return sum + (originalPrice * item.quantity);
+  }, 0) || 0;
+
+  // Calculate total savings
+  const totalSavings = totalMRP - (summary.totalAmount || 0);
+  const fees = (summary.platformFees || 0) + (summary.deliveryCharges || 0);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F3F8FF] flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <SearchBar />
         <div className="flex justify-center items-center flex-1">
           <div className="text-center">
@@ -133,303 +242,298 @@ function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F3F8FF] flex flex-col">
-      <SearchBar />
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Shopping Cart</h1>
-          {cart?.items?.length > 0 && (
-            <button
-              onClick={clearCart}
-              className="text-red-600 hover:text-red-800 font-medium"
-            >
-              Clear Cart
-            </button>
-          )}
+    <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <h1 className="text-xl font-semibold text-gray-900">My Cart</h1>
         </div>
+      </div>
 
-        {!cart?.items || cart.items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 md:py-20">
-            <div className="mb-6 md:mb-8">
-              <img
-                src="/cart.svg"
-                alt="Empty Cart"
-                className="w-48 h-48 md:w-64 md:h-64 object-contain"
-              />
+      {/* Empty Cart State */}
+      {!cart?.items || cart.items.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-12 px-4">
+          <div className="mb-6">
+            <img
+              src="/cart.svg"
+              alt="Empty Cart"
+              className="w-48 h-48 object-contain"
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-[#0051A3] mb-8 text-center">
+            You Study, We Deliver
+          </h2>
+          <button
+            onClick={() => navigate("/")}
+            className="px-8 py-3 rounded-full border-2 border-[#0051A3] text-[#0051A3] font-semibold text-lg hover:bg-blue-50 transition-colors duration-300"
+          >
+            Keep Exploring
+          </button>
+        </div>
+      ) : (
+        <div className="flex-1 max-w-2xl mx-auto w-full">
+          {/* Cart Items */}
+          <div className="space-y-3 p-4">
+            {cart.items.map((item) => {
+              const discountPercent = getDiscountPercentage(item.originalPrice, item.price);
+              const stockStatus = getStockStatus(item);
+              const variantText = getVariantDisplayText(item);
+
+              return (
+                <div
+                  key={item.id || `${item.productId}-${item.variantId}`}
+                  className="bg-white rounded-lg p-4 shadow-sm"
+                >
+                  {/* Product Info Row */}
+                  <div className="flex gap-3">
+                    {/* Product Image */}
+                    <div className="flex-shrink-0">
+                      <img
+                        src={getImageSrc(item)}
+                        alt={item.title || "Product"}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                        onError={(e) => handleImageError(e, item.image)}
+                      />
+                    </div>
+
+                    {/* Product Details */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2">
+                        {item.title || "Product Title"}
+                      </h3>
+
+                      {variantText && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {variantText}
+                        </p>
+                      )}
+
+                      {/* Price Row */}
+                      <div className="flex items-center gap-2 mt-2">
+                        {discountPercent > 0 && (
+                          <span className="text-green-600 text-sm font-medium">
+                            ↓{discountPercent}%
+                          </span>
+                        )}
+                        {item.originalPrice && item.originalPrice > item.price && (
+                          <span className="text-gray-400 text-sm line-through">
+                            ₹{item.originalPrice.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                        <span className="font-semibold text-gray-900">
+                          ₹{item.price.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quantity Selector */}
+                  <div className="flex items-center gap-1 mt-3">
+                    <button
+                      onClick={() =>
+                        handleQuantityChange(
+                          item.productId,
+                          item.variantId,
+                          item.quantity - 1
+                        )
+                      }
+                      className="w-7 h-7 flex items-center justify-center bg-[#3B82F6] text-white rounded font-medium text-lg"
+                      disabled={item.quantity <= 1}
+                    >
+                      −
+                    </button>
+                    <span className="w-8 text-center font-medium text-sm">
+                      {item.quantity || 1}
+                    </span>
+                    <button
+                      onClick={() =>
+                        handleQuantityChange(
+                          item.productId,
+                          item.variantId,
+                          item.quantity + 1
+                        )
+                      }
+                      className="w-7 h-7 flex items-center justify-center bg-[#3B82F6] text-white rounded font-medium text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Delivery Info and Stock Status */}
+                  <div className="flex items-center justify-between mt-3 text-sm">
+                    <span className="text-gray-600">
+                      Delivery by {getDeliveryDate()}
+                    </span>
+                    {stockStatus && (
+                      <span className={`font-medium ${stockStatus.color}`}>
+                        {stockStatus.text}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 mt-4 pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => handleRemoveItem(item.productId, item.variantId)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Remove
+                    </button>
+                    <button
+                      onClick={() => handleBuyNow(item)}
+                      className="flex-1 flex items-center justify-center gap-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors"
+                    >
+                      Buy Now
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Price Summary Section */}
+          <div className="bg-white mx-4 rounded-lg shadow-sm p-4 mt-4">
+            {/* MRP */}
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-700">MRP</span>
+              <span className="text-gray-900">₹{totalMRP.toLocaleString('en-IN')}</span>
             </div>
-            <h2 className="text-2xl md:text-4xl font-bold text-[#0051A3] mb-8 md:mb-12 text-center tracking-tight">
-              You Study, We Deliver
-            </h2>
+
+            {/* Fees */}
+            <div className="flex justify-between items-center py-2 border-t border-gray-100">
+              <button
+                onClick={() => setExpandedFees(!expandedFees)}
+                className="flex items-center gap-1 text-gray-700"
+              >
+                Fees
+                <svg
+                  className={`w-4 h-4 transition-transform ${expandedFees ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <span className="text-gray-900">₹{fees.toLocaleString('en-IN')}</span>
+            </div>
+            {expandedFees && (
+              <div className="pl-4 text-sm text-gray-500 pb-2">
+                <div className="flex justify-between">
+                  <span>Platform Fee</span>
+                  <span>₹{(summary.platformFees || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delivery Charges</span>
+                  <span>{summary.deliveryCharges === 0 ? 'FREE' : `₹${summary.deliveryCharges}`}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Discounts */}
+            <div className="flex justify-between items-center py-2 border-t border-gray-100">
+              <button
+                onClick={() => setExpandedDiscounts(!expandedDiscounts)}
+                className="flex items-center gap-1 text-gray-700"
+              >
+                Discounts
+                <svg
+                  className={`w-4 h-4 transition-transform ${expandedDiscounts ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <span className="text-green-600 font-medium">
+                -₹{(summary.discount || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+            {expandedDiscounts && (
+              <div className="pl-4 text-sm text-gray-500 pb-2">
+                <div className="flex justify-between">
+                  <span>Product Discount</span>
+                  <span className="text-green-600">-₹{(summary.discount || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Total Amount */}
+            <div className="flex justify-between items-center py-3 border-t border-gray-200 mt-2">
+              <span className="font-semibold text-gray-900">Total Amount</span>
+              <span className="font-bold text-gray-900 text-lg">
+                ₹{(summary.totalAmount || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+
+            {/* Savings Banner */}
+            {totalSavings > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg py-3 px-4 text-center mt-3">
+                <span className="text-yellow-800 font-medium">
+                  You will save ₹{totalSavings.toLocaleString('en-IN')} on this order
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Trust Badge */}
+          <div className="flex items-center gap-3 mx-4 py-6 text-gray-600 text-sm">
+            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>
+              Safe and secure payments. Easy returns.
+              <br />
+              100% Authentic products.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Bottom Bar */}
+      {cart?.items?.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-20">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            {/* Price Info */}
+            <div className="flex flex-col">
+              {totalMRP > summary.totalAmount && (
+                <span className="text-gray-400 text-sm line-through">
+                  {totalMRP.toLocaleString('en-IN')}
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-lg text-gray-900">
+                  ₹{(summary.totalAmount || 0).toLocaleString('en-IN')}
+                </span>
+                <button className="text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Place Order Button */}
             <button
-              onClick={() => navigate("/")}
-              className="px-8 py-3 rounded-full border-2 border-[#3B82F6] text-[#3B82F6] font-semibold text-lg hover:bg-blue-50 transition-colors duration-300"
+              onClick={handlePlaceOrder}
+              disabled={validationResults && !validationResults.isValid}
+              className={`px-8 py-3 rounded-lg font-semibold text-base transition-colors ${validationResults && !validationResults.isValid
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-[#3B82F6] hover:bg-[#2563eb] text-white"
+                }`}
             >
-              Keep Exploring
+              Place order
             </button>
           </div>
-        ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Cart Items */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    Cart Items ({cart.totalItems || 0})
-                  </h2>
-
-                  {/* Validation Results */}
-                  {validationResults && !validationResults.isValid && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                      <h3 className="font-medium text-yellow-800 mb-2">
-                        ⚠️ Cart Issues Found:
-                      </h3>
-                      {validationResults.results.map((result, idx) =>
-                        result.issues.map((issue, issueIdx) => (
-                          <p
-                            key={`${idx}-${issueIdx}`}
-                            className="text-sm text-yellow-700"
-                          >
-                            • {issue.message}
-                          </p>
-                        ))
-                      )}
-                    </div>
-                  )}
-
-                  <div className="space-y-6">
-                    {cart.items.map((item) => (
-                      <div
-                        key={item.id || `${item.productId}-${item.variantId}`}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex gap-4">
-                          {/* Product Image */}
-                          <div className="flex-shrink-0">
-                            <img
-                              src={getImageSrc(item)}
-                              alt={item.title || "Product"}
-                              className="w-20 h-20 object-cover rounded-lg border"
-                              onError={(e) => handleImageError(e, item.image)}
-                            />
-                          </div>
-
-                          {/* Product Details */}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-800 text-lg mb-1">
-                              {item.title || "Product Title"}
-                            </h3>
-
-                            <p className="text-sm text-gray-600 capitalize mb-2">
-                              {item.productType || "Product"}
-                            </p>
-
-                            {/* SKU */}
-                            {item.sku && (
-                              <p className="text-xs text-gray-500 mb-2">
-                                SKU: {item.sku}
-                              </p>
-                            )}
-
-                            {/* Variant Details */}
-                            {item.variantDetails && (
-                              <div className="mb-3">
-                                {getVariantDisplayText(item) && (
-                                  <p className="text-sm font-medium text-blue-800 mb-1">
-                                    {getVariantDisplayText(item)}
-                                  </p>
-                                )}
-
-                                {item.variantDetails.optionValues && (
-                                  <div className="flex flex-wrap gap-1 mb-2">
-                                    {Object.entries(
-                                      item.variantDetails.optionValues
-                                    ).map(
-                                      ([key, option]) =>
-                                        option &&
-                                        option.value && (
-                                          <span
-                                            key={key}
-                                            className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
-                                          >
-                                            {option.value}
-                                          </span>
-                                        )
-                                    )}
-                                  </div>
-                                )}
-
-                                {item.variantDetails.stock !== undefined && (
-                                  <p className="text-xs text-gray-500">
-                                    Stock:{" "}
-                                    {item.variantDetails.stock ||
-                                      "Out of Stock"}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Price */}
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-lg text-green-600">
-                                ₹{formatPrice(item.price)}
-                              </span>
-                              {item.originalPrice &&
-                                item.originalPrice > item.price && (
-                                  <span className="text-sm text-gray-500 line-through">
-                                    ₹{formatPrice(item.originalPrice)}
-                                  </span>
-                                )}
-                            </div>
-                          </div>
-
-                          {/* Quantity Controls and Actions */}
-                          <div className="flex flex-col items-end gap-3">
-                            {/* Remove Button */}
-                            <button
-                              onClick={() =>
-                                handleRemoveItem(item.productId, item.variantId)
-                              }
-                              className="text-red-500 hover:text-red-700 p-1"
-                              title="Remove item"
-                            >
-                              <svg
-                                className="w-5 h-5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </button>
-
-                            {/* Quantity Controls */}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() =>
-                                  handleQuantityChange(
-                                    item.productId,
-                                    item.variantId,
-                                    item.quantity - 1
-                                  )
-                                }
-                                className="w-8 h-8 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
-                                disabled={item.quantity <= 1}
-                              >
-                                −
-                              </button>
-                              <span className="w-12 text-center font-medium">
-                                {item.quantity || 1}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  handleQuantityChange(
-                                    item.productId,
-                                    item.variantId,
-                                    item.quantity + 1
-                                  )
-                                }
-                                className="w-8 h-8 border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
-                                disabled={
-                                  item.variantDetails?.stock &&
-                                  item.quantity >= item.variantDetails.stock
-                                }
-                              >
-                                +
-                              </button>
-                            </div>
-
-                            {/* Item Total */}
-                            <div className="text-right">
-                              <p className="font-semibold text-lg">
-                                ₹{formatPrice(item.price * item.quantity)}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                ₹{formatPrice(item.price)} each
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Cart Summary */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-                <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Subtotal ({cart.totalItems || 0} items)</span>
-                    <span>₹{formatPrice(cart.subtotal)}</span>
-                  </div>
-
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span>-₹{formatPrice(cart.discount)}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span>Delivery Charges</span>
-                    <span>
-                      {cart.deliveryCharges === 0 ? (
-                        <span className="text-green-600">FREE</span>
-                      ) : (
-                        `₹${formatPrice(cart.deliveryCharges)}`
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-sm">
-                    <span>Platform Fees</span>
-                    <span>₹{formatPrice(cart.platformFees)}</span>
-                  </div>
-
-                  <div className="border-t pt-3">
-                    <div className="flex justify-between font-semibold text-lg">
-                      <span>Total Amount</span>
-                      <span className="text-green-600">
-                        ₹{formatPrice(cart.totalAmount)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleProceedToCheckout}
-                  disabled={
-                    !validationResults?.isValid && validationResults !== null
-                  }
-                  className={`w-full mt-6 py-3 px-4 rounded-lg font-medium transition-colors ${!validationResults?.isValid && validationResults !== null
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600 text-white"
-                    }`}
-                >
-                  {!validationResults?.isValid && validationResults !== null
-                    ? "Fix Cart Issues First"
-                    : "Proceed to Checkout"}
-                </button>
-
-                <div className="mt-4 text-center">
-                  <button
-                    onClick={() => navigate("/")}
-                    className="text-blue-500 hover:text-blue-700 font-medium"
-                  >
-                    Continue Shopping
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,11 +11,25 @@ import {
 } from "lucide-react";
 import useAuthStore from "../../store/authStore";
 import useUIStore from "../../store/uiStore";
+import { useEffect } from "react";
 
 const MobileSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
     const { user, logout, setModalOpen, setRedirectPath } = useAuthStore();
     const { openCityPopup } = useUIStore();
+
+    // Prevent body scroll when sidebar is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
 
     const handleNavigation = (path) => {
         // Protected routes that require login
