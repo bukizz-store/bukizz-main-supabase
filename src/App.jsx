@@ -9,13 +9,10 @@ import CheckoutPage from "./views/pages/CheckoutPage";
 import OrderConfirmationPage from "./views/pages/OrderConfirmationPage";
 import OrdersPage from "./views/pages/OrdersPage";
 import ProductViewPage from "./views/pages/ProductViewPage";
-import AdminProductPage from "./views/pages/AdminProductPage";
-import AdminProductEditPage from "./views/pages/AdminProductEditPage";
-import ProductListPage from "./views/pages/ProductListPage";
 import CategoryProductsPage from "./views/pages/CategoryProductsPage";
 import ProfilePage from "./views/pages/ProfilePage";
 import MyCityPage from "./views/pages/MyCityPage";
-import AdminCategoryPage from "./views/pages/AdminCategoryPage";
+
 import CategoryPage from "./views/pages/CategoryPage";
 import VerifyEmailPage from "./views/pages/VerifyEmailPage";
 
@@ -35,6 +32,7 @@ import useAuthStore from "./store/authStore";
 import CitySelectionPopup from "./components/Common/CitySelectionPopup";
 
 import useUIStore from "./store/uiStore";
+import { supabase } from "./store/supabaseClient";
 
 // Main App Component
 function App() {
@@ -47,11 +45,26 @@ function App() {
   const { handleGoogleCallback } = useAuthStore();
 
   useEffect(() => {
-    // Handle Google OAuth callback
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-      handleGoogleCallback();
-    }
+    // Listen for auth state changes from Supabase
+    // This handles the redirect flow more reliably than manually checking the hash
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Supabase Auth Event:", event);
 
+      if (event === 'SIGNED_IN' && session) {
+        console.log("User signed in via Supabase, triggering backend sync...");
+        // Check if this is a Google login callback (usually has provider_token or just by context of being a redirect)
+        // For simplicity and robustness, we always ensure backend verification on SIGNED_IN if we don't have a backend token
+        await handleGoogleCallback(session);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [handleGoogleCallback]);
+
+
+  useEffect(() => {
     // Check localStorage or URL params for mobile app indicator
     const checkMobileApp = () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -143,14 +156,8 @@ function App() {
           <Route path="/product" element={<ProductViewPage />} />
           <Route path="/product/:id" element={<ProductViewPage />} />
           <Route path="/products" element={<CategoryProductsPage />} />
-          <Route path="/admin/products" element={<AdminProductPage />} />
-          <Route path="/admin/products/list" element={<ProductListPage />} />
-          <Route path="/admin/categories" element={<AdminCategoryPage />} />
           <Route path="/category" element={<CategoryPage />} />
-          <Route
-            path="/admin/products/edit/:id"
-            element={<AdminProductEditPage />}
-          />
+
 
           <Route path="/contact-us" element={<ContactUsPage />} />
           <Route path="/payment-policy" element={<PaymentPolicyPage />} />

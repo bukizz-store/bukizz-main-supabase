@@ -349,17 +349,27 @@ const useAuthStore = create(
         }
       },
 
-      handleGoogleCallback: async () => {
+      handleGoogleCallback: async (session = null) => {
         set({ loading: true });
-        try {
-          // 1. Get Supabase session
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        console.log("handleGoogleCallback initiated", { hasSessionProvided: !!session });
 
-          if (sessionError || !session) {
-            // No session found, maybe not a callback or error
-            set({ loading: false });
-            return;
+        try {
+          let activeSession = session;
+
+          if (!activeSession) {
+            console.log("No session provided, fetching from Supabase...");
+            // 1. Get Supabase session
+            const { data, error: sessionError } = await supabase.auth.getSession();
+            activeSession = data?.session;
+
+            if (sessionError || !activeSession) {
+              console.error("Supabase session error or no session found:", sessionError);
+              set({ loading: false });
+              return;
+            }
           }
+
+          console.log("Active session found, exchanging with backend...");
 
           const apiRoutes = useApiRoutesStore.getState();
 
@@ -367,7 +377,7 @@ const useAuthStore = create(
           const response = await fetch(apiRoutes.auth.googleLogin, {
             method: "POST",
             headers: apiRoutes.getBasicHeaders(),
-            body: JSON.stringify({ token: session.access_token }),
+            body: JSON.stringify({ token: activeSession.access_token }),
           });
 
           if (!response.ok) {
@@ -376,6 +386,7 @@ const useAuthStore = create(
           }
 
           const data = await response.json();
+          console.log("Backend exchange successful");
 
           // 3. Store Backend Tokens
           const tokens = data.data || data;
@@ -393,14 +404,22 @@ const useAuthStore = create(
             set({ user, loading: false, error: null, isModalOpen: false });
           }
 
+          // Clear URL fragment params to prevent loop
+          if (window.location.hash) {
+            console.log("Cleaning up URL hash");
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+
           // Optional: Sign out from Supabase if we only want to keep backend session
           // await supabase.auth.signOut();
 
         } catch (error) {
           console.error("Google Callback Error:", error);
           set({ loading: false, error: error.message });
-          // Clear URL fragment params to prevent loop or confuse user
-          window.history.replaceState(null, '', window.location.pathname);
+          // Clear URL fragment params to prevent loop or confuse user even on error
+          if (window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
         }
       },
 

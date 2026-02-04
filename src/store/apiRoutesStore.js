@@ -65,16 +65,7 @@ const useApiRoutesStore = create((set, get) => ({
     // Account management
     deactivateAccount: `${BASE_URL}/users/account`,
 
-    // Admin routes (if needed)
-    admin: {
-      search: `${BASE_URL}/users/admin/search`,
-      export: `${BASE_URL}/users/admin/export`,
-      getUserById: (userId) => `${BASE_URL}/users/admin/${userId}`,
-      updateRole: (userId) => `${BASE_URL}/users/admin/${userId}/role`,
-      reactivateAccount: (userId) =>
-        `${BASE_URL}/users/admin/${userId}/reactivate`,
-      bulkUpdate: `${BASE_URL}/users/bulk-update`,
-    },
+
 
     // Legacy endpoints (for existing code compatibility)
     legacy: {
@@ -112,27 +103,7 @@ const useApiRoutesStore = create((set, get) => ({
     variantSearch: `${BASE_URL}/products/variants/search`,
     getVariant: (variantId) => `${BASE_URL}/products/variants/${variantId}`,
 
-    // Admin routes (for product management)
-    admin: {
-      create: `${BASE_URL}/products`,
-      update: (productId) => `${BASE_URL}/products/${productId}`,
-      updateComprehensive: (productId) =>
-        `${BASE_URL}/products/${productId}/comprehensive`,
-      delete: (productId) => `${BASE_URL}/products/${productId}`,
-      bulkUpdate: `${BASE_URL}/products/bulk-update`,
-      addOption: (productId) => `${BASE_URL}/products/${productId}/options`,
-      addOptionValue: (attributeId) =>
-        `${BASE_URL}/products/options/${attributeId}/values`,
-      createVariant: (productId) =>
-        `${BASE_URL}/products/${productId}/variants`,
-      updateVariant: (variantId) =>
-        `${BASE_URL}/products/variants/${variantId}`,
-      deleteVariant: (variantId) =>
-        `${BASE_URL}/products/variants/${variantId}`,
-      updateVariantStock: (variantId) =>
-        `${BASE_URL}/products/variants/${variantId}/stock`,
-      bulkUpdateVariantStock: `${BASE_URL}/products/variants/bulk-stock-update`,
-    },
+
   },
 
   // ============ SCHOOL ROUTES ============
@@ -154,26 +125,7 @@ const useApiRoutesStore = create((set, get) => ({
     // Utility endpoints
     validate: `${BASE_URL}/schools/validate`,
 
-    // Admin routes (for school management)
-    admin: {
-      create: `${BASE_URL}/schools`,
-      update: (schoolId) => `${BASE_URL}/schools/${schoolId}`,
-      delete: (schoolId) => `${BASE_URL}/schools/${schoolId}`,
-      reactivate: (schoolId) => `${BASE_URL}/schools/${schoolId}/reactivate`,
-      bulkImport: `${BASE_URL}/schools/bulk-import`,
 
-      // Product associations
-      associateProduct: (schoolId, productId) =>
-        `${BASE_URL}/schools/${schoolId}/products/${productId}`,
-      updateProductAssociation: (schoolId, productId, grade) =>
-        `${BASE_URL}/schools/${schoolId}/products/${productId}/${grade}`,
-      removeProductAssociation: (schoolId, productId) =>
-        `${BASE_URL}/schools/${schoolId}/products/${productId}`,
-
-      // Partnerships
-      createPartnership: (schoolId) =>
-        `${BASE_URL}/schools/${schoolId}/partnerships`,
-    },
   },
 
   // ============ CATEGORY ROUTES ============
@@ -182,12 +134,7 @@ const useApiRoutesStore = create((set, get) => ({
     getById: (id) => `${BASE_URL}/categories/${id}`,
     getBySlug: (slug) => `${BASE_URL}/categories/slug/${slug}`,
 
-    // Admin routes
-    admin: {
-      create: `${BASE_URL}/categories`,
-      update: (id) => `${BASE_URL}/categories/${id}`,
-      delete: (id) => `${BASE_URL}/categories/${id}`,
-    }
+
   },
 
   // ============ PINCODE ROUTES ============
@@ -218,13 +165,7 @@ const useApiRoutesStore = create((set, get) => ({
     cart: `${BASE_URL}/orders/cart`,
     addToCart: `${BASE_URL}/orders/cart/items`,
 
-    // Admin routes
-    admin: {
-      search: `${BASE_URL}/orders/search`,
-      updateStatus: (orderId) => `${BASE_URL}/orders/${orderId}/status`,
-      updatePayment: (orderId) => `${BASE_URL}/orders/${orderId}/payment`,
-      bulkUpdate: `${BASE_URL}/orders/bulk-update`,
-    },
+
   },
 
   // ============ PAYMENT ROUTES ============
