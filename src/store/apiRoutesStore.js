@@ -13,7 +13,7 @@ const getBaseUrl = () => {
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return "http://localhost:5001";
     }
-    return "https://bukizz.in";
+    return `${window.location.origin}`;
   }
   return "https://bukizz.in";
 };
