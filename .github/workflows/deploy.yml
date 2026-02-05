@@ -1,4 +1,4 @@
-name: DigitalOcean VPS
+name: Hostinger VPS
 
 on:
   push:
@@ -19,13 +19,15 @@ jobs:
         port: 22
         script: |
           # 1. Go to the project folder
-          cd ~/user_app
+          cd ~/bukizz-main-supabase
 
           # 2. Pull the latest code from GitHub
           git pull origin main
 
           # 3. Install dependencies and Build
           # (We use --force sometimes if there are version conflicts)
+          npm install
+          npm run build
 
           # 4. Copy the new build to the public Nginx folder
           # (We don't need sudo because we changed ownership in Step 1)
