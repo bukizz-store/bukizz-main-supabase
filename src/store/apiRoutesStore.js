@@ -13,6 +13,10 @@ const getBaseUrl = () => {
     if (hostname === "localhost" || hostname === "127.0.0.1") {
       return "http://localhost:5001";
     }
+    // Check for local network IP
+    if (hostname.startsWith("192.168.") || hostname.startsWith("10.")) {
+      return `http://${hostname}:5001`;
+    }
     return `${window.location.origin}`;
   }
   return "https://bukizz.in";
@@ -149,6 +153,7 @@ const useApiRoutesStore = create((set, get) => ({
     create: `${BASE_URL}/orders`,
     getById: (orderId) => `${BASE_URL}/orders/${orderId}`,
     cancel: (orderId) => `${BASE_URL}/orders/${orderId}/cancel`,
+    cancelItem: (orderId, itemId) => `${BASE_URL}/orders/${orderId}/items/${itemId}/cancel`,
 
     // Order utilities
     calculate: `${BASE_URL}/orders/calculate`,
@@ -164,6 +169,9 @@ const useApiRoutesStore = create((set, get) => ({
     // Cart management
     cart: `${BASE_URL}/orders/cart`,
     addToCart: `${BASE_URL}/orders/cart/items`,
+
+    // Order Item Management
+    updateItemStatus: (orderId, itemId) => `${BASE_URL}/orders/${orderId}/items/${itemId}/status`,
 
 
   },

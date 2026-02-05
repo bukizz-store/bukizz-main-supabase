@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import useAddressStore from "../../store/addressStore";
 import useAuthStore from "../../store/authStore";
 import useNotificationStore from "../../store/notificationStore";
+import MobileMapAddressPicker from "../Address/MobileMapAddressPicker";
 
 const AddressManager = () => {
     const {
@@ -21,6 +22,8 @@ const AddressManager = () => {
 
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
+    const [showMobileMapPicker, setShowMobileMapPicker] = useState(false);
+    const [isMobileApp, setIsMobileApp] = useState(false);
 
     const [addressForm, setAddressForm] = useState({
         label: "Home",
@@ -38,6 +41,20 @@ const AddressManager = () => {
     useEffect(() => {
         fetchAddresses();
     }, [fetchAddresses]);
+
+    // Detect mobile app environment or mobile screen size
+    useEffect(() => {
+        const checkMobile = () => {
+            const isApp = localStorage.getItem("isMobileApp") === "true" ||
+                window.location.search.includes("mode=webview");
+            const isMobileScreen = window.innerWidth < 768;
+            setIsMobileApp(isApp || isMobileScreen);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const handleFormChange = (field, value) => {
         setAddressForm((prev) => ({
@@ -182,11 +199,27 @@ const AddressManager = () => {
 
     return (
         <div className="bg-white rounded-lg shadow-sm p-8">
+            {/* Mobile Map Address Picker */}
+            {showMobileMapPicker && (
+                <MobileMapAddressPicker
+                    onClose={() => setShowMobileMapPicker(false)}
+                    onAddressSelect={() => {
+                        setShowMobileMapPicker(false);
+                        fetchAddresses(); // Refresh address list
+                    }}
+                />
+            )}
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Manage Addresses</h2>
                 {!showAddressForm && (
                     <button
-                        onClick={() => setShowAddressForm(true)}
+                        onClick={() => {
+                            if (isMobileApp) {
+                                setShowMobileMapPicker(true);
+                            } else {
+                                setShowAddressForm(true);
+                            }
+                        }}
                         className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                         + Add New Address
@@ -394,10 +427,10 @@ const AddressManager = () => {
                                     <div className="flex items-center space-x-3 mb-2">
                                         <span
                                             className={`px-2 py-1 rounded text-xs font-medium ${address.label === "Home"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : address.label === "Work"
-                                                        ? "bg-blue-100 text-blue-800"
-                                                        : "bg-gray-100 text-gray-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : address.label === "Work"
+                                                    ? "bg-blue-100 text-blue-800"
+                                                    : "bg-gray-100 text-gray-800"
                                                 }`}
                                         >
                                             {address.label}

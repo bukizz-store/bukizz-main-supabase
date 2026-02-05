@@ -1,0 +1,654 @@
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
+import useAddressStore from "../../store/addressStore";
+import useNotificationStore from "../../store/notificationStore";
+import useAuthStore from "../../store/authStore";
+import "./MobileMapAddressPicker.css";
+
+const libraries = ["places"];
+
+const defaultCenter = {
+    lat: 26.4499,
+    lng: 80.3319, // Kanpur, India
+};
+
+const mapContainerStyle = {
+    width: "100%",
+    height: "100%",
+};
+
+const mapOptions = {
+    disableDefaultUI: true,
+    zoomControl: false,
+    streetViewControl: false,
+    mapTypeControl: false,
+    fullscreenControl: false,
+    gestureHandling: "greedy",
+    clickableIcons: false,
+};
+
+const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false }) => {
+    const [step, setStep] = useState("prompt"); // prompt, map, form
+    const [mapCenter, setMapCenter] = useState(defaultCenter);
+    const [selectedAddress, setSelectedAddress] = useState(null);
+    const [isGeocodingLoading, setIsGeocodingLoading] = useState(false);
+    const [userLocation, setUserLocation] = useState(null);
+    const [distance, setDistance] = useState(null);
+    const [isLocating, setIsLocating] = useState(false);
+
+    // Form state
+    const [formData, setFormData] = useState({
+        flatBuilding: "",
+        recipientName: "",
+        phone: "",
+        alternatePhone: "",
+        label: "Home",
+    });
+
+    const mapRef = useRef(null);
+    const searchInputRef = useRef(null);
+    const autocompleteRef = useRef(null);
+    const geocodeTimeoutRef = useRef(null);
+
+    const { reverseGeocodeEnhanced, addAddress } = useAddressStore();
+    const { showNotification } = useNotificationStore();
+
+    const { isLoaded, loadError } = useJsApiLoader({
+        googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+        libraries,
+    });
+
+    // Handle getting current location
+    const getCurrentLocation = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported"));
+                return;
+            }
+
+            setIsLocating(true);
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const location = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    };
+                    setUserLocation(location);
+                    setIsLocating(false);
+                    resolve(location);
+                },
+                (error) => {
+                    setIsLocating(false);
+                    console.error("Geolocation error:", error);
+                    reject(error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 20000,
+                    maximumAge: 0,
+                    frequency: 1000
+                }
+            );
+        });
+    }, []);
+
+    // Debounced reverse geocode location to get address
+    const reverseGeocode = useCallback((lat, lng) => {
+        // Clear any pending geocode request
+        if (geocodeTimeoutRef.current) {
+            clearTimeout(geocodeTimeoutRef.current);
+        }
+
+        setIsGeocodingLoading(true);
+
+        // Debounce the geocoding call
+        geocodeTimeoutRef.current = setTimeout(async () => {
+            try {
+                const address = await reverseGeocodeEnhanced(lat, lng);
+                setSelectedAddress({
+                    ...address,
+                    lat,
+                    lng,
+                });
+
+                // Calculate distance if user location is available
+                if (userLocation) {
+                    const dist = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
+                    setDistance(dist);
+                }
+            } catch (error) {
+                console.error("Reverse geocoding error:", error);
+                // Set a fallback address
+                setSelectedAddress({
+                    lat,
+                    lng,
+                    line1: "",
+                    line2: "",
+                    city: "Unknown",
+                    state: "",
+                    postalCode: "",
+                });
+            } finally {
+                setIsGeocodingLoading(false);
+            }
+        }, 300); // 300ms debounce
+    }, [reverseGeocodeEnhanced, userLocation]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (geocodeTimeoutRef.current) {
+                clearTimeout(geocodeTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Calculate distance between two coordinates
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // Earth's radius in km
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lat1 * Math.PI) / 180) *
+            Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return (R * c).toFixed(1);
+    };
+
+    // Handle location prompt options
+    const handleLocationChoice = async (useCurrentLocation) => {
+        if (useCurrentLocation) {
+            try {
+                const location = await getCurrentLocation();
+                setMapCenter(location);
+                setStep("map");
+                // Pan map to location after it loads
+                setTimeout(() => {
+                    if (mapRef.current) {
+                        mapRef.current.panTo(location);
+                        mapRef.current.setZoom(17);
+                    }
+                    reverseGeocode(location.lat, location.lng);
+                }, 500);
+            } catch (error) {
+                if (error.code === 1) { // User denied Geolocation
+                    showNotification({
+                        message: "Location permission denied. Please enable it in your browser settings.",
+                        type: "error",
+                    });
+                } else {
+                    showNotification({
+                        message: "Could not get location. Please allow location access or search manually.",
+                        type: "error",
+                    });
+                }
+                setStep("map");
+                reverseGeocode(defaultCenter.lat, defaultCenter.lng);
+            }
+        } else {
+            setStep("map");
+            reverseGeocode(defaultCenter.lat, defaultCenter.lng);
+        }
+    };
+
+    // Handle map idle (after drag or zoom ends)
+    const handleMapIdle = useCallback(() => {
+        if (mapRef.current) {
+            const center = mapRef.current.getCenter();
+            if (center) {
+                const lat = center.lat();
+                const lng = center.lng();
+                setMapCenter({ lat, lng });
+                reverseGeocode(lat, lng);
+            }
+        }
+    }, [reverseGeocode]);
+
+    // Handle use current location from map view
+    const handleUseCurrentLocation = async () => {
+        try {
+            const location = await getCurrentLocation();
+            setMapCenter(location);
+            if (mapRef.current) {
+                mapRef.current.panTo(location);
+                mapRef.current.setZoom(17);
+            }
+            reverseGeocode(location.lat, location.lng);
+        } catch (error) {
+            if (error.code === 1) { // User denied Geolocation
+                showNotification({
+                    message: "Location permission denied. Please enable it in your browser settings.",
+                    type: "error",
+                });
+            } else {
+                showNotification({
+                    message: "Could not get current location. Please enable location access.",
+                    type: "error",
+                });
+            }
+        }
+    };
+
+    // Callback ref for search input to initialize Autocomplete when DOM node is ready
+    const searchInputCallbackRef = useCallback((node) => {
+        if (node && isLoaded && !autocompleteRef.current && window.google && window.google.maps && window.google.maps.places) {
+            try {
+                autocompleteRef.current = new window.google.maps.places.Autocomplete(
+                    node,
+                    {
+                        componentRestrictions: { country: "in" },
+                        fields: ["geometry", "formatted_address", "address_components", "name"],
+                    }
+                );
+
+                autocompleteRef.current.addListener("place_changed", () => {
+                    const place = autocompleteRef.current.getPlace();
+                    if (place.geometry && place.geometry.location) {
+                        const lat = place.geometry.location.lat();
+                        const lng = place.geometry.location.lng();
+                        setMapCenter({ lat, lng });
+                        if (mapRef.current) {
+                            mapRef.current.panTo({ lat, lng });
+                            mapRef.current.setZoom(17);
+                        }
+                        reverseGeocode(lat, lng);
+                        // Clear input after selection
+                        node.value = "";
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing autocomplete:", error);
+            }
+        }
+    }, [isLoaded, reverseGeocode]);
+
+    // Handle form input changes
+    const handleFormChange = (field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    // Handle form submission
+    const handleSaveAddress = async () => {
+        // Validate required fields
+        if (!formData.flatBuilding.trim()) {
+            showNotification({
+                message: "Please enter flat/house/building name",
+                type: "error",
+            });
+            return;
+        }
+        if (!formData.recipientName.trim()) {
+            showNotification({
+                message: "Please enter your full name",
+                type: "error",
+            });
+            return;
+        }
+        if (!formData.phone.trim() || !/^[0-9]{10}$/.test(formData.phone)) {
+            showNotification({
+                message: "Please enter a valid 10-digit phone number",
+                type: "error",
+            });
+            return;
+        }
+
+        const addressData = {
+            label: formData.label,
+            recipientName: formData.recipientName,
+            phone: formData.phone,
+            alternatePhone: formData.alternatePhone || null,
+            line1: formData.flatBuilding,
+            line2: selectedAddress?.line2 || selectedAddress?.locality || "",
+            city: selectedAddress?.city || "",
+            state: selectedAddress?.state || "",
+            country: "India",
+            postalCode: selectedAddress?.postalCode || "",
+            landmark: selectedAddress?.landmark || "",
+            lat: mapCenter.lat,
+            lng: mapCenter.lng,
+        };
+
+        try {
+            console.log("Saving address...", addressData);
+            const newAddress = await addAddress(addressData);
+            console.log("Address saved:", newAddress);
+
+            if (newAddress) {
+                showNotification({
+                    message: "Address added successfully!",
+                    type: "success",
+                });
+                if (onAddressSelect) {
+                    onAddressSelect(newAddress);
+                }
+                onClose();
+            } else {
+                // AddressStore returns null if no token, prompt login
+                const setModalOpen = useAuthStore.getState().setModalOpen;
+                setModalOpen(true);
+                showNotification({
+                    message: "Please login to add an address",
+                    type: "info",
+                });
+            }
+        } catch (error) {
+            console.error("Save address error:", error);
+            showNotification({
+                message: error.message || "Failed to save address",
+                type: "error",
+            });
+        }
+    };
+
+    // Get formatted locality name
+    const getLocalityName = () => {
+        if (!selectedAddress) return "";
+        return selectedAddress.locality || selectedAddress.line2 || selectedAddress.city || "";
+    };
+
+    // Get full address string
+    const getFullAddressString = () => {
+        if (!selectedAddress) return "";
+        const parts = [
+            selectedAddress.line1,
+            selectedAddress.line2,
+            selectedAddress.city,
+            selectedAddress.state,
+            selectedAddress.postalCode,
+        ].filter(Boolean);
+        return parts.join(", ");
+    };
+
+    // Loading state
+    if (loadError) {
+        return (
+            <div className="map-picker-error">
+                <p>Error loading maps. Please try again.</p>
+                <button onClick={onClose}>Close</button>
+            </div>
+        );
+    }
+
+    if (!isLoaded) {
+        return (
+            <div className="map-picker-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading map...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mobile-map-picker">
+            {/* Header */}
+            <div className="map-picker-header">
+                <button className="back-button" onClick={onClose}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1>Add new address</h1>
+            </div>
+
+            {/* Step 1: Location Prompt */}
+            {step === "prompt" && (
+                <div className="location-prompt-overlay">
+                    <div className="location-prompt-content">
+                        <h2>Where do you want us to deliver the order?</h2>
+                        <p>This will help with the right map location</p>
+
+                        <button
+                            className="prompt-btn primary"
+                            onClick={() => handleLocationChoice(false)}
+                        >
+                            Away from my location
+                        </button>
+
+                        <button
+                            className="prompt-btn secondary"
+                            onClick={() => handleLocationChoice(true)}
+                            disabled={isLocating}
+                        >
+                            {isLocating ? (
+                                <>
+                                    <div className="btn-spinner"></div>
+                                    Getting location...
+                                </>
+                            ) : (
+                                <>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                    Use current location
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Step 2: Map View */}
+            {step === "map" && (
+                <>
+                    {/* Search Bar - Uncontrolled input for Google autocomplete */}
+                    <div className="map-search-bar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF">
+                            <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                            <path d="M21 21l-4.35-4.35" strokeWidth="2" />
+                        </svg>
+                        <input
+                            ref={searchInputCallbackRef}
+                            type="text"
+                            placeholder="Search by area, name, street..."
+                            autoComplete="off"
+                        />
+                    </div>
+
+                    {/* Map Container */}
+                    <div className="map-container">
+                        <GoogleMap
+                            mapContainerStyle={mapContainerStyle}
+                            center={mapCenter}
+                            zoom={17}
+                            options={mapOptions}
+                            onLoad={(map) => {
+                                mapRef.current = map;
+                            }}
+                            onIdle={handleMapIdle}
+                        />
+
+                        {/* Fixed center pin */}
+                        <div className="center-pin">
+                            <div className="pin-instruction">Place pin on the exact location</div>
+                            <div className="pin-marker">
+                                <svg width="40" height="50" viewBox="0 0 40 50" fill="none">
+                                    <ellipse cx="20" cy="47" rx="8" ry="3" fill="rgba(0,0,0,0.2)" />
+                                    <path d="M20 0C10 0 2 8 2 18C2 30 20 45 20 45C20 45 38 30 38 18C38 8 30 0 20 0Z" fill="#374151" />
+                                    <circle cx="20" cy="18" r="6" fill="white" />
+                                </svg>
+                            </div>
+                            {getLocalityName() && (
+                                <div className="locality-badge">{getLocalityName()}</div>
+                            )}
+                        </div>
+
+                        {/* Recentering FAB - Bottom Right */}
+                        <button
+                            className="recenter-fab"
+                            onClick={handleUseCurrentLocation}
+                            disabled={isLocating}
+                            title="Use my current location"
+                        >
+                            {isLocating ? (
+                                <div className="btn-spinner-blue"></div>
+                            ) : (
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Bottom Sheet - Address Preview */}
+                    <div className="address-preview-sheet">
+                        <div className="sheet-header">
+                            <span className="sheet-title">Deliver To</span>
+                        </div>
+
+                        <div className="address-preview-card">
+                            <div className="address-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#3B82F6" />
+                                    <circle cx="12" cy="9" r="2.5" fill="white" />
+                                </svg>
+                            </div>
+
+                            <div className="address-details">
+                                <div className="address-locality">
+                                    {isGeocodingLoading ? (
+                                        <div className="loading-shimmer">Loading...</div>
+                                    ) : (
+                                        getLocalityName() || "Drag map to select location"
+                                    )}
+                                </div>
+                                <div className="address-full">
+                                    {isGeocodingLoading ? "" : getFullAddressString()}
+                                </div>
+                                {distance && (
+                                    <div className="address-distance">
+                                        <span className="distance-value">{distance} kms</span> away from your current location
+                                    </div>
+                                )}
+                            </div>
+
+                            <button className="change-btn" onClick={() => setStep("prompt")}>Change</button>
+                        </div>
+
+                        <button
+                            className="add-details-btn"
+                            onClick={() => setStep("form")}
+                            disabled={!selectedAddress || isGeocodingLoading}
+                        >
+                            Add address Details
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {/* Step 3: Address Details Form */}
+            {step === "form" && (
+                <div className="address-form-overlay">
+                    <div className="address-form-sheet">
+                        <div className="form-header">
+                            <h2>Deliver To</h2>
+                            <button className="close-form-btn" onClick={() => setStep("map")}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="form-info-tip">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 16v-4M12 8h.01" />
+                            </svg>
+                            <span>Ensure your address details are accurate for a smooth delivery experience</span>
+                        </div>
+
+                        <div className="form-content">
+                            <div className="form-group">
+                                <label>Flat/House/building name *</label>
+                                <input
+                                    type="text"
+                                    value={formData.flatBuilding}
+                                    onChange={(e) => handleFormChange("flatBuilding", e.target.value)}
+                                    placeholder=""
+                                />
+                            </div>
+
+                            <div className="form-group area-group">
+                                <label>Area / Sector / Locality</label>
+                                <div className="area-display">
+                                    <span>{getFullAddressString()}</span>
+                                    <button className="change-area-btn" onClick={() => setStep("map")}>Change</button>
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Enter your full name *</label>
+                                <input
+                                    type="text"
+                                    value={formData.recipientName}
+                                    onChange={(e) => handleFormChange("recipientName", e.target.value)}
+                                    placeholder=""
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>10-digit mobile number *</label>
+                                <input
+                                    type="tel"
+                                    value={formData.phone}
+                                    onChange={(e) => handleFormChange("phone", e.target.value)}
+                                    placeholder=""
+                                    maxLength={10}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Alternate phone number (Optional)</label>
+                                <input
+                                    type="tel"
+                                    value={formData.alternatePhone}
+                                    onChange={(e) => handleFormChange("alternatePhone", e.target.value)}
+                                    placeholder=""
+                                    maxLength={10}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Type of address</label>
+                                <div className="address-type-options">
+                                    <button
+                                        className={`type-btn ${formData.label === "Home" ? "active" : ""}`}
+                                        onClick={() => handleFormChange("label", "Home")}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                        </svg>
+                                        Home
+                                    </button>
+                                    <button
+                                        className={`type-btn ${formData.label === "Work" ? "active" : ""}`}
+                                        onClick={() => handleFormChange("label", "Work")}
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                                            <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                                        </svg>
+                                        Work
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button className="save-address-btn" onClick={handleSaveAddress}>
+                            Save address
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default MobileMapAddressPicker;

@@ -51,6 +51,14 @@ function App() {
       console.log("Supabase Auth Event:", event);
 
       if (event === 'SIGNED_IN' && session) {
+        // Check if we already have a user in our store to avoid unnecessary re-loading loops
+        // triggered by Supabase's auto-refresh on window focus (visibility change)
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+          console.log("User already authenticated in store, skipping backend sync on SIGNED_IN event.");
+          return;
+        }
+
         console.log("User signed in via Supabase, triggering backend sync...");
         // Check if this is a Google login callback (usually has provider_token or just by context of being a redirect)
         // For simplicity and robustness, we always ensure backend verification on SIGNED_IN if we don't have a backend token

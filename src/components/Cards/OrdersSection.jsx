@@ -3,25 +3,19 @@ import { X, MessageSquare, AlertTriangle, FileText, ChevronDown, ChevronUp } fro
 
 import useApiRoutesStore from "../../store/apiRoutesStore";
 
-const OrderRow = ({ order, onCancel, onRequest, setSelectedOrder, getStatusColor, getStatusText, formatDate }) => {
+const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getStatusColor, getStatusText, formatDate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const items = order.items || [];
-  const itemCount = items.length;
-  const displayItems = items.slice(0, 4); // Show max 4 images in stack
-
-  const estimatedDelivery = new Date(order.createdAt);
-  estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-white">
       {/* Main Card Content */}
       <div
         className="p-4 cursor-pointer"
-        onClick={() => setSelectedOrder(order)}
+        onClick={() => setSelectedItem({ ...item, order })}
       >
         <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
 
-          {/* Left: Order Info & Stacked Images */}
+          {/* Left: Product Image & Details */}
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               <span className="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-0.5 rounded border border-gray-200">
@@ -32,46 +26,33 @@ const OrderRow = ({ order, onCancel, onRequest, setSelectedOrder, getStatusColor
               </span>
             </div>
 
-            <div className="flex items-center gap-6">
-              {/* Stacked Images */}
-              <div className="flex items-center">
-                <div className="flex -space-x-4">
-                  {displayItems.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="w-16 h-16 rounded-full border-2 border-white bg-gray-100 overflow-hidden relative z-10"
-                      style={{ zIndex: 10 - index }}
-                    >
-                      {item.productSnapshot?.image_url ? (
-                        <img
-                          src={item.productSnapshot.image_url}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-sm">📦</div>
-                      )}
-                    </div>
-                  ))}
-                  {itemCount > 4 && (
-                    <div
-                      className="w-16 h-16 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 relative z-0"
-                      style={{ zIndex: 0 }}
-                    >
-                      +{itemCount - 4}
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-center gap-4">
+              {/* Product Image */}
+              <div className="w-16 h-16 rounded-lg border border-gray-100 bg-gray-50 overflow-hidden flex-shrink-0">
+                {item.productSnapshot?.image_url ? (
+                  <img
+                    src={item.productSnapshot.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-sm">📦</div>
+                )}
               </div>
 
-              {/* Order Summary Text (for mobile/desktop context) */}
+              {/* Product Details */}
               <div>
-                <p className="font-semibold text-gray-900">
-                  {itemCount} {itemCount === 1 ? 'Item' : 'Items'}
+                <p className="font-semibold text-gray-900 line-clamp-2">
+                  {item.title}
                 </p>
-                <p className="text-sm text-gray-500">
-                  Total: <span className="font-bold text-gray-900">₹{order.totalAmount?.toLocaleString("en-IN")}</span>
-                </p>
+                {item.variantDetails && (
+                  <p className="text-xs text-gray-500">{item.variantDetails}</p>
+                )}
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm font-medium text-gray-900">₹{item.totalPrice?.toLocaleString("en-IN")}</p>
+                  <span className="text-xs text-gray-400">|</span>
+                  <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -79,83 +60,45 @@ const OrderRow = ({ order, onCancel, onRequest, setSelectedOrder, getStatusColor
           {/* Right: Status & Actions */}
           <div className="flex flex-col items-end gap-3 min-w-[200px]">
             {/* Status Badge */}
-            <div className="flex items-center gap-2">
-              {order.status === "delivered" ? (
-                <div className="flex items-center gap-1.5 text-green-700 bg-green-50 px-3 py-1 rounded-full text-sm font-medium border border-green-100">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Delivered
-                </div>
-              ) : order.status === "cancelled" ? (
-                <div className="flex items-center gap-1.5 text-red-700 bg-red-50 px-3 py-1 rounded-full text-sm font-medium border border-red-100">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  Cancelled
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-3 py-1 rounded-full text-sm font-medium border border-blue-100">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  {getStatusText(order.status).split('Your item has been ')[1] || order.status}
-                </div>
-              )}
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(item.status || order.status).bg} ${getStatusColor(item.status || order.status).text} ${getStatusColor(item.status || order.status).border || 'border-transparent'}`}>
+              <div className={`w-2 h-2 rounded-full ${getStatusColor(item.status || order.status).dotColor}`}></div>
+              {getStatusText(item.status || order.status)}
             </div>
 
             {/* Main Actions */}
             <div className="flex gap-2">
-              {(order.status === "initialized" || order.status === "processed") && (
+              {((item.status || order.status) === "initialized" || (item.status || order.status) === "processed") && (
                 <button
-                  onClick={onCancel}
+                  onClick={(e) => onCancel(e)}
                   className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
                 >
-                  Cancel Order
+                  Cancel Item
                 </button>
               )}
-              {(order.status === "shipped" || order.status === "out_for_delivery" || order.status === "delivered") && (
+              {((item.status || order.status) === "shipped" || (item.status || order.status) === "out_for_delivery" || (item.status || order.status) === "delivered") && (
                 <button
-                  onClick={onRequest}
+                  onClick={(e) => onRequest(e)}
                   className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded hover:bg-blue-50 transition-colors"
                 >
                   Raise Request
                 </button>
               )}
 
-              {/* Expand Toggle */}
+              {/* View Details Button */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsExpanded(!isExpanded);
+                  setSelectedItem({ ...item, order });
                 }}
                 className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition-colors flex items-center gap-1"
               >
-                {isExpanded ? 'Hide Details' : 'View Details'}
-                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                View Details
+                <ChevronDown className="w-3 h-3" />
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Expanded Details */}
-      {isExpanded && (
-        <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-3">
-          {items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded border border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
-                  {item.productSnapshot?.image_url ? (
-                    <img src={item.productSnapshot.image_url} alt={item.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                  <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
-                </div>
-              </div>
-              <p className="text-sm font-bold text-gray-900">₹{item.totalPrice?.toLocaleString("en-IN")}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
@@ -165,11 +108,14 @@ const OrdersSection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Previously selectedOrder, now selectedItem (which includes order info)
+  const [selectedItem, setSelectedItem] = useState(null);
 
   // Action States
   const [activeModal, setActiveModal] = useState("none"); // "none", "cancel", "request"
   const [selectedOrderForAction, setSelectedOrderForAction] = useState(null);
+  const [selectedItemForAction, setSelectedItemForAction] = useState(null);
   const [requestForm, setRequestForm] = useState({ subject: "Delay in Delivery", message: "" });
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState(null);
@@ -226,14 +172,32 @@ const OrdersSection = () => {
       setActionError(null);
       const token = localStorage.getItem("access_token") || localStorage.getItem("custom_token");
 
-      const response = await fetch(useApiRoutesStore.getState().orders.cancel(selectedOrderForAction.id), {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ reason: "Cancelled by user via app" }),
-      });
+      let response;
+
+      if (selectedItemForAction) {
+        // Cancel specific item
+        // Use new customer-specific cancel endpoint to avoid permission issues
+        response = await fetch(useApiRoutesStore.getState().orders.cancelItem(selectedOrderForAction.id, selectedItemForAction.id), {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            reason: "Cancelled by user via app"
+          }),
+        });
+      } else {
+        // Fallback if somehow full order cancel is triggered, though we removed UI for it
+        response = await fetch(useApiRoutesStore.getState().orders.cancel(selectedOrderForAction.id), {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ reason: "Cancelled by user via app" }),
+        });
+      }
 
       if (!response.ok) {
         const data = await response.json();
@@ -243,8 +207,9 @@ const OrdersSection = () => {
       // Success
       setActiveModal("none");
       setSelectedOrderForAction(null);
+      setSelectedItemForAction(null);
       setRefreshTrigger(prev => prev + 1); // Refresh list
-      alert("Order cancelled successfully");
+      alert(selectedItemForAction ? "Item cancelled successfully" : "Order cancelled successfully");
     } catch (err) {
       setActionError(err.message);
     } finally {
@@ -264,13 +229,19 @@ const OrdersSection = () => {
       setActionError(null);
       const token = localStorage.getItem("access_token") || localStorage.getItem("custom_token");
 
+      // Append item info to message
+      let message = requestForm.message;
+      if (selectedItemForAction) {
+        message = `[Regarding Item: ${selectedItemForAction.title}] ${message}`;
+      }
+
       const response = await fetch(useApiRoutesStore.getState().orders.createQuery(selectedOrderForAction.id), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestForm),
+        body: JSON.stringify({ ...requestForm, message }),
       });
 
       if (!response.ok) {
@@ -281,6 +252,7 @@ const OrdersSection = () => {
       // Success
       setActiveModal("none");
       setSelectedOrderForAction(null);
+      setSelectedItemForAction(null);
       setRequestForm({ subject: "Delay in Delivery", message: "" });
       alert("Request raised successfully. Our support team will contact you.");
     } catch (err) {
@@ -290,16 +262,18 @@ const OrdersSection = () => {
     }
   };
 
-  const openCancelModal = (order, e) => {
+  const openCancelModal = (order, e, item = null) => {
     e?.stopPropagation();
     setSelectedOrderForAction(order);
+    setSelectedItemForAction(item);
     setActiveModal("cancel");
     setActionError(null);
   };
 
-  const openRequestModal = (order, e) => {
+  const openRequestModal = (order, e, item = null) => {
     e?.stopPropagation();
     setSelectedOrderForAction(order);
+    setSelectedItemForAction(item);
     setActiveModal("request");
     setRequestForm({ subject: "Delay in Delivery", message: "" });
     setActionError(null);
@@ -308,28 +282,29 @@ const OrdersSection = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "delivered":
-        return { bg: "bg-green-100", text: "text-green-800", icon: "🟢" };
+        return { bg: "bg-green-100", text: "text-green-800", icon: "🟢", dotColor: "bg-green-600", border: "border-green-200" };
       case "shipped":
       case "out_for_delivery":
-        return { bg: "bg-blue-100", text: "text-blue-800", icon: "🔵" };
+        return { bg: "bg-blue-100", text: "text-blue-800", icon: "🔵", dotColor: "bg-blue-600", border: "border-blue-200" };
       case "cancelled":
-        return { bg: "bg-red-100", text: "text-red-800", icon: "🔴" };
+        return { bg: "bg-red-100", text: "text-red-800", icon: "🔴", dotColor: "bg-red-600", border: "border-red-200" };
       case "processed":
-        return { bg: "bg-yellow-100", text: "text-yellow-800", icon: "🟡" };
+        return { bg: "bg-yellow-100", text: "text-yellow-800", icon: "🟡", dotColor: "bg-yellow-600", border: "border-yellow-200" };
       default:
-        return { bg: "bg-gray-100", text: "text-gray-800", icon: "⚪" };
+        return { bg: "bg-gray-100", text: "text-gray-800", icon: "⚪", dotColor: "bg-gray-500", border: "border-gray-200" };
     }
   };
 
-  const getStatusText = (status, date) => {
+  const getStatusText = (status) => {
+    // Simplifying status text for item cards
     const statusMap = {
-      initialized: "Your item has been placed",
-      processed: "Your item is being processed",
-      shipped: "Your item has been shipped",
-      out_for_delivery: "Your item is out for delivery",
-      delivered: "Your item has been delivered",
-      cancelled: "Your item has been cancelled",
-      refunded: "Refunded Processed",
+      initialized: "Ordered",
+      processed: "Processing",
+      shipped: "Shipped",
+      out_for_delivery: "Out for Delivery",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+      refunded: "Refunded",
     };
     return statusMap[status] || status;
   };
@@ -342,9 +317,19 @@ const OrdersSection = () => {
     });
   };
 
-  const filteredOrders = orders.filter((order) => {
+  // Flatten orders into items list for display
+  const allItems = orders.flatMap(order =>
+    (order.items || []).map(item => ({
+      ...item,
+      order: order // Pass full order reference
+    }))
+  );
+
+  const filteredItems = allItems.filter((item) => {
     if (activeFilter === "all") return true;
-    return order.status === activeFilter;
+    // Check item status first, fallback to order status
+    const effectiveStatus = item.status || item.order.status;
+    return effectiveStatus === activeFilter;
   });
 
   if (loading) {
@@ -368,12 +353,14 @@ const OrdersSection = () => {
     );
   }
 
-  // Order detail view component
-  const OrderDetailView = ({ order, onBack }) => {
-    const firstItem = order.items && order.items.length > 0 ? order.items[0] : null;
+  // Order Detail View - Now Focused on Item
+  const OrderDetailView = ({ item, onBack }) => {
+    const { order } = item;
+    const itemStatus = item.status || order.status;
+
     let statusTimeline = [];
 
-    if (order.status === "cancelled") {
+    if (itemStatus === "cancelled") {
       statusTimeline = [
         { status: "initialized", label: "Order Confirmed", completed: true, date: order.createdAt, color: "green" },
         { status: "cancelled", label: "Cancelled", completed: true, date: order.updatedAt, color: "red" }
@@ -381,24 +368,12 @@ const OrdersSection = () => {
     } else {
       statusTimeline = [
         { status: "initialized", label: "Order Confirmed", completed: true, date: order.createdAt, color: "green" },
-        { status: "processed", label: "Order Shipped", completed: ["processed", "shipped", "out_for_delivery", "delivered"].includes(order.status), color: "green" },
-        { status: "shipped", label: "Out for Delivery", completed: ["out_for_delivery", "delivered"].includes(order.status), color: "green" },
-        { status: "delivered", label: "Delivery", completed: order.status === "delivered", color: "green" },
+        { status: "processed", label: "Processing", completed: ["processed", "shipped", "out_for_delivery", "delivered"].includes(itemStatus), color: "green" },
+        { status: "shipped", label: "Shipped", completed: ["shipped", "out_for_delivery", "delivered"].includes(itemStatus), color: "green" },
+        { status: "out_for_delivery", label: "Out for Delivery", completed: ["out_for_delivery", "delivered"].includes(itemStatus), color: "green" },
+        { status: "delivered", label: "Delivered", completed: itemStatus === "delivered", color: "green" },
       ];
     }
-
-    const formatDate = (date) => {
-      if (!date) return "";
-      return new Date(date).toLocaleDateString("en-IN", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    };
-
-    const getTotalPrice = () => {
-      return order.items?.reduce((sum, item) => sum + (item.totalPrice || 0), 0) || 0;
-    };
 
     return (
       <div className="space-y-6">
@@ -415,97 +390,92 @@ const OrdersSection = () => {
           </button>
         </div>
 
-        {/* Order Header */}
+        {/* Item Header */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Your Order has been {order.status === "delivered" ? "Delivered" : order.status === "cancelled" ? "Cancelled" : "Confirmed"}
+            Item Status: {getStatusText(itemStatus)}
           </h2>
           <p className="text-gray-600 mb-4">Order #<span className="font-semibold">{order.id}</span></p>
 
           {/* Product Card */}
-          {firstItem && (
-            <div className="border border-gray-200 rounded-lg p-4 mb-4">
-              <div className="flex gap-4">
-                <div className="w-24 h-24 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center">
-                  {firstItem.productSnapshot?.image_url ? (
-                    <img
-                      src={firstItem.productSnapshot.image_url}
-                      alt={firstItem.title}
-                      className="w-full h-full object-cover rounded"
-                    />
-                  ) : (
-                    <span className="text-2xl">📦</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-2">{firstItem.title}</h3>
-                  {firstItem.productSnapshot?.school_name && (
-                    <p className="text-sm text-gray-600 mb-2">{firstItem.productSnapshot.school_name}</p>
-                  )}
-                  <p className="text-lg font-bold text-gray-900">₹{firstItem.totalPrice?.toLocaleString("en-IN")}</p>
+          <div className="border border-gray-200 rounded-lg p-4 mb-4">
+            <div className="flex gap-4">
+              <div className="w-24 h-24 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
+                {item.productSnapshot?.image_url ? (
+                  <img
+                    src={item.productSnapshot.image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl">📦</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
+                {item.productSnapshot?.school_name && (
+                  <p className="text-sm text-gray-600 mb-2">{item.productSnapshot.school_name}</p>
+                )}
+                <div className="flex items-center gap-4">
+                  <p className="text-lg font-bold text-gray-900">₹{item.totalPrice?.toLocaleString("en-IN")}</p>
+                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4">
-            {(order.status === "initialized" || order.status === "processed") && (
+            {(itemStatus === "initialized" || itemStatus === "processed") && (
               <button
-                onClick={(e) => openCancelModal(order, e)}
+                onClick={(e) => openCancelModal(order, e, item)}
                 className="px-6 py-2 border border-red-200 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
-                Cancel Order
+                Cancel Item
               </button>
             )}
 
-            {(order.status === "shipped" || order.status === "out_for_delivery" || order.status === "delivered") && (
+            {(itemStatus === "shipped" || itemStatus === "out_for_delivery" || itemStatus === "delivered") && (
               <button
-                onClick={(e) => openRequestModal(order, e)}
+                onClick={(e) => openRequestModal(order, e, item)}
                 className="px-6 py-2 border border-blue-200 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" />
                 Raise Request
               </button>
             )}
-
-            {order.status === "delivered" && (
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2">
-                <span>⭐</span>
-                Add Review
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Order Status Timeline */}
+        {/* Status Timeline */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Order Status</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Status Timeline</h3>
 
           <div className="space-y-0">
             {statusTimeline.map((step, index) => {
-              const bgColor = step.completed
+              const isActive = step.completed;
+              const bgColor = isActive
                 ? (step.color === "red" ? "bg-red-500" : "bg-green-500")
                 : "bg-gray-300";
 
               return (
-                <div key={step.status} className="flex gap-4 pb-6">
+                <div key={index} className="flex gap-4 pb-6 last:pb-0">
                   {/* Timeline Dot and Line */}
                   <div className="flex flex-col items-center">
-                    <div className={`w-4 h-4 rounded-full ${bgColor} relative z-10`}></div>
+                    <div className={`w-4 h-4 rounded-full ${bgColor} relative z-10 ring-4 ring-white`}></div>
                     {index < statusTimeline.length - 1 && (
-                      <div className={`w-0.5 h-12 ${step.completed ? bgColor : "bg-gray-300"} mt-2`}></div>
+                      <div className={`w-0.5 h-12 ${step.status === itemStatus ? "bg-gray-300" : (step.completed ? bgColor : "bg-gray-300")} mt-[-4px] mb-[-4px]`}></div>
                     )}
                   </div>
 
                   {/* Status Details */}
-                  <div className="pt-0">
-                    <h4 className={`font-semibold ${step.completed ? (step.color === "red" ? "text-red-700" : "text-gray-900") : "text-gray-500"}`}>
+                  <div className="pt-0 -mt-1">
+                    <h4 className={`font-semibold ${isActive ? (step.color === "red" ? "text-red-700" : "text-gray-900") : "text-gray-500"}`}>
                       {step.label}
                     </h4>
                     {step.date && (
-                      <p className={`text-sm ${step.completed ? "text-gray-600" : "text-gray-400"}`}>
+                      <p className={`text-sm ${isActive ? "text-gray-600" : "text-gray-400"}`}>
                         {formatDate(step.date)}
                       </p>
                     )}
@@ -515,100 +485,36 @@ const OrdersSection = () => {
             })}
           </div>
         </div>
-
-        {/* Order Summary */}
-        {order.items && order.items.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-
-            <div className="space-y-4">
-              {order.items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center pb-4 border-b border-gray-200 last:border-b-0">
-                  <div>
-                    <p className="font-medium text-gray-900">{item.title}</p>
-                    {item.variantDetails && (
-                      <p className="text-sm text-gray-600">{item.variantDetails}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">₹{item.totalPrice?.toLocaleString("en-IN")}</p>
-                    <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="pt-4 border-t-2 border-gray-200">
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-900">Total Amount</span>
-                  <span className="font-bold text-gray-900">₹{getTotalPrice().toLocaleString("en-IN")}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-6">
-      {selectedOrder ? (
-        <OrderDetailView order={selectedOrder} onBack={() => setSelectedOrder(null)} />
+      {selectedItem ? (
+        <OrderDetailView item={selectedItem} onBack={() => setSelectedItem(null)} />
       ) : (
         <>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h2>
 
           {/* Filter Buttons */}
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-            <button
-              onClick={() => setActiveFilter("all")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors text-sm ${activeFilter === "all"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActiveFilter("processed")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors text-sm ${activeFilter === "processed"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-            >
-              Processing
-            </button>
-            <button
-              onClick={() => setActiveFilter("shipped")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors text-sm ${activeFilter === "shipped"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-            >
-              Shipped
-            </button>
-            <button
-              onClick={() => setActiveFilter("delivered")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors text-sm ${activeFilter === "delivered"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-            >
-              Delivered
-            </button>
-            <button
-              onClick={() => setActiveFilter("cancelled")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors text-sm ${activeFilter === "cancelled"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                }`}
-            >
-              Cancelled
-            </button>
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+            {["all", "processed", "shipped", "delivered", "cancelled"].map((status) => (
+              <button
+                key={status}
+                onClick={() => setActiveFilter(status)}
+                className={`px-4 py-2 rounded-full whitespace-nowrap font-medium transition-colors text-sm ${activeFilter === status
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
           </div>
 
-          {/* Orders List */}
-          {filteredOrders.length === 0 ? (
+          {/* Orders (Items) List */}
+          {filteredItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <p className="text-lg text-blue-500 mb-8">
                 Enjoy New Experience of Shopping School Essentials ...
@@ -623,21 +529,22 @@ const OrdersSection = () => {
               <p className="text-gray-600 text-base mb-6">
                 {activeFilter === "all"
                   ? "No orders found. Place your first order!"
-                  : `No ${activeFilter} orders found`}
+                  : `No items found with status: ${activeFilter}`}
               </p>
               <a href="/" className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
                 Continue Shopping..
               </a>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredOrders.map((order) => (
-                <OrderRow
-                  key={order.id}
-                  order={order}
-                  onCancel={(e) => openCancelModal(order, e)}
-                  onRequest={(e) => openRequestModal(order, e)}
-                  setSelectedOrder={setSelectedOrder}
+            <div className="space-y-6">
+              {filteredItems.map((item, index) => (
+                <OrderItemRow
+                  key={`${item.id}-${index}`} // Composite key in case of id collision (rare but safe)
+                  item={item}
+                  order={item.order}
+                  onCancel={(e) => openCancelModal(item.order, e, item)}
+                  onRequest={(e) => openRequestModal(item.order, e, item)}
+                  setSelectedItem={setSelectedItem}
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   formatDate={formatDate}
@@ -688,7 +595,7 @@ const OrdersSection = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
-                Cancel Order
+                Cancel Item
               </h3>
               <button onClick={() => setActiveModal("none")} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -696,7 +603,7 @@ const OrdersSection = () => {
             </div>
 
             <p className="text-gray-600 mb-6">
-              Are you sure you want to cancel this order? This action cannot be undone.
+              Are you sure you want to cancel <strong>{selectedItemForAction?.title}</strong>? This action cannot be undone.
             </p>
 
             {actionError && (
@@ -711,14 +618,14 @@ const OrdersSection = () => {
                 className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
                 disabled={actionLoading}
               >
-                No, Keep Order
+                No, Keep
               </button>
               <button
                 onClick={handleCancelOrder}
                 className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors flex items-center gap-2"
                 disabled={actionLoading}
               >
-                {actionLoading ? "Cancelling..." : "Yes, Cancel Order"}
+                {actionLoading ? "Cancelling..." : "Yes, Cancel Item"}
               </button>
             </div>
           </div>
@@ -738,6 +645,12 @@ const OrdersSection = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {selectedItemForAction && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800">
+                Requesting support for: <strong>{selectedItemForAction.title}</strong>
+              </div>
+            )}
 
             <div className="space-y-4 mb-6">
               <div>

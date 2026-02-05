@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
+import MobileMapAddressPicker from "../../components/Address/MobileMapAddressPicker";
 import useCartStore from "../../store/cartStore";
 import useAddressStore from "../../store/addressStore";
 import useAuthStore from "../../store/authStore";
@@ -12,13 +13,28 @@ import useApiRoutesStore from "../../store/apiRoutesStore";
 function CheckoutPage() {
   const navigate = useNavigate();
 
+  // Store integrations
+  const {
+    cart,
+    updateQuantity,
+    removeFromCart,
+    loadCart,
+    clearCart,
+    getCheckoutItems,
+    getCheckoutSummary,
+    isBuyNowMode,
+    clearBuyNowItem,
+  } = useCartStore();
+
   // Track images that failed to load to prevent infinite retry loops
   const failedImagesRef = useRef(new Set());
 
   // Process state management with enhanced validation tracking
-  const [processState, setProcessState] = useState(1); // 1 - Order Summary, 2 - Delivery Address, 3 - Payment & Place Order
+  const [processState, setProcessState] = useState(isBuyNowMode ? 1 : 2); // 1 - Order Summary, 2 - Delivery Address, 3 - Payment & Place Order
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
+  const [showMobileMapPicker, setShowMobileMapPicker] = useState(false);
+  const [isMobileApp, setIsMobileApp] = useState(false);
 
   // Order placement state
   const [paymentMethod, setPaymentMethod] = useState("cod");
@@ -49,18 +65,7 @@ function CheckoutPage() {
     landmark: "",
   });
 
-  // Store integrations
-  const {
-    cart,
-    updateQuantity,
-    removeFromCart,
-    loadCart,
-    clearCart,
-    getCheckoutItems,
-    getCheckoutSummary,
-    isBuyNowMode,
-    clearBuyNowItem,
-  } = useCartStore();
+
   const {
     addresses,
     loading: addressLoading,
@@ -235,6 +240,20 @@ function CheckoutPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
+
+  // Detect mobile app environment or mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      const isApp = localStorage.getItem("isMobileApp") === "true" ||
+        window.location.search.includes("mode=webview");
+      const isMobileScreen = window.innerWidth < 768;
+      setIsMobileApp(isApp || isMobileScreen);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Lightweight validation on address/payment changes (no API calls)
   useEffect(() => {
@@ -895,6 +914,17 @@ function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Mobile Map Address Picker */}
+      {showMobileMapPicker && (
+        <MobileMapAddressPicker
+          onClose={() => setShowMobileMapPicker(false)}
+          onAddressSelect={(newAddress) => {
+            selectAddress(newAddress.id);
+            setShowMobileMapPicker(false);
+          }}
+        />
+      )}
+
       {/* <SearchBar /> */}
 
       {/* Progress Steps */}
@@ -1105,7 +1135,13 @@ function CheckoutPage() {
                     Select Delivery Address
                   </h2>
                   <button
-                    onClick={() => setShowAddressForm(true)}
+                    onClick={() => {
+                      if (isMobileApp) {
+                        setShowMobileMapPicker(true);
+                      } else {
+                        setShowAddressForm(true);
+                      }
+                    }}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                   >
                     + Add New Address
@@ -1440,10 +1476,12 @@ function CheckoutPage() {
                 {!showAddressForm && addresses.length > 0 && (
                   <div className="mt-6 flex justify-between">
                     <button
-                      onClick={() => setProcessState(1)}
+                      onClick={() =>
+                        isBuyNowMode ? setProcessState(1) : navigate("/cart")
+                      }
                       className="text-gray-600 hover:text-gray-700 font-medium transition-colors"
                     >
-                      ← Back to Cart
+                      {isBuyNowMode ? "← Back to Review" : "← Back to Cart"}
                     </button>
 
                     <button
@@ -1918,4 +1956,5 @@ function CheckoutPage() {
     </div>
   );
 }
+
 export default CheckoutPage;
