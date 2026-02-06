@@ -42,8 +42,27 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         recipientName: "",
         phone: "",
         alternatePhone: "",
+        landmark: "",
+        city: "",
+        state: "",
+        postalCode: "",
         label: "Home",
     });
+
+    // Populate form data when address is selected
+    useEffect(() => {
+        if (selectedAddress) {
+            setFormData(prev => ({
+                ...prev,
+                flatBuilding: selectedAddress.houseNumber || selectedAddress.line1 || "",
+                landmark: selectedAddress.landmark || "",
+                city: selectedAddress.city || "",
+                state: selectedAddress.state || "",
+                postalCode: selectedAddress.postalCode || "",
+            }));
+        }
+    }, [selectedAddress]);
+
 
     const mapRef = useRef(null);
     const searchInputRef = useRef(null);
@@ -171,7 +190,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                         mapRef.current.panTo(location);
                         mapRef.current.setZoom(17);
                     }
-                    reverseGeocode(location.lat, location.lng);
                 }, 500);
             } catch (error) {
                 if (error.code === 1) { // User denied Geolocation
@@ -186,13 +204,14 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                     });
                 }
                 setStep("map");
-                reverseGeocode(defaultCenter.lat, defaultCenter.lng);
             }
         } else {
             setStep("map");
-            reverseGeocode(defaultCenter.lat, defaultCenter.lng);
         }
     };
+
+    // Track last geocoded center to prevent infinite loops
+    const lastCenterRef = useRef(defaultCenter);
 
     // Handle map idle (after drag or zoom ends)
     const handleMapIdle = useCallback(() => {
@@ -201,8 +220,19 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             if (center) {
                 const lat = center.lat();
                 const lng = center.lng();
-                setMapCenter({ lat, lng });
-                reverseGeocode(lat, lng);
+
+                // Check if significantly changed from LAST PROCESSED center (epsilon check)
+                // 0.000001 degrees is ~11cm, sufficient for "address hasn't changed"
+                const last = lastCenterRef.current;
+                const isSame =
+                    Math.abs(lat - last.lat) < 0.000001 &&
+                    Math.abs(lng - last.lng) < 0.000001;
+
+                if (!isSame) {
+                    lastCenterRef.current = { lat, lng };
+                    setMapCenter({ lat, lng });
+                    reverseGeocode(lat, lng);
+                }
             }
         }
     }, [reverseGeocode]);
@@ -216,7 +246,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                 mapRef.current.panTo(location);
                 mapRef.current.setZoom(17);
             }
-            reverseGeocode(location.lat, location.lng);
         } catch (error) {
             if (error.code === 1) { // User denied Geolocation
                 showNotification({
@@ -254,7 +283,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                             mapRef.current.panTo({ lat, lng });
                             mapRef.current.setZoom(17);
                         }
-                        reverseGeocode(lat, lng);
                         // Clear input after selection
                         node.value = "";
                     }
@@ -305,11 +333,11 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             alternatePhone: formData.alternatePhone || null,
             line1: formData.flatBuilding,
             line2: selectedAddress?.line2 || selectedAddress?.locality || "",
-            city: selectedAddress?.city || "",
-            state: selectedAddress?.state || "",
+            city: formData.city,
+            state: formData.state,
             country: "India",
-            postalCode: selectedAddress?.postalCode || "",
-            landmark: selectedAddress?.landmark || "",
+            postalCode: formData.postalCode,
+            landmark: formData.landmark,
             lat: mapCenter.lat,
             lng: mapCenter.lng,
         };
@@ -612,6 +640,47 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     onChange={(e) => handleFormChange("alternatePhone", e.target.value)}
                                     placeholder=""
                                     maxLength={10}
+                                />
+                            </div>
+
+                            <div className="form-group grid-cols-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
+                                    <label>Pincode *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.postalCode}
+                                        onChange={(e) => handleFormChange("postalCode", e.target.value)}
+                                        placeholder=""
+                                    />
+                                </div>
+                                <div>
+                                    <label>City *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.city}
+                                        onChange={(e) => handleFormChange("city", e.target.value)}
+                                        placeholder=""
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>State *</label>
+                                <input
+                                    type="text"
+                                    value={formData.state}
+                                    onChange={(e) => handleFormChange("state", e.target.value)}
+                                    placeholder=""
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Landmark (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={formData.landmark}
+                                    onChange={(e) => handleFormChange("landmark", e.target.value)}
+                                    placeholder="Near..."
                                 />
                             </div>
 

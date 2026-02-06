@@ -8,7 +8,7 @@ const useCartStore = create((set, get) => ({
     subtotal: 0,
     discount: 0,
     deliveryCharges: 0,
-    platformFees: 2,
+    platformFees: 10,
     totalAmount: 0,
   },
   loading: false,
@@ -621,8 +621,8 @@ const calculateCartTotals = (items) => {
   );
   const totalItems = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-  // Calculate discount (20% for demo, but cap at reasonable amount)
-  const discount = Math.min(subtotal * 0.2, 500);
+  // No default discount (coupon logic to be added later)
+  const discount = 0;
 
   // Calculate delivery charges based on product types
   // Items with explicit delivery charges (bookset/uniform/stationary with deliveryCharge in metadata)
@@ -642,7 +642,7 @@ const calculateCartTotals = (items) => {
   }
 
   // Platform fees only if there are items
-  const platformFees = subtotal > 0 ? 2 : 0;
+  const platformFees = subtotal > 0 ? 10 : 0;
 
   const totalAmount = Math.max(
     0,

@@ -18,6 +18,7 @@ function CartPage() {
     loadCart,
     getCheckoutSummary,
     setBuyNowItem,
+    clearBuyNowItem,
   } = useCartStore();
 
   const [validationResults, setValidationResults] = useState(null);
@@ -37,7 +38,7 @@ function CartPage() {
       setValidationResults(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart?.items?.length]);
+  }, [cart]);
 
   const handleQuantityChange = async (productId, variantId, newQuantity) => {
     if (newQuantity < 1) {
@@ -130,6 +131,8 @@ function CartPage() {
       });
       return;
     }
+    // Explicitly clear any previous Buy Now state to avoid conflicts
+    clearBuyNowItem();
     navigate("/checkout");
   };
 
@@ -214,8 +217,8 @@ function CartPage() {
     return null;
   };
 
-  // Get checkout summary
-  const summary = getCheckoutSummary();
+  // Use cart totals directly instead of getCheckoutSummary to avoid Buy Now mode conflicts
+  const summary = cart;
 
   // Calculate MRP (total original prices)
   const totalMRP = cart?.items?.reduce((sum, item) => {
@@ -223,8 +226,8 @@ function CartPage() {
     return sum + (originalPrice * item.quantity);
   }, 0) || 0;
 
-  // Calculate total savings
-  const totalSavings = totalMRP - (summary.totalAmount || 0);
+  // Calculate total savings (Discount = MRP - Subtotal)
+  const totalSavings = totalMRP - (summary.subtotal || 0);
   const fees = (summary.platformFees || 0) + (summary.deliveryCharges || 0);
 
   if (loading) {
@@ -453,14 +456,14 @@ function CartPage() {
                 </svg>
               </button>
               <span className="text-green-600 font-medium">
-                -₹{(summary.discount || 0).toLocaleString('en-IN')}
+                -₹{totalSavings.toLocaleString('en-IN')}
               </span>
             </div>
             {expandedDiscounts && (
               <div className="pl-4 text-sm text-gray-500 pb-2">
                 <div className="flex justify-between">
                   <span>Product Discount</span>
-                  <span className="text-green-600">-₹{(summary.discount || 0).toLocaleString('en-IN')}</span>
+                  <span className="text-green-600">-₹{totalSavings.toLocaleString('en-IN')}</span>
                 </div>
               </div>
             )}

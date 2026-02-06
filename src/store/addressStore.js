@@ -132,20 +132,20 @@ const useAddressStore = create((set, get) => ({
 
     // Try multiple APIs in order of preference
     const geocodingAPIs = [
-      // Primary: BigDataCloud (free, detailed)
+      // Primary: Google Maps (Highest Precision)
+      {
+        name: "Google Maps",
+        fn: () => get().reverseGeocodeGoogle(lat, lng, process.env.REACT_APP_GOOGLE_MAPS_API_KEY),
+      },
+      // Secondary: BigDataCloud (Free, good detail)
       {
         name: "BigDataCloud",
         fn: () => get().reverseGeocodeBigDataCloud(lat, lng),
       },
-      // Secondary: Nominatim (free, OpenStreetMap)
+      // Tertiary: Nominatim (Free, OpenStreetMap)
       {
         name: "Nominatim",
         fn: () => get().reverseGeocodeNominatim(lat, lng),
-      },
-      // Tertiary: LocationIQ (free tier available)
-      {
-        name: "LocationIQ",
-        fn: () => get().reverseGeocodeLocationIQ(lat, lng),
       },
     ];
 
@@ -411,29 +411,25 @@ const useAddressStore = create((set, get) => ({
         return component ? component.short_name : "";
       };
 
+      // Precise mapping
+      const houseNumber = getComponent(["street_number", "premise", "subpremise"]);
+      const route = getComponent(["route"]);
+      const sublocality = getComponent(["sublocality_level_2", "sublocality_level_1", "sublocality", "neighborhood"]);
+      const landmarkComponent = getComponent(["point_of_interest", "establishment", "park"]);
+
       const addressData = {
-        line1:
-          `${getComponent(["street_number"])} ${getComponent([
-            "route",
-          ])}`.trim() ||
-          getComponent(["premise"]) ||
-          getComponent(["subpremise"]) ||
-          "Address Line 1",
-        line2:
-          getComponent([
-            "sublocality_level_2",
-            "sublocality_level_1",
-            "sublocality",
-          ]) ||
-          getComponent(["neighborhood"]) ||
-          "",
+        line1: houseNumber ? `${houseNumber}, ${route}` : (route || sublocality || "Address"),
+        line2: sublocality,
         city: getComponent(["locality", "administrative_area_level_2"]) || "",
         state: getComponent(["administrative_area_level_1"]) || "",
         country: getComponent(["country"]) || "India",
         postalCode: getComponent(["postal_code"]) || "",
         lat: lat,
         lng: lng,
-        // Additional data from Google
+        // Extract specific fields for form pre-filling
+        houseNumber: houseNumber, // Export specifically for UI
+        street: route,
+        landmark: landmarkComponent, // Export landmark
         formattedAddress: result.formatted_address,
         placeId: result.place_id,
       };

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
 import MobileMapAddressPicker from "../../components/Address/MobileMapAddressPicker";
+import AddressList from "../../components/Address/AddressList";
+import AddressForm from "../../components/Address/AddressForm";
 import useCartStore from "../../store/cartStore";
 import useAddressStore from "../../store/addressStore";
 import useAuthStore from "../../store/authStore";
@@ -23,6 +25,7 @@ function CheckoutPage() {
     getCheckoutItems,
     getCheckoutSummary,
     isBuyNowMode,
+    buyNowItem,
     clearBuyNowItem,
   } = useCartStore();
 
@@ -30,7 +33,9 @@ function CheckoutPage() {
   const failedImagesRef = useRef(new Set());
 
   // Process state management with enhanced validation tracking
-  const [processState, setProcessState] = useState(isBuyNowMode ? 1 : 2); // 1 - Order Summary, 2 - Delivery Address, 3 - Payment & Place Order
+  // If Buy Now mode (direct purchase), start at Step 1 (Order Summary/Review)
+  // If Cart mode (standard checkout), start at Step 2 (Delivery Address) as Summary is already reviewed in Cart
+  const [processState, setProcessState] = useState(isBuyNowMode ? 1 : 2);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [showMobileMapPicker, setShowMobileMapPicker] = useState(false);
@@ -51,19 +56,11 @@ function CheckoutPage() {
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
 
-  // Form state for new/edit address
-  const [addressForm, setAddressForm] = useState({
-    label: "Home",
-    recipientName: "",
-    phone: "",
-    line1: "",
-    line2: "",
-    city: "",
-    state: "",
-    country: "India",
-    postalCode: "",
-    landmark: "",
-  });
+  // Order Summary UI state (matching Cart Page)
+  const [expandedFees, setExpandedFees] = useState(false);
+  const [expandedDiscounts, setExpandedDiscounts] = useState(false);
+
+
 
 
   const {
@@ -125,9 +122,15 @@ function CheckoutPage() {
   // Effect to handle Native Razorpay Callbacks
   useEffect(() => {
     // Success Callback from Native
-    window.onNativePaymentSuccess = async (responseString) => {
+    // Success Callback from Native
+    window.onNativePaymentSuccess = async (data) => {
+      console.log("Native payment success callback received:", data);
       try {
-        const response = JSON.parse(responseString);
+        let response = data;
+        if (typeof data === 'string') {
+          response = JSON.parse(data);
+        }
+
         const order = currentOrderRef.current;
 
         if (!order) {
@@ -180,9 +183,14 @@ function CheckoutPage() {
     };
 
     // Failure Callback from Native
-    window.onNativePaymentFailure = async (responseString) => {
+    window.onNativePaymentFailure = async (data) => {
+      console.log("Native payment failure callback received:", data);
       try {
-        const response = JSON.parse(responseString);
+        let response = data;
+        if (typeof data === 'string') {
+          response = JSON.parse(data);
+        }
+
         const order = currentOrderRef.current;
 
         if (!order) {
@@ -354,144 +362,34 @@ function CheckoutPage() {
 
   // Get variant display text
   const getVariantDisplayText = (item) => {
-    if (!item.variantOptions || item.variantOptions.length === 0) {
-      return null;
+    if (item.variantOptions && item.variantOptions.length > 0) {
+      return item.variantOptions
+        .map((option) => option.value)
+        .join(", ");
     }
-    return item.variantOptions
-      .map((option) => `${option.name}: ${option.value}`)
-      .join(", ");
+    if (!item.variantDetails) return null;
+    if (item.variantDetails.variantDescription) {
+      return item.variantDetails.variantDescription;
+    }
+    if (item.variantDetails.optionValues) {
+      const options = Object.values(item.variantDetails.optionValues)
+        .filter((option) => option && option.value)
+        .map((option) => option.value);
+      return options.length > 0 ? options.join(", ") : null;
+    }
+    return null;
   };
 
-  // Handle form input changes
-  const handleFormChange = (field, value) => {
-    setAddressForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+
 
   // Handle use current location
-  // Handle use current location
-  const handleUseCurrentLocation = async () => {
-    try {
-      const { address } = await getCurrentLocationAndAddress();
 
-      if (address) {
-        setAddressForm((prev) => ({
-          ...prev,
-          line1: address.line1 || "",
-          line2: address.line2 || "",
-          city: address.city || "",
-          state: address.state || "",
-          country: address.country || "India",
-          postalCode: address.postalCode || "",
-          landmark: address.landmark || "",
-        }));
 
-        showNotification({
-          message: "Location detected successfully",
-          type: "success"
-        });
-      }
-    } catch (error) {
-      console.error("Location error:", error);
-      showNotification({
-        message: "Failed to get current location. Please enter address manually.",
-        type: "error",
-      });
-    }
-  };
 
-  // Handle add/edit address form submission
-  const handleAddressSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate required fields
-    const requiredFields = [
-      "recipientName",
-      "phone",
-      "line1",
-      "city",
-      "state",
-      "postalCode",
-    ];
-    const missingFields = requiredFields.filter((field) => !addressForm[field]);
-
-    if (missingFields.length > 0) {
-      showNotification({
-        message: `Please fill in all required fields: ${missingFields.join(", ")}`,
-        type: "error",
-      });
-      return;
-    }
-
-    // Validate phone number format
-    if (!/^\+?[\d\s\-\(\)]{10,15}$/.test(addressForm.phone)) {
-      showNotification({
-        message: "Please enter a valid phone number",
-        type: "error"
-      });
-      return;
-    }
-
-    // Validate postal code (6 digits for India)
-    if (!/^\d{6}$/.test(addressForm.postalCode)) {
-      showNotification({
-        message: "Please enter a valid 6-digit postal code",
-        type: "error"
-      });
-      return;
-    }
-
-    try {
-      if (editingAddress) {
-        await updateAddress(editingAddress.id, addressForm);
-        showNotification({
-          message: "Address updated successfully",
-          type: "success"
-        });
-      } else {
-        const newAddress = await addAddress(addressForm);
-
-        if (!newAddress) {
-          setModalOpen(true);
-          showNotification({
-            message: "Please login to add an address",
-            type: "info"
-          });
-          return;
-        }
-
-        selectAddress(newAddress.id);
-        showNotification({
-          message: "Address added successfully",
-          type: "success"
-        });
-      }
-      handleCancelForm();
-    } catch (error) {
-      showNotification({
-        message: error.message || "Failed to save address. Please try again.",
-        type: "error",
-      });
-    }
-  };
 
   // Handle edit address
   const handleEditAddress = (address) => {
     setEditingAddress(address);
-    setAddressForm({
-      label: address.label || "Home",
-      recipientName: address.recipientName || "",
-      phone: address.phone || "",
-      line1: address.line1 || "",
-      line2: address.line2 || "",
-      city: address.city || "",
-      state: address.state || "",
-      country: address.country || "India",
-      postalCode: address.postalCode || "",
-      landmark: address.landmark || "",
-    });
     setShowAddressForm(true);
   };
 
@@ -499,18 +397,6 @@ function CheckoutPage() {
   const handleCancelForm = () => {
     setShowAddressForm(false);
     setEditingAddress(null);
-    setAddressForm({
-      label: "Home",
-      recipientName: "",
-      phone: "",
-      line1: "",
-      line2: "",
-      city: "",
-      state: "",
-      country: "India",
-      postalCode: "",
-      landmark: "",
-    });
   };
 
   // Handle deliver here (select address and move to next step)
@@ -848,7 +734,20 @@ function CheckoutPage() {
 
   // Get checkout items and summary (works for both cart and buy now)
   const checkoutItems = getCheckoutItems();
-  const checkoutSummary = getCheckoutSummary();
+
+  // Use direct store values instead of getCheckoutSummary for accuracy
+  // This mirrors the logic in CartPage.js to ensure consistency
+  const checkoutSummary = isBuyNowMode && buyNowItem
+    ? {
+      items: [buyNowItem],
+      totalItems: buyNowItem.quantity,
+      subtotal: buyNowItem.price * buyNowItem.quantity,
+      platformFees: 10,
+      deliveryCharges: buyNowItem.deliveryCharge || 0,
+      // Calculate total for Buy Now
+      totalAmount: (buyNowItem.price * buyNowItem.quantity) + 10 + (buyNowItem.deliveryCharge || 0)
+    }
+    : cart; // When in Cart mode, use the cart store state directly
 
   // Calculate totals from checkout summary
   const cartSubtotal = checkoutSummary.subtotal || 0;
@@ -856,6 +755,21 @@ function CheckoutPage() {
 
   // Get selected address
   const selectedAddress = getSelectedAddress();
+
+  // Calculate MRP (total original prices) for display - similar to CartPage
+  const totalMRP = checkoutItems?.reduce((sum, item) => {
+    // If originalPrice exists and is greater than price, use it. Otherwise use price.
+    // Note: The cart item structure might differ slightly, checking for originalPrice or compare_at_price
+    const originalPrice = item.originalPrice || item.compare_at_price || item.price;
+    return sum + (originalPrice * item.quantity);
+  }, 0) || 0;
+
+  // Calculate fees and savings for display
+  // Use store values for fees to ensure consistency
+  const fees = (checkoutSummary.platformFees || checkoutSummary.platformFee || 0) + (checkoutSummary.deliveryCharges || checkoutSummary.deliveryFee || 0);
+
+  // Calculate discount (Strictly MRP - Subtotal)
+  const totalSavings = totalMRP - (checkoutSummary.subtotal || 0);
 
   // Check if order can proceed
   const canProceedToNext = () => {
@@ -1134,321 +1048,66 @@ function CheckoutPage() {
                   <h2 className="text-xl font-semibold text-gray-800">
                     Select Delivery Address
                   </h2>
-                  <button
-                    onClick={() => {
-                      if (isMobileApp) {
-                        setShowMobileMapPicker(true);
-                      } else {
-                        setShowAddressForm(true);
-                      }
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    + Add New Address
-                  </button>
+                  {isMobileApp && (
+                    <button
+                      onClick={() => setShowMobileMapPicker(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      + Add New Address
+                    </button>
+                  )}
                 </div>
 
                 {/* Address Form */}
                 {showAddressForm && (
-                  <div className="mb-6 p-6 bg-gray-50 rounded-lg border">
-                    <h3 className="font-semibold text-gray-800 mb-4">
-                      {editingAddress ? "Edit Address" : "Add New Address"}
-                    </h3>
+                  <div className="mb-6">
+                    <AddressForm
+                      existingAddress={editingAddress}
+                      onCancel={handleCancelForm}
+                      onSuccess={() => {
+                        fetchAddresses();
+                        handleCancelForm();
+                        showNotification({
+                          message: editingAddress ? "Address updated successfully" : "Address added successfully",
+                          type: "success"
+                        });
+                      }}
+                    />
+                  </div>
+                )}
 
-                    <form onSubmit={handleAddressSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Address Label *
-                          </label>
-                          <select
-                            value={addressForm.label}
-                            onChange={(e) =>
-                              handleFormChange("label", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required
-                          >
-                            <option value="Home">Home</option>
-                            <option value="Work">Work</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Recipient Name *
-                          </label>
-                          <input
-                            type="text"
-                            value={addressForm.recipientName}
-                            onChange={(e) =>
-                              handleFormChange("recipientName", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Full name"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone Number *
-                        </label>
-                        <input
-                          type="tel"
-                          value={addressForm.phone}
-                          onChange={(e) =>
-                            handleFormChange("phone", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="10-digit phone number"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address Line 1 *
-                        </label>
-                        <input
-                          type="text"
-                          value={addressForm.line1}
-                          onChange={(e) =>
-                            handleFormChange("line1", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="House/Flat/Building details"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address Line 2
-                        </label>
-                        <input
-                          type="text"
-                          value={addressForm.line2}
-                          onChange={(e) =>
-                            handleFormChange("line2", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Area/Locality details"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Landmark
-                        </label>
-                        <input
-                          type="text"
-                          value={addressForm.landmark}
-                          onChange={(e) =>
-                            handleFormChange("landmark", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Nearby landmark (optional)"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            City *
-                          </label>
-                          <input
-                            type="text"
-                            value={addressForm.city}
-                            onChange={(e) =>
-                              handleFormChange("city", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="City"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            State *
-                          </label>
-                          <input
-                            type="text"
-                            value={addressForm.state}
-                            onChange={(e) =>
-                              handleFormChange("state", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="State"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Postal Code *
-                          </label>
-                          <input
-                            type="text"
-                            value={addressForm.postalCode}
-                            onChange={(e) =>
-                              handleFormChange("postalCode", e.target.value)
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="6-digit PIN"
-                            pattern="\d{6}"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <button
-                          type="button"
-                          onClick={handleUseCurrentLocation}
-                          disabled={geoLoading}
-                          className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                        >
-                          {geoLoading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              <span>Getting Location...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>📍</span>
-                              <span>Use Current Location</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      <div className="flex space-x-4">
-                        <button
-                          type="submit"
-                          disabled={addressLoading}
-                          className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                        >
-                          {addressLoading
-                            ? "Saving..."
-                            : editingAddress
-                              ? "Update Address"
-                              : "Add Address"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleCancelForm}
-                          className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
+                {/* Desktop Add Address Bar */}
+                {!isMobileApp && !showAddressForm && (
+                  <div
+                    onClick={() => setShowAddressForm(true)}
+                    className="mb-6 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors flex items-center text-blue-600 font-semibold uppercase tracking-wide"
+                  >
+                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    ADD A NEW ADDRESS
                   </div>
                 )}
 
                 {/* Existing Addresses */}
                 {addresses.length > 0 ? (
-                  <div className="space-y-4">
-                    {addresses.map((address) => (
-                      <div
-                        key={address.id}
-                        className={`p-4 border rounded-lg transition-all cursor-pointer ${selectedAddressId === address.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                          }`}
-                        onClick={() => selectAddress(address.id)}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium ${address.label === "Home"
-                                  ? "bg-green-100 text-green-800"
-                                  : address.label === "Work"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-gray-100 text-gray-800"
-                                  }`}
-                              >
-                                {address.label}
-                              </span>
-
-                              {address.isDefault && (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
-                                  Default
-                                </span>
-                              )}
-
-                              {selectedAddressId === address.id && (
-                                <span className="text-blue-600 font-medium text-sm">
-                                  Selected
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="text-gray-800 font-medium mb-1">
-                              {address.recipientName}
-                            </div>
-
-                            <div className="text-gray-600 text-sm">
-                              {address.line1}
-                              {address.line2 && `, ${address.line2}`}
-                              {address.landmark &&
-                                ` (Near ${address.landmark})`}
-                              <br />
-                              {address.city}, {address.state} -{" "}
-                              {address.postalCode}
-                              <br />
-                              📞 {address.phone}
-                            </div>
-                          </div>
-
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditAddress(address);
-                              }}
-                              className="text-blue-600 hover:text-blue-700 p-1 transition-colors"
-                            >
-                              ✏️
-                            </button>
-
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (
-                                  window.confirm(
-                                    "Are you sure you want to delete this address?"
-                                  )
-                                ) {
-                                  deleteAddress(address.id);
-                                }
-                              }}
-                              className="text-red-600 hover:text-red-700 p-1 transition-colors"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-
-                        {selectedAddressId === address.id && (
-                          <div className="mt-4 pt-4 border-t border-blue-200">
-                            <button
-                              onClick={() => handleDeliverHere(address.id)}
-                              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                            >
-                              Deliver to this Address →
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <AddressList
+                    addresses={addresses}
+                    selectedAddressId={selectedAddressId}
+                    onSelect={(addr) => selectAddress(addr.id)}
+                    onEdit={handleEditAddress}
+                    onDelete={(address) => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to delete this address?"
+                        )
+                      ) {
+                        deleteAddress(address.id);
+                      }
+                    }}
+                    isMobile={isMobileApp}
+                    onDeliverHere={(addr) => handleDeliverHere(addr.id)}
+                  />
                 ) : (
                   !showAddressForm && (
                     <div className="text-center py-8">
@@ -1806,61 +1465,88 @@ function CheckoutPage() {
                 Order Summary
               </h3>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">
-                    Subtotal ({cartItemCount} items)
-                  </span>
-                  <span className="font-medium">
-                    ₹{cartSubtotal.toFixed(2)}
-                  </span>
-                </div>
-
-                {orderSummary && (
-                  <>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Delivery Fee</span>
-                      <span className="font-medium">
-                        ₹{orderSummary.deliveryFee.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {orderSummary.platformFee > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Platform Fee</span>
-                        <span className="font-medium">
-                          ₹{orderSummary.platformFee.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax</span>
-                      <span className="font-medium">
-                        ₹{orderSummary.tax.toFixed(2)}
-                      </span>
-                    </div>
-
-                    {orderSummary.savings > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Savings</span>
-                        <span className="font-medium">
-                          -₹{orderSummary.savings.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
+              {/* MRP */}
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-700">MRP</span>
+                <span className="text-gray-900">₹{totalMRP.toLocaleString('en-IN')}</span>
               </div>
 
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-lg font-semibold text-gray-800">
-                  <span>Total</span>
-                  <span>
-                    ₹{(orderSummary?.total || cartSubtotal).toFixed(2)}
+              {/* Fees */}
+              <div className="flex justify-between items-center py-2 border-t border-gray-100">
+                <button
+                  onClick={() => setExpandedFees(!expandedFees)}
+                  className="flex items-center gap-1 text-gray-700"
+                >
+                  Fees
+                  <svg
+                    className={`w-4 h-4 transition-transform ${expandedFees ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <span className="text-gray-900">₹{fees.toLocaleString('en-IN')}</span>
+              </div>
+              {expandedFees && (
+                <div className="pl-4 text-sm text-gray-500 pb-2">
+                  <div className="flex justify-between">
+                    <span>Platform Fee</span>
+                    <span>₹{(checkoutSummary.platformFees || checkoutSummary.platformFee || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Delivery Charges</span>
+                    <span>{(checkoutSummary.deliveryCharges || checkoutSummary.deliveryFee || 0) === 0 ? 'FREE' : `₹${(checkoutSummary.deliveryCharges || checkoutSummary.deliveryFee || 0).toLocaleString('en-IN')}`}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Discounts */}
+              <div className="flex justify-between items-center py-2 border-t border-gray-100">
+                <button
+                  onClick={() => setExpandedDiscounts(!expandedDiscounts)}
+                  className="flex items-center gap-1 text-gray-700"
+                >
+                  Discounts
+                  <svg
+                    className={`w-4 h-4 transition-transform ${expandedDiscounts ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                <span className="text-green-600 font-medium">
+                  -₹{totalSavings.toLocaleString('en-IN')}
+                </span>
+              </div>
+              {expandedDiscounts && (
+                <div className="pl-4 text-sm text-gray-500 pb-2">
+                  <div className="flex justify-between">
+                    <span>Product Discount</span>
+                    <span className="text-green-600">-₹{totalSavings.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Total Amount */}
+              <div className="flex justify-between items-center py-3 border-t border-gray-200 mt-2">
+                <span className="font-semibold text-gray-900">Total Amount</span>
+                <span className="font-bold text-gray-900 text-lg">
+                  ₹{(checkoutSummary.totalAmount || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {/* Savings Banner */}
+              {totalSavings > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg py-3 px-4 text-center mt-3">
+                  <span className="text-yellow-800 font-medium">
+                    You will save ₹{totalSavings.toLocaleString('en-IN')} on this order
                   </span>
                 </div>
-              </div>
+              )}
 
               {processState === 3 && paymentMethod === "cod" && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -1868,7 +1554,7 @@ function CheckoutPage() {
                     <span className="mr-2">💵</span>
                     <span>
                       Cash on Delivery selected. Pay ₹
-                      {(orderSummary?.total || cartSubtotal).toFixed(2)} when
+                      {(checkoutSummary.totalAmount || 0).toLocaleString('en-IN')} when
                       your order arrives.
                     </span>
                   </div>

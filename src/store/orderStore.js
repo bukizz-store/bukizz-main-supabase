@@ -321,14 +321,17 @@ const useOrderStore = create((set, get) => ({
     // Calculate delivery fee (free delivery for orders above ₹500)
     const deliveryFee = subtotal >= 500 ? 0 : 50;
 
-    // Platform fee (₹2 if there are items)
-    const platformFee = subtotal > 0 ? 2 : 0;
+    // Platform fee (₹10 if there are items)
+    const platformFee = subtotal > 0 ? 10 : 0;
 
     // Calculate tax (18% GST, but simplified calculation)
     const taxRate = 0.18;
     const tax = subtotal * taxRate;
 
-    // Calculate savings (20% discount, max ₹500)
+    // Calculate savings (Discount = MRP - Subtotal)
+    // Here we approximate MRP as Subtotal * 1.25 (20% discount reversed) if originalPrice is not available
+    // But ideally, savings should be calculated based on item-level originalPrice if available
+    // For now, keeping the fallback simple as per previous logic, but ensure it's presented correctly
     const discountRate = 0.2;
     const savings = Math.min(subtotal * discountRate, 500);
 
