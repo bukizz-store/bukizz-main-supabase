@@ -58,6 +58,7 @@ function ProductViewPage() {
           id: v.option_value_1_ref.id,
           value: v.option_value_1_ref.value,
           priceModifier: v.option_value_1_ref.price_modifier || 0,
+          imageUrl: v.option_value_1_ref.imageUrl, // Capture image URL
         });
       }
 
@@ -76,6 +77,7 @@ function ProductViewPage() {
           id: v.option_value_2_ref.id,
           value: v.option_value_2_ref.value,
           priceModifier: v.option_value_2_ref.price_modifier || 0,
+          imageUrl: v.option_value_2_ref.imageUrl, // Capture image URL
         });
       }
 
@@ -94,6 +96,7 @@ function ProductViewPage() {
           id: v.option_value_3_ref.id,
           value: v.option_value_3_ref.value,
           priceModifier: v.option_value_3_ref.price_modifier || 0,
+          imageUrl: v.option_value_3_ref.imageUrl, // Capture image URL
         });
       }
     });
@@ -620,19 +623,49 @@ function ProductViewPage() {
                   </h3>
                   <div className="flex gap-3 flex-nowrap overflow-x-auto pb-2 w-full no-scrollbar">
                     {optionGroup.options.map((option) => (
-                      <button
-                        key={option.id}
-                        onClick={() =>
-                          handleOptionSelect(optionGroup.position, option.id)
-                        }
-                        className={`px-4 py-2 border rounded-lg transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${selectedOptions[`option${optionGroup.position}`] ===
-                          option.id
-                          ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                          : "border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700"
-                          }`}
-                      >
-                        {option.value}
-                      </button>
+                      <div key={option.id} className="flex flex-col items-center">
+                        {option.imageUrl ? (
+                          // Image-based option rendering
+                          <button
+                            onClick={() =>
+                              handleOptionSelect(optionGroup.position, option.id)
+                            }
+                            className={`relative w-12 h-12 rounded-full overflow-hidden transition-all flex-shrink-0 ${selectedOptions[`option${optionGroup.position}`] ===
+                              option.id
+                              ? "ring-2 ring-blue-500 ring-offset-2 scale-105"
+                              : "border border-gray-300 hover:border-gray-400"
+                              }`}
+                            title={option.value}
+                          >
+                            <img
+                              src={option.imageUrl}
+                              alt={option.value}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ) : (
+                          // Text-based option rendering
+                          <button
+                            onClick={() =>
+                              handleOptionSelect(optionGroup.position, option.id)
+                            }
+                            className={`px-4 py-2 border rounded-lg transition-all text-sm font-medium whitespace-nowrap flex-shrink-0 ${selectedOptions[`option${optionGroup.position}`] ===
+                              option.id
+                              ? "bg-blue-500 text-white border-blue-500 shadow-md"
+                              : "border-gray-300 hover:bg-gray-50 hover:border-gray-400 text-gray-700"
+                              }`}
+                          >
+                            {option.value}
+                          </button>
+                        )}
+                        {/* Show name below image if it's an image option */}
+                        {option.imageUrl && (
+                          <span className={`text-xs mt-1 font-medium ${selectedOptions[`option${optionGroup.position}`] === option.id ? "text-blue-600" : "text-gray-600"
+                            }`}>
+                            {option.value}
+                          </span>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -778,87 +811,35 @@ function ProductViewPage() {
 
           {/* Product Highlights */}
           <h2 className="text-2xl font-semibold my-4">Product Highlights</h2>
-          <div className="grid grid-cols-2 gap-4 text-sm md:text-base">
-            <div>
-              <p className="font-semibold">Product Type</p>
-              <p className="capitalize">{productData.product_type}</p>
-              <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-
-              <p className="font-semibold">SKU</p>
-              <p>{productData.sku}</p>
-              <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-
-              <p className="font-semibold">Currency</p>
-              <p>{productData.currency}</p>
-              <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-
-              {/* Brands */}
-              {productData.brands?.length > 0 && (
-                <>
-                  <p className="font-semibold">Brand</p>
-                  <p>{productData.brands[0].name}</p>
-                  <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-                </>
-              )}
-
-              {/* Categories */}
-              {productData.categories?.length > 0 && (
-                <>
-                  <p className="font-semibold">Category</p>
-                  <p>{productData.categories[0].name}</p>
-                  <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-                </>
-              )}
+          {productData.highlight ? (
+            <div className="grid grid-cols-2 gap-4 text-sm md:text-base">
+              {Object.entries(productData.highlight).map(([key, value], index) => (
+                <React.Fragment key={index}>
+                  <div>
+                    <p className="font-semibold capitalize">{key.replace(/_/g, " ")}</p>
+                    <p>{value}</p>
+                    <div className="h-0.5 w-full bg-gray-300 my-2"></div>
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
-            <div>
-              <p className="font-semibold">Warehouse</p>
-              <p>{productData.warehouses?.[0]?.name || "Bukizz"}</p>
-              <div className="h-0.5 w-full bg-gray-300 my-2"></div>
+          ) : (
+            <div className="text-gray-500">No highlights available for this product.</div>
+          )}
 
-              <p className="font-semibold">Status</p>
-              <p
-                className={
-                  productData.is_active ? "text-green-600" : "text-red-600"
-                }
-              >
-                {productData.is_active ? "Active" : "Inactive"}
-              </p>
-              <div className="h-0.5 w-full bg-gray-300 my-2"></div>
 
-              {selectedVariant?.stock && (
-                <>
-                  <p className="font-semibold">Stock</p>
-                  <p>{selectedVariant.stock} units available</p>
-                  <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-                </>
-              )}
-
-              <p className="font-semibold">Base Price</p>
-              <p>₹{productData.base_price}</p>
-              <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-
-              {productData.min_price && (
-                <>
-                  <p className="font-semibold">Min Price</p>
-                  <p>₹{productData.min_price}</p>
-                  <div className="h-0.5 w-full bg-gray-300 my-2"></div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Product Description */}
-          <h2 className="text-2xl font-semibold my-4">Product Description</h2>
-          <p className="text-sm">
-            {productData.short_description ||
-              productData.description ||
-              "No description available."}
-          </p>
         </div>
       </div>
 
-
-      {/* Similar Products Section */}
+      {/* Product Description */}
+      <div className="mx-4 md:mx-12 my-4">
+        <h2 className="text-2xl font-semibold my-4">Product Description</h2>
+        <p className="text-sm">
+          {productData.short_description ||
+            productData.description ||
+            "No description available."}
+        </p>
+      </div>
       {
         similarProducts.length > 0 && (
           <div className="mx-4 md:mx-12 my-4">
@@ -889,9 +870,12 @@ function ProductViewPage() {
       {/* Product Details Section */}
       <div className="mx-4 md:mx-12 my-4">
         <h2 className="text-2xl font-semibold my-4">Product Details</h2>
-        <div className="text-sm text-gray-700 leading-relaxed bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          {productData.description || "No specific details available for this product."}
-        </div>
+        <div
+          className="text-sm text-gray-700 leading-relaxed bg-white p-6 rounded-xl border border-gray-100 shadow-sm"
+          dangerouslySetInnerHTML={{
+            __html: productData.description || "No specific details available for this product.",
+          }}
+        />
       </div>
       {/* Mobile Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex gap-4 z-50 md:hidden items-center justify-between border-t border-gray-100">
@@ -927,9 +911,9 @@ function ProductViewPage() {
             (selectedVariant && selectedVariant.stock < selectedQuantity)
           }
           className={`flex-1 py-3 rounded-xl font-semibold shadow-lg transition-all ${!selectedVariant ||
-              (selectedVariant && selectedVariant.stock < selectedQuantity)
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-              : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
+            (selectedVariant && selectedVariant.stock < selectedQuantity)
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+            : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
             }`}
         >
           Buy Now

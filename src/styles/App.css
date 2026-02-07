@@ -9,10 +9,11 @@
   padding-right: env(safe-area-inset-right);
 
   /* Add extra breathing room for the WebView content */
-  padding-top: calc(env(safe-area-inset-top) + 16px);
+  /* Add extra breathing room for the WebView content */
+  padding-top: calc(env(safe-area-inset-top) + 2px);
   padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
 
   /* Equivalent to my-4 (1rem = 16px) */
-  margin-top: 1rem;
+  margin-top: 0;
   margin-bottom: 1rem;
 }
