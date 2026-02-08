@@ -571,9 +571,33 @@ const useCartStore = create((set, get) => ({
     set({ buyNowItem: null, isBuyNowMode: false });
   },
 
+  // Initiate Buy Now Flow
+  initiateBuyNowFlow: (product, variant, quantity = 1) => {
+    try {
+      get().setBuyNowItem(product, variant, quantity);
+      return { success: true };
+    } catch (error) {
+      console.error("Error initiating Buy Now flow:", error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Initiate Cart Flow
+  initiateCartFlow: () => {
+    try {
+      // Explicitly clear Buy Now item to ensure we are in Cart mode
+      set({ buyNowItem: null, isBuyNowMode: false });
+      return { success: true };
+    } catch (error) {
+      console.error("Error initiating Cart flow:", error);
+      return { success: false, error: error.message };
+    }
+  },
+
   // Get items for checkout (returns buyNowItem as array or cart items)
   getCheckoutItems: () => {
     const { buyNowItem, isBuyNowMode, cart } = get();
+    // Prefer buyNowItem if in Buy Now mode, otherwise fallback to cart
     if (isBuyNowMode && buyNowItem) {
       return [buyNowItem];
     }
@@ -599,6 +623,28 @@ const useCartStore = create((set, get) => ({
       platformFees: cart.platformFees || 0,
       totalAmount: cart.totalAmount || 0,
     };
+  },
+  // Update Buy Now item quantity
+  updateBuyNowItemQuantity: (quantity) => {
+    try {
+      if (quantity <= 0) {
+        get().clearBuyNowItem();
+        return;
+      }
+
+      const { buyNowItem } = get();
+      if (!buyNowItem) return;
+
+      const updatedItem = {
+        ...buyNowItem,
+        quantity: Math.max(1, Math.min(1000, quantity))
+      };
+
+      set({ buyNowItem: updatedItem, error: null });
+    } catch (error) {
+      console.error("Error updating buy now quantity:", error);
+      set({ error: error.message });
+    }
   },
 }));
 

@@ -20,8 +20,14 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
         state: "",
         landmark: "",
         alternatePhone: "",
-        label: "Home"
+        label: "Home",
+        country: "India",
+        isDefault: false,
+        lat: null,
+        lng: null
     });
+
+    const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (existingAddress) {
@@ -36,21 +42,50 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                 landmark: existingAddress.landmark || "",
                 alternatePhone: existingAddress.alternatePhone || "",
                 label: existingAddress.label || "Home",
+                country: existingAddress.country || "India",
+                isDefault: existingAddress.isDefault || false,
+                lat: existingAddress.lat || null,
+                lng: existingAddress.lng || null
             });
         }
     }, [existingAddress]);
 
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.recipientName.trim()) newErrors.recipientName = true;
+        if (!formData.phone.trim()) {
+            newErrors.phone = true;
+        } else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
+            newErrors.phone = true;
+        }
+        if (!formData.postalCode.trim()) {
+            newErrors.postalCode = true;
+        } else if (!/^\d{6}$/.test(formData.postalCode.replace(/\D/g, ''))) {
+            newErrors.postalCode = true;
+        }
+        if (!formData.line1.trim()) newErrors.line1 = true;
+        if (!formData.city.trim()) newErrors.city = true;
+        if (!formData.state.trim()) newErrors.state = true;
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: type === 'checkbox' ? checked : value
         }));
+        // Clear error when user types
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: false }));
+        }
     };
 
     const handleUseCurrentLocation = async () => {
         try {
-            const { address } = await getCurrentLocationAndAddress();
+            const { address, location } = await getCurrentLocationAndAddress();
             if (address) {
                 setFormData(prev => ({
                     ...prev,
@@ -60,7 +95,12 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                     state: address.state || "",
                     postalCode: address.postalCode || "",
                     landmark: address.landmark || "",
+                    country: address.country || "India",
+                    lat: location?.lat || null,
+                    lng: location?.lng || null
                 }));
+                // Clear errors as fields are populated
+                setErrors({});
             }
         } catch (error) {
             console.error("Failed to get location", error);
@@ -71,9 +111,8 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Basic validation
-        if (!formData.recipientName || !formData.phone || !formData.postalCode || !formData.line1 || !formData.city || !formData.state) {
-            alert("Please fill in all required fields.");
+        if (!validateForm()) {
+            // alert("Please correct the highlighted fields.");
             return;
         }
 
@@ -91,9 +130,9 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-blue-600 font-bold uppercase mb-6 text-sm tracking-wide">
+            {/* <h2 className="text-blue-600 font-bold uppercase mb-6 text-sm tracking-wide">
                 {existingAddress ? "EDIT ADDRESS" : "ADD A NEW ADDRESS"}
-            </h2>
+            </h2> */}
 
             <button
                 type="button"
@@ -120,9 +159,10 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             value={formData.recipientName}
                             onChange={handleChange}
                             placeholder="Name"
-                            className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500"
-                            required
+                            className={`w-full px-4 py-3 border ${errors.recipientName ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
+
                         />
+                        {errors.recipientName && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Name is required</span>}
                     </div>
                     <div className="relative">
                         <input
@@ -131,9 +171,10 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             value={formData.phone}
                             onChange={handleChange}
                             placeholder="10-digit mobile number"
-                            className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500"
-                            required
+                            className={`w-full px-4 py-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
+
                         />
+                        {errors.phone && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Valid 10-digit phone required</span>}
                     </div>
                 </div>
 
@@ -145,9 +186,10 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             value={formData.postalCode}
                             onChange={handleChange}
                             placeholder="Pincode"
-                            className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500"
-                            required
+                            className={`w-full px-4 py-3 border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
+
                         />
+                        {errors.postalCode && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Valid 6-digit pincode required</span>}
                     </div>
                     <div className="relative">
                         <input
@@ -168,9 +210,10 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                         onChange={handleChange}
                         placeholder="Address (Area and Street)"
                         rows="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500 resize-none"
-                        required
+                        className={`w-full px-4 py-3 border ${errors.line1 ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500 resize-none`}
+
                     />
+                    {errors.line1 && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Address is required</span>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -181,17 +224,18 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             value={formData.city}
                             onChange={handleChange}
                             placeholder="City/District/Town"
-                            className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500"
-                            required
+                            className={`w-full px-4 py-3 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
+
                         />
+                        {errors.city && <span className="text-xs text-red-500 absolute -bottom-4 left-0">City is required</span>}
                     </div>
                     <div className="relative">
                         <select
                             name="state"
                             value={formData.state}
                             onChange={handleChange}
-                            className={`w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${formData.state ? 'text-gray-900' : 'text-gray-500'}`}
-                            required
+                            className={`w-full px-4 py-3 border ${errors.state ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${formData.state ? 'text-gray-900' : 'text-gray-500'}`}
+
                         >
                             <option value="" disabled>--Select State--</option>
                             <option value="Andhra Pradesh">Andhra Pradesh</option>
@@ -231,6 +275,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             <option value="Lakshadweep">Lakshadweep</option>
                             <option value="Puducherry">Puducherry</option>
                         </select>
+                        {errors.state && <span className="text-xs text-red-500 absolute -bottom-4 left-0">State is required</span>}
                     </div>
                 </div>
 
@@ -283,6 +328,19 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             <span className="text-gray-700">Work</span>
                         </label>
                     </div>
+                </div>
+
+                <div className="mt-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="isDefault"
+                            checked={formData.isDefault}
+                            onChange={handleChange}
+                            className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 rounded"
+                        />
+                        <span className="text-gray-700 text-sm">Make this my default address</span>
+                    </label>
                 </div>
 
                 <div className="flex items-center space-x-4 pt-4 mt-4">

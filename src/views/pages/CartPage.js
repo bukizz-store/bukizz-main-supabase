@@ -19,6 +19,8 @@ function CartPage() {
     getCheckoutSummary,
     setBuyNowItem,
     clearBuyNowItem,
+    initiateBuyNowFlow,
+    initiateCartFlow,
   } = useCartStore();
 
   const [validationResults, setValidationResults] = useState(null);
@@ -131,9 +133,9 @@ function CartPage() {
       });
       return;
     }
-    // Explicitly clear any previous Buy Now state to avoid conflicts
-    clearBuyNowItem();
-    navigate("/checkout");
+    // Explicitly initiate cart flow
+    initiateCartFlow();
+    navigate("/checkout", { state: { mode: 'cart' } });
   };
 
   const handleBuyNow = (item) => {
@@ -184,8 +186,8 @@ function CartPage() {
       } : null;
 
       // Set this item as Buy Now item (bypasses rest of cart)
-      setBuyNowItem(product, variant, item.quantity);
-      navigate("/checkout");
+      initiateBuyNowFlow(product, variant, item.quantity);
+      navigate("/checkout", { state: { mode: 'buy_now' } });
     } catch (error) {
       console.error("Error with Buy Now:", error);
       showNotification({

@@ -15,7 +15,7 @@ function ProductViewPage() {
   const location = useLocation();
   const { getProduct, searchProducts, loading, error } = useUserProfileStore();
 
-  const { addToCart, loading: cartLoading, isInCart, setBuyNowItem } = useCartStore();
+  const { addToCart, loading: cartLoading, isInCart, initiateBuyNowFlow } = useCartStore();
 
   const [productData, setProductData] = useState(null);
   const [schoolName, setSchoolName] = useState(null);
@@ -362,8 +362,8 @@ function ProductViewPage() {
     if (!productData) return;
 
     try {
-      setBuyNowItem(productData, selectedVariant, selectedQuantity);
-      navigate("/checkout");
+      initiateBuyNowFlow(productData, selectedVariant, selectedQuantity);
+      navigate("/checkout", { state: { mode: 'buy_now' } });
     } catch (error) {
       console.error("Error with Buy Now:", error);
     }

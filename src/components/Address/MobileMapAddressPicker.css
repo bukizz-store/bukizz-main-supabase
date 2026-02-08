@@ -464,7 +464,7 @@
   margin-bottom: 8px;
 }
 
-.form-group input {
+.form-group input:not([type="checkbox"]) {
   width: 100%;
   padding: 14px 16px;
   border: 2px solid #E5E7EB;
@@ -474,7 +474,7 @@
   box-sizing: border-box;
 }
 
-.form-group input:focus {
+.form-group input:not([type="checkbox"]):focus {
   outline: none;
   border-color: #3B82F6;
 }
@@ -568,7 +568,36 @@
     padding: 16px;
   }
 
+
   .address-form-sheet {
     max-height: 95vh;
   }
+}
+
+/* Google Places Autocomplete Dropdown */
+.pac-container {
+  z-index: 10000 !important;
+  font-family: inherit;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: none;
+  margin-top: 4px;
+}
+
+.pac-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.pac-item:hover {
+  background-color: #F3F4F6;
+}
+
+.pac-item-query {
+  font-size: 14px;
+  color: #111827;
+}
+
+.pac-icon {
+  margin-right: 12px;
 }

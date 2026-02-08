@@ -492,9 +492,11 @@ const useAddressStore = create((set, get) => ({
               const addresses = retryData.data.addresses || [];
 
               // Set the first address as selected if none is selected
+              // Set the default address as selected if none is selected
               const selectedId = get().selectedAddressId;
               if (!selectedId && addresses.length > 0) {
-                set({ selectedAddressId: addresses[0].id });
+                const defaultAddress = addresses.find((addr) => addr.isDefault);
+                set({ selectedAddressId: defaultAddress ? defaultAddress.id : addresses[0].id });
               }
 
               set({
@@ -524,9 +526,11 @@ const useAddressStore = create((set, get) => ({
       const addresses = data.data.addresses || [];
 
       // Set the first address as selected if none is selected
+      // Set the default address as selected if none is selected
       const selectedId = get().selectedAddressId;
       if (!selectedId && addresses.length > 0) {
-        set({ selectedAddressId: addresses[0].id });
+        const defaultAddress = addresses.find((addr) => addr.isDefault);
+        set({ selectedAddressId: defaultAddress ? defaultAddress.id : addresses[0].id });
       }
 
       set({
@@ -738,7 +742,7 @@ const useAddressStore = create((set, get) => ({
         );
         const newSelectedId =
           state.selectedAddressId === addressId && remainingAddresses.length > 0
-            ? remainingAddresses[0].id
+            ? (remainingAddresses.find((a) => a.isDefault)?.id || remainingAddresses[0].id)
             : state.selectedAddressId === addressId
               ? null
               : state.selectedAddressId;

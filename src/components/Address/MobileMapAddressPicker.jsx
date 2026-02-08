@@ -47,6 +47,8 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         state: "",
         postalCode: "",
         label: "Home",
+        line2: "",
+        isDefault: false,
     });
 
     // Populate form data when address is selected
@@ -55,6 +57,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             setFormData(prev => ({
                 ...prev,
                 flatBuilding: selectedAddress.houseNumber || selectedAddress.line1 || "",
+                line2: selectedAddress.line2 || selectedAddress.locality || "",
                 landmark: selectedAddress.landmark || "",
                 city: selectedAddress.city || "",
                 state: selectedAddress.state || "",
@@ -278,7 +281,81 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                     if (place.geometry && place.geometry.location) {
                         const lat = place.geometry.location.lat();
                         const lng = place.geometry.location.lng();
+
+                        // Parse address components
+                        const addressComponents = place.address_components || [];
+                        let line1 = "";
+                        let line2 = "";
+                        let city = "";
+                        let state = "";
+                        let postalCode = "";
+                        let country = "";
+                        let houseNumber = "";
+                        let route = "";
+                        let sublocality = "";
+                        let sublocality2 = "";
+                        let sublocality3 = "";
+
+                        addressComponents.forEach(component => {
+                            const types = component.types;
+                            if (types.includes("street_number")) {
+                                houseNumber = component.long_name;
+                            }
+                            if (types.includes("route")) {
+                                route = component.long_name;
+                            }
+                            if (types.includes("sublocality_level_2")) {
+                                sublocality2 = component.long_name;
+                            }
+                            if (types.includes("sublocality_level_3")) {
+                                sublocality3 = component.long_name;
+                            }
+                            if (types.includes("sublocality") || types.includes("sublocality_level_1")) {
+                                sublocality = component.long_name;
+                            }
+                            if (types.includes("locality")) {
+                                city = component.long_name;
+                            }
+                            if (types.includes("administrative_area_level_1")) {
+                                state = component.long_name;
+                            }
+                            if (types.includes("postal_code")) {
+                                postalCode = component.long_name;
+                            }
+                            if (types.includes("country")) {
+                                country = component.long_name;
+                            }
+                        });
+
+
+                        line1 = [houseNumber, route].filter(Boolean).join(" ");
+                        // Construct line2 better to include all locality details
+                        line2 = [sublocality3, sublocality2, sublocality].filter(Boolean).join(", ");
+
+                        // If line1 is empty, try to use name or formatted address part
+                        if (!line1 && place.name) {
+                            line1 = place.name;
+                        }
+
+                        const newAddress = {
+                            line1,
+                            line2,
+                            city,
+                            state,
+                            postalCode,
+                            country,
+                            lat,
+                            lng,
+                            locality: sublocality || city // fallback for display
+                        };
+
+                        // Update state immediately
+                        setSelectedAddress(newAddress);
+
+                        // Update map center and lastCenterRef to PREVENT re-geocoding on idle
                         setMapCenter({ lat, lng });
+                        lastCenterRef.current = { lat, lng };
+
                         if (mapRef.current) {
                             mapRef.current.panTo({ lat, lng });
                             mapRef.current.setZoom(17);
@@ -332,7 +409,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             phone: formData.phone,
             alternatePhone: formData.alternatePhone || null,
             line1: formData.flatBuilding,
-            line2: selectedAddress?.line2 || selectedAddress?.locality || "",
+            line2: formData.line2 || selectedAddress?.line2 || selectedAddress?.locality || "",
             city: formData.city,
             state: formData.state,
             country: "India",
@@ -340,6 +417,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             landmark: formData.landmark,
             lat: mapCenter.lat,
             lng: mapCenter.lng,
+            isDefault: formData.isDefault,
         };
 
         try {
@@ -606,7 +684,13 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                             <div className="form-group area-group">
                                 <label>Area / Sector / Locality</label>
                                 <div className="area-display">
-                                    <span>{getFullAddressString()}</span>
+                                    <input
+                                        type="text"
+                                        value={formData.line2}
+                                        onChange={(e) => handleFormChange("line2", e.target.value)}
+                                        placeholder=""
+                                        className="w-full border-none p-0 focus:ring-0"
+                                    />
                                     <button className="change-area-btn" onClick={() => setStep("map")}>Change</button>
                                 </div>
                             </div>
@@ -707,6 +791,18 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         Work
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.isDefault}
+                                        onChange={(e) => handleFormChange("isDefault", e.target.checked)}
+                                        className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 rounded"
+                                    />
+                                    <span className="text-gray-700 px-4">Make this my default address</span>
+                                </label>
                             </div>
                         </div>
 

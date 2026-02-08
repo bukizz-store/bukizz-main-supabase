@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
 import MobileMapAddressPicker from "../../components/Address/MobileMapAddressPicker";
 import AddressList from "../../components/Address/AddressList";
@@ -14,6 +14,7 @@ import useApiRoutesStore from "../../store/apiRoutesStore";
 // CheckoutPage.js
 function CheckoutPage() {
   const navigate = useNavigate();
+  const location = useLocation(); // Add location hook
 
   // Store integrations
   const {
@@ -24,18 +25,41 @@ function CheckoutPage() {
     clearCart,
     getCheckoutItems,
     getCheckoutSummary,
-    isBuyNowMode,
+    isBuyNowMode, // We'll override this with explicit state
     buyNowItem,
     clearBuyNowItem,
+    initiateBuyNowFlow,
+    updateBuyNowItemQuantity,
   } = useCartStore();
 
   // Track images that failed to load to prevent infinite retry loops
   const failedImagesRef = useRef(new Set());
 
+  // Determine checkout mode explicitly from navigation state
+  // This prevents stale store state from causing issues
+  const checkoutMode = location.state?.mode; // 'buy_now' or 'cart'
+
+  // Use explicit mode if available, fallback to store state (backward compatibility)
+  const isExplicitBuyNow = checkoutMode === 'buy_now';
+  const isExplicitCart = checkoutMode === 'cart';
+
+  // Derived state for actual mode
+  // If explicit cart, force false. If explicit buy now, force true. Else fallback.
+  const isBuyNow = isExplicitCart ? false : (isExplicitBuyNow || isBuyNowMode);
+
+  // Validate generic state on mount
+  useEffect(() => {
+    // If trying to do Buy Now but no item exists, redirect home
+    if (isBuyNow && !buyNowItem) {
+      console.warn("Buy Now mode active but no item found. Redirecting to home.");
+      navigate("/", { replace: true });
+    }
+  }, [isBuyNow, buyNowItem, navigate]);
+
   // Process state management with enhanced validation tracking
   // If Buy Now mode (direct purchase), start at Step 1 (Order Summary/Review)
   // If Cart mode (standard checkout), start at Step 2 (Delivery Address) as Summary is already reviewed in Cart
-  const [processState, setProcessState] = useState(isBuyNowMode ? 1 : 2);
+  const [processState, setProcessState] = useState(isBuyNow ? 1 : 2);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [showMobileMapPicker, setShowMobileMapPicker] = useState(false);
@@ -147,7 +171,7 @@ function CheckoutPage() {
         });
 
         // Success
-        if (isBuyNowMode) {
+        if (isBuyNow) {
           clearBuyNowItem();
         } else {
           clearCart();
@@ -167,7 +191,7 @@ function CheckoutPage() {
 
         const order = currentOrderRef.current;
         if (order) {
-          if (isBuyNowMode) {
+          if (isBuyNow) {
             clearBuyNowItem();
           } else {
             clearCart();
@@ -221,7 +245,7 @@ function CheckoutPage() {
       window.onNativePaymentSuccess = null;
       window.onNativePaymentFailure = null;
     };
-  }, [navigate, clearCart, clearBuyNowItem, isBuyNowMode, verifyRazorpayPayment, reportPaymentFailure, showNotification]);
+  }, [navigate, clearCart, clearBuyNowItem, isBuyNow, verifyRazorpayPayment, reportPaymentFailure, showNotification]);
 
   // Load cart and addresses on component mount
   useEffect(() => {
@@ -331,14 +355,21 @@ function CheckoutPage() {
     }
 
     try {
-      await updateQuantity(productId, variantId, newQuantity);
-      showNotification({
-        message: "Cart updated successfully",
-        type: "success"
-      });
+      if (isBuyNow) {
+        // Buy Now mode: update single item directly
+        // Note: productId/variantId check skipped as there's only one item
+        // But strictly we should check
+        if (buyNowItem && buyNowItem.productId === productId && buyNowItem.variantId === variantId) {
+          updateBuyNowItemQuantity(newQuantity);
+        }
+      } else {
+        // Cart mode
+        await updateQuantity(productId, variantId, newQuantity);
+      }
+      // Removed success notification
     } catch (error) {
       showNotification({
-        message: "Failed to update cart. Please try again.",
+        message: "Failed to update quantity. Please try again.",
         type: "error"
       });
     }
@@ -347,11 +378,15 @@ function CheckoutPage() {
   // Handle remove item from cart
   const handleRemoveItem = async (productId, variantId) => {
     try {
-      await removeFromCart(productId, variantId);
-      showNotification({
-        message: "Item removed from cart",
-        type: "success"
-      });
+      if (isBuyNow) {
+        if (buyNowItem && buyNowItem.productId === productId && buyNowItem.variantId === variantId) {
+          clearBuyNowItem();
+          // Redirect handled by useEffect
+        }
+      } else {
+        await removeFromCart(productId, variantId);
+      }
+      // Removed success notification
     } catch (error) {
       showNotification({
         message: "Failed to remove item. Please try again.",
@@ -378,6 +413,109 @@ function CheckoutPage() {
       return options.length > 0 ? options.join(", ") : null;
     }
     return null;
+  };
+
+  // Helper functions imported from CartPage design
+  const getImageSrc = useCallback((item) => {
+    if (item.image && item.image !== "/placeholder.jpg") {
+      return item.image;
+    }
+    if (item.productDetails?.images?.[0]?.url) {
+      return item.productDetails.images[0].url;
+    }
+    if (item.variantDetails?.image) {
+      return item.variantDetails.image;
+    }
+    return "/no-product-image.svg";
+  }, []);
+
+  const getDeliveryDate = () => {
+    const today = new Date();
+    const deliveryDate = new Date(today.setDate(today.getDate() + 4));
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return deliveryDate.toLocaleDateString('en-IN', options);
+  };
+
+  const getDiscountPercentage = (originalPrice, price) => {
+    if (!originalPrice || originalPrice <= price) return 0;
+    return Math.round(((originalPrice - price) / originalPrice) * 100);
+  };
+
+  const getStockStatus = (item) => {
+    const stock = item.variantDetails?.stock || item.stock;
+    if (stock === 0) return { text: "Out of Stock", color: "text-red-600" };
+    if (stock && stock <= 5) return { text: `Only ${stock} left`, color: "text-orange-500" };
+    return null;
+  };
+
+  const handleBuyNow = (item) => {
+    if (!isAuthenticated) {
+      setModalOpen(true);
+      return;
+    }
+
+    try {
+      // Create product and variant objects from cart item for setBuyNowItem
+      // Note: item structure in checkoutItems might be slightly different depending on source (cart vs buyNowItem)
+      // But assuming it matches what's used in CartPage for now
+      const product = {
+        id: item.productId,
+        title: item.title,
+        sku: item.sku,
+        productType: item.productType,
+        basePrice: item.price,
+        base_price: item.price,
+        images: item.image ? [{ url: item.image, isPrimary: true }] : [],
+        metadata: item.productDetails?.metadata || {},
+        deliveryCharge: item.deliveryCharge || 0,
+      };
+
+      const variant = item.variantDetails ? {
+        id: item.variantId,
+        sku: item.variantDetails.sku,
+        price: item.price,
+        compare_at_price: item.originalPrice,
+        stock: item.variantDetails.stock,
+        image: item.variantDetails.image,
+        option_value_1_ref: item.variantDetails.optionValues?.option1 ? {
+          id: item.variantDetails.optionValues.option1.id,
+          value: item.variantDetails.optionValues.option1.value,
+          attribute_name: item.variantDetails.optionValues.option1.attributeName,
+          price_modifier: item.variantDetails.optionValues.option1.priceModifier || 0,
+        } : null,
+        option_value_2_ref: item.variantDetails.optionValues?.option2 ? {
+          id: item.variantDetails.optionValues.option2.id,
+          value: item.variantDetails.optionValues.option2.value,
+          attribute_name: item.variantDetails.optionValues.option2.attributeName,
+          price_modifier: item.variantDetails.optionValues.option2.priceModifier || 0,
+        } : null,
+        option_value_3_ref: item.variantDetails.optionValues?.option3 ? {
+          id: item.variantDetails.optionValues.option3.id,
+          value: item.variantDetails.optionValues.option3.value,
+          attribute_name: item.variantDetails.optionValues.option3.attributeName,
+          price_modifier: item.variantDetails.optionValues.option3.priceModifier || 0,
+        } : null,
+      } : null;
+
+      // Set this item as Buy Now item (bypasses rest of cart)
+      initiateBuyNowFlow(product, variant, item.quantity);
+      // Force reload/re-navigation to same page with new state
+      // We might need to handle this carefully to ensure state update is picked up
+      // Since we are already on checkout, navigate to self might not trigger remount
+      // But passing different state should update location
+      navigate("/checkout", { state: { mode: 'buy_now' }, replace: true });
+      // Also explicity reload to be safe if sticking to same route? 
+      // No, react-router should handle location changes.
+      // However, our effect depends on [isBuyNow, buyNowItem, navigate].
+      // Changing explicit state mode will change isBuyNow derived state.
+
+    } catch (error) {
+      console.error("Error with Buy Now:", error);
+      showNotification({
+        message: "Failed to proceed with Buy Now. Please try again.",
+        type: "error"
+      });
+    }
   };
 
 
@@ -530,7 +668,7 @@ function CheckoutPage() {
 
       if (paymentMethod === "cod") {
         // COD Order - Success immediately
-        if (isBuyNowMode) {
+        if (isBuyNow) {
           clearBuyNowItem();
         } else {
           clearCart();
@@ -575,7 +713,7 @@ function CheckoutPage() {
                 });
 
                 // Success
-                if (isBuyNowMode) {
+                if (isBuyNow) {
                   clearBuyNowItem();
                 } else {
                   clearCart();
@@ -593,7 +731,7 @@ function CheckoutPage() {
                   type: "error",
                 });
                 // Navigate to order page anyway, status will be pending/failed
-                if (isBuyNowMode) {
+                if (isBuyNow) {
                   clearBuyNowItem();
                 } else {
                   clearCart();
@@ -729,20 +867,24 @@ function CheckoutPage() {
     });
   }, [processState]);
 
-  // Get checkout items and summary (works for both cart and buy now)
-  const checkoutItems = getCheckoutItems();
+
+  // Get checkout items based on mode
+  const checkoutItems = isBuyNow && buyNowItem ? [buyNowItem] : (cart.items || []);
+
+  // Check if we are really in buy now mode (explicitly checked above)
+  const activeBuyNowItem = isBuyNow ? buyNowItem : null;
 
   // Use direct store values instead of getCheckoutSummary for accuracy
   // This mirrors the logic in CartPage.js to ensure consistency
-  const checkoutSummary = isBuyNowMode && buyNowItem
+  const checkoutSummary = activeBuyNowItem
     ? {
-      items: [buyNowItem],
-      totalItems: buyNowItem.quantity,
-      subtotal: buyNowItem.price * buyNowItem.quantity,
+      items: [activeBuyNowItem],
+      totalItems: activeBuyNowItem.quantity,
+      subtotal: activeBuyNowItem.price * activeBuyNowItem.quantity,
       platformFees: 10,
-      deliveryCharges: buyNowItem.deliveryCharge || 0,
+      deliveryCharges: activeBuyNowItem.deliveryCharge || 0,
       // Calculate total for Buy Now
-      totalAmount: (buyNowItem.price * buyNowItem.quantity) + 10 + (buyNowItem.deliveryCharge || 0)
+      totalAmount: (activeBuyNowItem.price * activeBuyNowItem.quantity) + 10 + (activeBuyNowItem.deliveryCharge || 0)
     }
     : cart; // When in Cart mode, use the cart store state directly
 
@@ -894,13 +1036,13 @@ function CheckoutPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto py-2">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Step 1: Order Summary */}
             {processState === 1 && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              <div className="bg-white shadow-sm p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-800">
                     Review Your Order
@@ -931,100 +1073,115 @@ function CheckoutPage() {
 
                 {/* Cart Items */}
                 <div className="space-y-4">
-                  {checkoutItems.map((item) => (
-                    <div
-                      key={`${item.productId}-${item.variantId || "default"}`}
-                      className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <img
-                        src={item.image || "/no-product-image.svg"}
-                        alt={item.title}
-                        className="w-20 h-20 object-cover rounded-lg"
-                        onError={(e) => handleImageError(e, item.image)}
-                      />
+                  {checkoutItems.map((item) => {
+                    const discountPercent = getDiscountPercentage(item.originalPrice, item.price);
+                    const stockStatus = getStockStatus(item);
+                    const variantText = getVariantDisplayText(item);
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-800 truncate">
-                          {item.title}
-                        </h3>
-
-                        {getVariantDisplayText(item) && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            {getVariantDisplayText(item)}
-                          </p>
-                        )}
-
-                        {item.sku && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            SKU: {item.sku}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center space-x-3">
-                            <button
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.variantId,
-                                  item.quantity - 1
-                                )
-                              }
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
-                              disabled={orderLoading || item.quantity <= 1}
-                            >
-                              −
-                            </button>
-
-                            <span className="font-medium min-w-[2rem] text-center">
-                              {item.quantity}
-                            </span>
-
-                            <button
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.productId,
-                                  item.variantId,
-                                  item.quantity + 1
-                                )
-                              }
-                              className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
-                              disabled={orderLoading || item.quantity >= 1000}
-                            >
-                              +
-                            </button>
+                    return (
+                      <div
+                        key={`${item.productId}-${item.variantId || "default"}`}
+                        className="bg-white rounded-lg p-2 shadow-sm border border-gray-200"
+                      >
+                        {/* Product Info Row */}
+                        <div className="flex gap-3">
+                          {/* Product Image */}
+                          <div className="flex-shrink-0">
+                            <img
+                              src={getImageSrc(item)}
+                              alt={item.title}
+                              className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                              onError={(e) => handleImageError(e, item.image)}
+                            />
                           </div>
 
-                          <div className="text-right">
-                            <div className="font-semibold text-gray-800">
-                              ₹{(item.price * item.quantity).toFixed(2)}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              ₹{item.price} each
+                          {/* Product Details */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2">
+                              {item.title}
+                            </h3>
+
+                            {variantText && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {variantText}
+                              </p>
+                            )}
+
+                            {/* Price Row */}
+                            <div className="flex items-center gap-2 mt-2">
+                              {discountPercent > 0 && (
+                                <span className="text-green-600 text-sm font-medium">
+                                  ↓{discountPercent}%
+                                </span>
+                              )}
+                              {item.originalPrice && item.originalPrice > item.price && (
+                                <span className="text-gray-400 text-sm line-through">
+                                  ₹{item.originalPrice.toLocaleString('en-IN')}
+                                </span>
+                              )}
+                              <span className="font-semibold text-gray-900">
+                                ₹{item.price.toLocaleString('en-IN')}
+                              </span>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      <button
-                        onClick={() =>
-                          handleRemoveItem(item.productId, item.variantId)
-                        }
-                        className="text-red-500 hover:text-red-700 p-2 transition-colors"
-                        disabled={orderLoading}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
+                        {/* Quantity Selector */}
+                        <div className="flex items-center gap-1 mt-3">
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(
+                                item.productId,
+                                item.variantId,
+                                item.quantity - 1
+                              )
+                            }
+                            className="w-7 h-7 flex items-center justify-center bg-[#3B82F6] text-white rounded font-medium text-lg disabled:bg-gray-300"
+                            disabled={orderLoading || item.quantity <= 1}
+                          >
+                            −
+                          </button>
+                          <span className="w-8 text-center font-medium text-sm">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              handleQuantityChange(
+                                item.productId,
+                                item.variantId,
+                                item.quantity + 1
+                              )
+                            }
+                            className="w-7 h-7 flex items-center justify-center bg-[#3B82F6] text-white rounded font-medium text-lg disabled:bg-gray-300"
+                            disabled={orderLoading || item.quantity >= 1000}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Delivery Info and Stock Status */}
+                        <div className="flex items-center justify-between mt-3 text-sm">
+                          <span className="text-gray-600">
+                            Delivery by {getDeliveryDate()}
+                          </span>
+                          {stockStatus && (
+                            <span className={`font-medium ${stockStatus.color}`}>
+                              {stockStatus.text}
+                            </span>
+                          )}
+                        </div>
+
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-6 flex justify-between">
                   <button
                     onClick={() => navigate("/")}
-                    className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    className="text-grey-600 hover:text-blue-700 font-medium transition-colors"
                   >
-                    ← Continue Shopping
+                    ← Back
                   </button>
 
                   <button
@@ -1032,7 +1189,7 @@ function CheckoutPage() {
                     disabled={!canProceedToNext()}
                     className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                   >
-                    Proceed to Delivery →
+                    Continue →
                   </button>
                 </div>
               </div>
@@ -1040,17 +1197,26 @@ function CheckoutPage() {
 
             {/* Step 2: Delivery Address */}
             {processState === 2 && (
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white rounded-lg shadow-sm border px-4 py-2">
+                <div className="flex flex-row items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-800">
-                    Select Delivery Address
+                    Select Address
                   </h2>
                   {isMobileApp && (
                     <button
                       onClick={() => setShowMobileMapPicker(true)}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
-                      + Add New Address
+                      + Add New
+                    </button>
+                  )}
+                  {/* Desktop Add Address Bar */}
+                  {!isMobileApp && !showAddressForm && (
+                    <button
+                      onClick={() => setShowAddressForm(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      + Add Address
                     </button>
                   )}
                 </div>
@@ -1073,18 +1239,7 @@ function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Desktop Add Address Bar */}
-                {!isMobileApp && !showAddressForm && (
-                  <div
-                    onClick={() => setShowAddressForm(true)}
-                    className="mb-6 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors flex items-center text-blue-600 font-semibold uppercase tracking-wide"
-                  >
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    ADD A NEW ADDRESS
-                  </div>
-                )}
+
 
                 {/* Existing Addresses */}
                 {addresses.length > 0 ? (
@@ -1130,14 +1285,18 @@ function CheckoutPage() {
                 )}
 
                 {!showAddressForm && addresses.length > 0 && (
-                  <div className="mt-6 flex justify-between">
+                  <div className="mt-6 flex justify-between items-center">
                     <button
                       onClick={() =>
-                        isBuyNowMode ? setProcessState(1) : navigate("/cart")
+                        processState === 2
+                          ? isBuyNow ? setProcessState(1) : navigate("/cart")
+                          : setProcessState(processState - 1)
                       }
-                      className="text-gray-600 hover:text-gray-700 font-medium transition-colors"
+                      className="text-blue-600 font-semibold flex items-center gap-2 hover:underline"
                     >
-                      {isBuyNowMode ? "← Back to Review" : "← Back to Cart"}
+                      {processState === 2
+                        ? (isBuyNow ? "← Back to Review" : "← Back to Cart")
+                        : "← Back"}
                     </button>
 
                     <button
@@ -1145,7 +1304,7 @@ function CheckoutPage() {
                       disabled={!selectedAddressId}
                       className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                     >
-                      Continue to Payment →
+                      Continue →
                     </button>
                   </div>
                 )}
@@ -1153,7 +1312,7 @@ function CheckoutPage() {
                 {/* Order Summary Review */}
                 <div className="bg-white rounded-lg shadow-sm border mt-6 p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Order Review
+                    Order Details
                   </h3>
 
                   {/* Cart Items Summary */}
