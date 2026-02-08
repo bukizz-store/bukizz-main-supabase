@@ -48,8 +48,8 @@ const Stationary = () => {
 
   const handleCategoryClick = (category) => {
     // Navigate to product list filtered by category slug
-    navigate("/products", {
-      state: { categorySlug: category.slug, source: "School Essentials" },
+    navigate(`/products?category=${category.slug}`, {
+      // state: { categorySlug: category.slug, source: "School Essentials" },
     });
   };
 

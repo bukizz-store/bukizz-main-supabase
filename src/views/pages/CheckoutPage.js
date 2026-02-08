@@ -48,7 +48,7 @@ function CheckoutPage() {
     email: "",
   });
   const [orderNotes, setOrderNotes] = useState("");
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
 
   // Validation states
   const [validationErrors, setValidationErrors] = useState([]);
@@ -471,10 +471,7 @@ function CheckoutPage() {
       errors.push("Please select a payment method");
     }
 
-    // Check terms agreement
-    if (!agreedToTerms) {
-      errors.push("Please agree to terms and conditions");
-    }
+
 
     // Validate phone format if provided
     if (
@@ -1152,49 +1149,12 @@ function CheckoutPage() {
                     </button>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Step 3: Payment & Place Order */}
-            {processState === 3 && (
-              <div className="space-y-6">
                 {/* Order Summary Review */}
-                <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="bg-white rounded-lg shadow-sm border mt-6 p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">
                     Order Review
                   </h3>
-
-                  {/* Selected Address */}
-                  {selectedAddress && (
-                    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-800">
-                          Delivery Address
-                        </h4>
-                        <button
-                          onClick={() => setProcessState(2)}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                        >
-                          Change
-                        </button>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <div className="font-medium">
-                          {selectedAddress.recipientName}
-                        </div>
-                        <div>
-                          {selectedAddress.line1}
-                          {selectedAddress.line2 &&
-                            `, ${selectedAddress.line2}`}
-                        </div>
-                        <div>
-                          {selectedAddress.city}, {selectedAddress.state} -{" "}
-                          {selectedAddress.postalCode}
-                        </div>
-                        <div>📞 {selectedAddress.phone}</div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Cart Items Summary */}
                   <div className="mb-6">
@@ -1235,6 +1195,89 @@ function CheckoutPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Step 3: Payment & Place Order */}
+            {processState === 3 && (
+              <div className="space-y-6">
+                {/* Order Summary Review */}
+                {/* <div className="bg-white rounded-lg shadow-sm border p-6"> */}
+                {/* <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Order Review
+                  </h3> */}
+
+                {/* Selected Address */}
+                {/* {selectedAddress && (
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-gray-800">
+                          Delivery Address
+                        </h4>
+                        <button
+                          onClick={() => setProcessState(2)}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          Change
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <div className="font-medium">
+                          {selectedAddress.recipientName}
+                        </div>
+                        <div>
+                          {selectedAddress.line1}
+                          {selectedAddress.line2 &&
+                            `, ${selectedAddress.line2}`}
+                        </div>
+                        <div>
+                          {selectedAddress.city}, {selectedAddress.state} -{" "}
+                          {selectedAddress.postalCode}
+                        </div>
+                        <div>📞 {selectedAddress.phone}</div>
+                      </div>
+                    </div>
+                  )} */}
+
+                {/* Cart Items Summary */}
+                {/* <div className="mb-6">
+                    <h4 className="font-medium text-gray-800 mb-3">
+                      Items ({cartItemCount})
+                    </h4>
+                    <div className="space-y-3">
+                      {checkoutItems.map((item) => (
+                        <div
+                          key={`${item.productId}-${item.variantId || "default"
+                            }`}
+                          className="flex items-center space-x-3 text-sm"
+                        >
+                          <img
+                            src={item.image || "/no-product-image.svg"}
+                            alt={item.title}
+                            className="w-10 h-10 object-cover rounded"
+                            onError={(e) => handleImageError(e, item.image)}
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium">{item.title}</div>
+                            {getVariantDisplayText(item) && (
+                              <div className="text-gray-500">
+                                {getVariantDisplayText(item)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">
+                              ₹{(item.price * item.quantity).toFixed(2)}
+                            </div>
+                            <div className="text-gray-500">
+                              Qty: {item.quantity}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div> */}
+                {/* </div> */}
 
                 {/* Contact Information */}
                 <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -1301,18 +1344,18 @@ function CheckoutPage() {
                         icon: "💳",
                         desc: "Secure payment with your card",
                       },
-                      {
-                        value: "netbanking",
-                        label: "Net Banking",
-                        icon: "🏦",
-                        desc: "Pay using internet banking",
-                      },
-                      {
-                        value: "wallet",
-                        label: "Digital Wallet",
-                        icon: "💰",
-                        desc: "Pay using digital wallets",
-                      },
+                      // {
+                      //   value: "netbanking",
+                      //   label: "Net Banking",
+                      //   icon: "🏦",
+                      //   desc: "Pay using internet banking",
+                      // },
+                      // {
+                      //   value: "wallet",
+                      //   label: "Digital Wallet",
+                      //   icon: "💰",
+                      //   desc: "Pay using digital wallets",
+                      // },
                     ].map((method) => (
                       <label
                         key={method.value}
@@ -1364,34 +1407,26 @@ function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Terms and Conditions */}
+                {/* Terms and Conditions Note */}
                 <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <label className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                      className="mt-1 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="text-sm text-gray-700">
-                      I agree to the{" "}
-                      <a
-                        href="/terms"
-                        target="_blank"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Terms and Conditions
-                      </a>{" "}
-                      and{" "}
-                      <a
-                        href="/privacy"
-                        target="_blank"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Privacy Policy
-                      </a>
-                    </div>
-                  </label>
+                  <p className="text-sm text-gray-600">
+                    By placing your order, you agree to our{" "}
+                    <a
+                      href="/terms-of-use"
+                      target="_blank"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Terms and Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="/privacy-policy"
+                      target="_blank"
+                      className="text-blue-600 hover:underline"
+                    >
+                      Privacy Policy
+                    </a>.
+                  </p>
                 </div>
 
                 {/* Validation Errors */}
@@ -1425,7 +1460,7 @@ function CheckoutPage() {
                   <button
                     onClick={handlePlaceOrder}
                     disabled={
-                      placingOrder || paymentProcessing || !agreedToTerms
+                      placingOrder || paymentProcessing
                     }
                     className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
                   >
@@ -1458,9 +1493,9 @@ function CheckoutPage() {
           </div>
 
           {/* Order Summary Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 sticky">
             {/* Price Breakdown */}
-            <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-4">
+            <div className="bg-white rounded-lg shadow-sm border p-6 top-4">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Order Summary
               </h3>
@@ -1575,17 +1610,14 @@ function CheckoutPage() {
               <h4 className="font-semibold text-gray-800 mb-3">Need Help?</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex items-center text-gray-600">
-                  <span className="mr-3">📞</span>
-                  <span>Call: +91-XXXXX-XXXXX</span>
-                </div>
-                <div className="flex items-center text-gray-600">
                   <span className="mr-3">📧</span>
-                  <span>Email: support@bukizz.com</span>
+                  <span >Email: bukizzstore@gmail.com</span>
                 </div>
                 <div className="flex items-center text-gray-600">
                   <span className="mr-3">💬</span>
-                  <span>Live Chat Available</span>
+                  <span>Raise Query Post Order</span>
                 </div>
+
               </div>
             </div>
           </div>
@@ -1626,7 +1658,7 @@ function CheckoutPage() {
                 (error) =>
                   error.includes("cart is empty") ||
                   error.includes("address") ||
-                  error.includes("terms")
+                  error.includes("address")
               ) && (
                   <button
                     onClick={handleRetryOrder}
