@@ -571,10 +571,6 @@ function CheckoutPage() {
 
     selectAddress(addressId);
     setProcessState(3); // Move to payment step
-    showNotification({
-      message: "Delivery address selected",
-      type: "success",
-    });
   };
 
   // Handle contact details change
@@ -966,7 +962,7 @@ function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* Mobile Map Address Picker */}
       {showMobileMapPicker && (
         <MobileMapAddressPicker
@@ -1176,21 +1172,27 @@ function CheckoutPage() {
                   })}
                 </div>
 
-                <div className="mt-6 flex justify-between">
-                  <button
-                    onClick={() => navigate("/")}
-                    className="text-grey-600 hover:text-blue-700 font-medium transition-colors"
-                  >
-                    ← Back
-                  </button>
+                {/* Sticky Footer for Step 1 - Review Order */}
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                  <div className="max-w-6xl mx-auto flex justify-between items-center">
+                    <button
+                      onClick={() => navigate("/")}
+                      className="text-gray-600 font-medium flex items-center gap-2 hover:text-gray-900 transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                      </svg>
+                      Back
+                    </button>
 
-                  <button
-                    onClick={() => setProcessState(2)}
-                    disabled={!canProceedToNext()}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Continue →
-                  </button>
+                    <button
+                      onClick={() => setProcessState(2)}
+                      disabled={!canProceedToNext()}
+                      className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-sm"
+                    >
+                      Continue
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1204,7 +1206,13 @@ function CheckoutPage() {
                   </h2>
                   {isMobileApp && (
                     <button
-                      onClick={() => setShowMobileMapPicker(true)}
+                      onClick={() => {
+                        if (isAuthenticated()) {
+                          setShowMobileMapPicker(true);
+                        } else {
+                          setModalOpen(true);
+                        }
+                      }}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       + Add New
@@ -1213,7 +1221,13 @@ function CheckoutPage() {
                   {/* Desktop Add Address Bar */}
                   {!isMobileApp && !showAddressForm && (
                     <button
-                      onClick={() => setShowAddressForm(true)}
+                      onClick={() => {
+                        if (isAuthenticated()) {
+                          setShowAddressForm(true);
+                        } else {
+                          setModalOpen(true);
+                        }
+                      }}
                       className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       + Add Address
@@ -1274,38 +1288,36 @@ function CheckoutPage() {
                       <p className="text-gray-600 mb-4">
                         Add your first delivery address to continue
                       </p>
-                      <button
-                        onClick={() => setShowAddressForm(true)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        Add Address
-                      </button>
                     </div>
                   )
                 )}
 
+                {/* Sticky Footer for Step 2 */}
                 {!showAddressForm && addresses.length > 0 && (
-                  <div className="mt-6 flex justify-between items-center">
-                    <button
-                      onClick={() =>
-                        processState === 2
-                          ? isBuyNow ? setProcessState(1) : navigate("/cart")
-                          : setProcessState(processState - 1)
-                      }
-                      className="text-blue-600 font-semibold flex items-center gap-2 hover:underline"
-                    >
-                      {processState === 2
-                        ? (isBuyNow ? "← Back to Review" : "← Back to Cart")
-                        : "← Back"}
-                    </button>
+                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                    <div className="max-w-6xl mx-auto flex justify-between items-center">
+                      <button
+                        onClick={() =>
+                          processState === 2
+                            ? isBuyNow ? setProcessState(1) : navigate("/cart")
+                            : setProcessState(processState - 1)
+                        }
+                        className="text-gray-600 font-medium flex items-center gap-2 hover:text-gray-900 transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Back
+                      </button>
 
-                    <button
-                      onClick={() => handleDeliverHere(selectedAddressId)}
-                      disabled={!selectedAddressId}
-                      className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      Continue →
-                    </button>
+                      <button
+                        onClick={() => handleDeliverHere(selectedAddressId)}
+                        disabled={!selectedAddressId}
+                        className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-sm"
+                      >
+                        Continue
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -1607,39 +1619,54 @@ function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Place Order Button */}
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setProcessState(2)}
-                    className="text-gray-600 hover:text-gray-700 font-medium transition-colors"
-                  >
-                    ← Back to Address
-                  </button>
+                {/* Sticky Footer for Step 3 - Matching Cart Page Style */}
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                  <div className="max-w-6xl mx-auto flex items-center justify-between">
+                    {/* Price Info */}
+                    <div className="flex flex-col">
+                      {totalMRP > (checkoutSummary.totalAmount || 0) && (
+                        <span className="text-gray-400 text-sm line-through">
+                          ₹{totalMRP.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2">
+                        {/* <span className="text-gray-600 text-sm font-medium">Total:</span> */}
+                        <span className="font-bold text-xl text-gray-900">
+                          ₹{(checkoutSummary.totalAmount || 0).toLocaleString('en-IN')}
+                        </span>
+                        {/* Optional: Add chevron for details if not already visible/expanded elsewhere? 
+                            For now keeping it simple as per request image style 
+                        */}
+                      </div>
+                      <button
+                        onClick={() => setProcessState(2)}
+                        className="text-blue-600 text-xs font-medium hover:underline text-left mt-0.5"
+                      >
+                        Change Address
+                      </button>
+                    </div>
 
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={
-                      placingOrder || paymentProcessing
-                    }
-                    className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2"
-                  >
-                    {placingOrder ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Placing Order...</span>
-                      </>
-                    ) : paymentProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Processing Payment...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>🛒</span>
-                        <span>Place Order</span>
-                      </>
-                    )}
-                  </button>
+                    {/* Place Order Button */}
+                    <button
+                      onClick={handlePlaceOrder}
+                      disabled={placingOrder || paymentProcessing}
+                      className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-bold text-base transition-colors shadow-sm flex items-center gap-2"
+                    >
+                      {placingOrder ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Placing...</span>
+                        </>
+                      ) : paymentProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        "Place order"
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {retryCount > 0 && (

@@ -249,8 +249,13 @@ function CartPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+      <div className="bg-white border-b sticky top-0 z-10 flex px-4">
+        <button onClick={() => window.history.back()} className="mr-3 md:hidden">
+          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+        <div className="max-w-2xl py-4">
           <h1 className="text-xl font-semibold text-gray-900">My Cart</h1>
         </div>
       </div>

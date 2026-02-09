@@ -7,6 +7,7 @@ import useUserProfileStore from "../../store/userProfileStore";
 import useAuthStore from "../../store/authStore";
 import { User, Package, Wallet, Folder, ChevronRight, Power } from 'lucide-react';
 import AddressManager from "../../components/Profile/AddressManager";
+import NotificationSection from "../../components/Profile/NotificationSection";
 
 import useUIStore from "../../store/uiStore";
 
@@ -184,7 +185,7 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F3F8FF]">
-      {!isMobileApp && <SearchBar />}
+      {!isMobileApp && <div className="md:block hidden"><SearchBar /></div>}
 
       <div className="max-w-7xl mx-auto px-2 py-2">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -270,7 +271,18 @@ function ProfilePage() {
                       >
                         My City
                       </button>
-                      <button className="w-full text-left px-16 py-2 text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                      <button
+                        onClick={() => {
+                          setActiveSection("notifications");
+                          setEditMode(false);
+                          if (isMobileApp) {
+                            // Logic for mobile specific transition if needed, 
+                            // but referencing ProfilePage logic, simple state change should trigger re-render
+                          }
+                        }}
+                        className={`w-full text-left px-16 py-2 text-sm transition-colors ${activeSection === "notifications" ? "text-blue-600 font-medium bg-blue-50" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                          }`}
+                      >
                         All Notifications
                       </button>
                     </div>
@@ -292,7 +304,7 @@ function ProfilePage() {
           )}
 
           {/* Main Content - Full Width When Active */}
-          <div className={(activeSection === "profile" || activeSection === "addresses") ? (isMobileApp ? "col-span-full" : "lg:col-span-4") : "lg:col-span-4 hidden"}>
+          <div className={(activeSection === "profile" || activeSection === "addresses" || activeSection === "notifications") ? (isMobileApp ? "col-span-full" : "lg:col-span-4") : "lg:col-span-4 hidden"}>
             {activeSection === "profile" && (
               <div className="space-y-6">
                 {/* Personal Information */}
@@ -539,6 +551,9 @@ function ProfilePage() {
 
             {activeSection === "addresses" && (
               <AddressManager />
+            )}
+            {activeSection === "notifications" && (
+              <NotificationSection />
             )}
           </div>
 

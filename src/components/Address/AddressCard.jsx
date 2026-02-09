@@ -15,7 +15,7 @@ const AddressCard = ({
     if (!isMobile) {
         return (
             <div
-                className={`p-4 border rounded-lg transition-all relative ${isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                className={`p-4 border rounded-lg transition-all relative ${isSelected ? "border-2 border-[#3B82F6] bg-blue-50" : "border-gray-200 hover:border-gray-300"
                     }`}
                 onClick={() => onSelect && onSelect(address)}
             >
@@ -86,22 +86,7 @@ const AddressCard = ({
                          */}
                 </div>
 
-                {/* Deliver Here Button for Checkout */}
-                {
-                    isSelected && onDeliverHere && (
-                        <div className="mt-4 pt-3 border-t border-blue-200">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDeliverHere(address);
-                                }}
-                                className="bg-blue-600 text-white px-6 py-2 rounded shadow-sm text-sm font-medium uppercase tracking-wide hover:bg-blue-700 transition-colors"
-                            >
-                                Deliver Here
-                            </button>
-                        </div>
-                    )
-                }
+
             </div>
         );
     }
@@ -109,7 +94,7 @@ const AddressCard = ({
     // Mobile Layout (Flipkart Style)
     return (
         <div
-            className={`bg-white p-4 border-b last:border-b-0 ${isSelected ? "bg-blue-50" : ""}`}
+            className={`bg-white p-4 rounded-lg border mb-3 transition-all ${isSelected ? "border-2 border-[#3B82F6] bg-blue-50" : "border-gray-200"}`}
             onClick={() => onSelect && onSelect(address)}
         >
             <div className="flex items-start">
@@ -196,24 +181,8 @@ const AddressCard = ({
                     <p className="text-gray-900 text-xs font-medium">
                         {address.phone}
                     </p>
-
-                    {/* Selected Indicator / Deliver Here Button for Checkout Mobile */}
-                    {isSelected && onDeliverHere && (
-                        <div className="mt-3">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDeliverHere(address);
-                                }}
-                                className="w-full bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium shadow-sm active:bg-blue-700"
-                            >
-                                Deliver Here
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
-
         </div>
     );
 };

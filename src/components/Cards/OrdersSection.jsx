@@ -9,7 +9,7 @@ import {
   Share2,
   Truck,
   User,
-  X, // Added X icon for modal
+  X, // Added X
   Star,
   ChevronDown,
   Download,
@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   FileText
 } from "lucide-react";
+import AddressMapPreview from "../Address/AddressMapPreview";
 
 import useApiRoutesStore from "../../store/apiRoutesStore";
 
@@ -249,6 +250,20 @@ const OrdersSection = () => {
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+        const [isMobileApp, setIsMobileApp] = useState(false);
+
+      useEffect(() => {
+          const checkMobile = () => {
+              const isApp = localStorage.getItem("isMobileApp") === "true" ||
+                  window.location.search.includes("mode=webview");
+              const isMobileScreen = window.innerWidth < 768;
+              setIsMobileApp(isApp || isMobileScreen);
+          };
+  
+          checkMobile();
+          window.addEventListener('resize', checkMobile);
+          return () => window.removeEventListener('resize', checkMobile);
+      }, []);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -925,6 +940,8 @@ const OrdersSection = () => {
       ];
     }
 
+
+
     const getStepStatus = (stepKey) => {
       if (isCancelled) {
         // Both steps are "completed" in the sense they happened
@@ -1124,14 +1141,14 @@ const OrdersSection = () => {
               <div className="flex gap-3">
                 <div className="mt-0.5"><div className="w-4 h-4 rounded-full border border-gray-400 flex items-center justify-center"><span className="text-[10px] text-gray-600">🏠</span></div></div>
                 <div>
-                  <p className="text-xs font-bold text-gray-900">Home <span className="font-normal text-gray-600">{order.shippingAddress?.street || order.shippingAddress?.addressLine1}, {order.shippingAddress?.city}</span></p>
+                  <p className="text-xs font-bold text-gray-900">{order.shippingAddress?.label || "Home"} <span className="font-normal text-gray-600">{order.shippingAddress?.line1}{order.shippingAddress?.line2 ? `, ${order.shippingAddress.line2}` : ""}, {order.shippingAddress?.city}</span></p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
               </div>
               <div className="flex gap-3 pt-2 border-t border-gray-200">
                 <div className="mt-0.5"><User className="w-4 h-4 text-gray-500" /></div>
                 <div>
-                  <p className="text-xs font-bold text-gray-900">{order.shippingAddress?.name || "Customer Name"} <span className="font-normal text-gray-600">{order.shippingAddress?.phone || order.contactPhone}</span></p>
+                  <p className="text-xs font-bold text-gray-900">{order.shippingAddress?.recipientName || "Customer Name"} <span className="font-normal text-gray-600">{order.shippingAddress?.phone || order.contactPhone}</span></p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
               </div>
@@ -1406,22 +1423,32 @@ const OrdersSection = () => {
               {/* Content */}
               <div className="p-5 space-y-6">
                 {/* Map/Location Visual (Optional Placeholder) */}
-                <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <span className="text-2xl">📍</span>
-                    </div>
-                    <p className="text-xs text-gray-500">Location Preview</p>
+                {/* Map/Location Visual */}
+                {order.shippingAddress?.lat && order.shippingAddress?.lng ? (
+                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    <AddressMapPreview
+                      lat={order.shippingAddress.lat}
+                      lng={order.shippingAddress.lng}
+                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <span className="text-2xl">📍</span>
+                      </div>
+                      <p className="text-xs text-gray-500">Location Preview Not Available</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <div className="flex gap-3">
                     <div className="mt-1"><div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center"><span className="text-sm">🏠</span></div></div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900 mb-1">Home</p>
+                      <p className="text-sm font-bold text-gray-900 mb-1">{order.shippingAddress?.label || "Home"}</p>
                       <p className="text-sm text-gray-600 leading-relaxed">
-                        {order.shippingAddress?.street || order.shippingAddress?.addressLine1}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.postalCode || order.shippingAddress?.zip}
+                        {order.shippingAddress?.line1}{order.shippingAddress?.line2 ? `, ${order.shippingAddress.line2}` : ""}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.postalCode}
                       </p>
                     </div>
                   </div>
@@ -1430,7 +1457,7 @@ const OrdersSection = () => {
                     <p className="text-xs font-medium text-gray-500 mb-2">Contact Details</p>
                     <div className="flex items-center gap-3 mb-2">
                       <User className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-900">{order.shippingAddress?.name || "Customer Name"}</span>
+                      <span className="text-sm text-gray-900">{order.shippingAddress?.recipientName || "Customer Name"}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="w-4 h-4 flex items-center justify-center text-xs text-gray-400">📞</span>
@@ -1455,18 +1482,33 @@ const OrdersSection = () => {
     );
   };
 
+  
+
+
+
   return (
     <div className="bg-white rounded-lg shadow-sm md:p-4">
       {selectedItem ? (
         <OrderDetailView item={selectedItem} onBack={() => setSelectedItem(null)} />
       ) : (
         <>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h2>
+          <div className="flex items-center p-4">
+            {isMobileApp && (
+              <button onClick={() => window.history.back()} className="mr-3">
+                <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
+            )}
+            <h2 className={`${isMobileApp ? "text-lg" : "text-2xl"} font-bold text-gray-900`}>
+              {isMobileApp ? "My Orders" : "My Orders"}
+            </h2>
+          </div>
 
           {/* Filter Buttons */}
           {/* Filter Buttons - Responsive */}
           {/* Mobile: Search & Filter Row */}
-          <div className="md:hidden flex gap-3 mb-6">
+          <div className="md:hidden flex gap-3 mb-6 p-3">
             <div className="relative flex-1">
               <input
                 type="text"

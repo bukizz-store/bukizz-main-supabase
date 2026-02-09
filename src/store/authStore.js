@@ -196,6 +196,11 @@ const useAuthStore = create(
               // Continue with local logout even if server logout fails
             }
           }
+
+          // Explicitly sign out from Supabase to prevent auto-login on refresh
+          const { error } = await supabase.auth.signOut();
+          if (error) console.error("Supabase signOut error:", error);
+
         } catch (error) {
           console.error("Logout error:", error);
         } finally {

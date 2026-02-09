@@ -91,7 +91,13 @@ const AddressManager = () => {
 
                 {isMobileApp && !showAddressForm && (
                     <button
-                        onClick={() => setShowMobileMapPicker(true)}
+                        onClick={() => {
+                            if (useAuthStore.getState().user) {
+                                setShowMobileMapPicker(true);
+                            } else {
+                                setModalOpen(true);
+                            }
+                        }}
                         className="text-blue-600 font-medium text-sm flex items-center"
                     >
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +111,13 @@ const AddressManager = () => {
             {/* Desktop Add Address Bar */}
             {!isMobileApp && !showAddressForm && (
                 <div
-                    onClick={() => setShowAddressForm(true)}
+                    onClick={() => {
+                            if (useAuthStore.getState().user) {
+                                setShowAddressForm(true);
+                            } else {
+                                setModalOpen(true);
+                            }
+                        }}
                     className="mb-6 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors flex items-center text-blue-600 font-semibold uppercase tracking-wide"
                 >
                     <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

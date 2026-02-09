@@ -109,7 +109,10 @@ const Navbar = () => {
             <img src="/image 55.png" alt="Search" className="h-8 md:h-12" />
           </button>
 
-          <button className="text-gray-700 hover:text-blue-600 items-center flex flex-col hidden md:flex">
+          <button
+            onClick={() => navigate("/profile?tab=notifications")}
+            className="text-gray-700 hover:text-blue-600 items-center flex flex-col hidden md:flex"
+          >
             <img
               src="/notification_svg.svg"
               alt="Notification"

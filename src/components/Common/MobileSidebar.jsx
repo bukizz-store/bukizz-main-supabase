@@ -160,7 +160,7 @@ const MobileSidebar = ({ isOpen, onClose }) => {
                     </button>
 
                     <button
-                        onClick={() => handleNavigation("/notifications")}
+                        onClick={() => handleNavigation("/profile?tab=notifications")}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-gray-700"
                     >
                         <Bell size={20} className="text-gray-500" />

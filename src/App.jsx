@@ -164,6 +164,7 @@ function App() {
           <Route path="/product" element={<ProductViewPage />} />
           <Route path="/product/:id" element={<ProductViewPage />} />
           <Route path="/products" element={<CategoryProductsPage />} />
+
           <Route path="/category" element={<CategoryPage />} />
 
 

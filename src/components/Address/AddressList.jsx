@@ -17,7 +17,7 @@ const AddressList = ({
     }
 
     return (
-        <div className={`space-y-4 ${isMobile ? "space-y-0 border-t border-gray-100" : ""}`}>
+        <div className={`space-y-4`}>
             {addresses.map((address) => (
                 <AddressCard
                     key={address.id}
