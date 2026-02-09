@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import SearchBar from "../../components/Common/SearchBar";
 import Breadcrumb from "../../components/Common/Breadcrumb";
+import { handleBackNavigation } from "../../utils/navigation";
 
 const CategoryPage = () => {
     const navigate = useNavigate();
@@ -55,7 +56,7 @@ const CategoryPage = () => {
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <button
-                                onClick={() => navigate(-1)}
+                                onClick={() => handleBackNavigation(navigate)}
                                 className="text-blue-600 hover:text-blue-800 mb-2 flex items-center gap-2"
                             >
                                 ← Back

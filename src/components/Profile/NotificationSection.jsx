@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { handleBackNavigation } from "../../utils/navigation";
 
 const NotificationSection = () => {
+    const navigate = useNavigate();
     const [isMobileApp, setIsMobileApp] = useState(false);
 
     useEffect(() => {
@@ -22,7 +24,7 @@ const NotificationSection = () => {
             {/* Header */}
             <div className={`flex items-center p-4 ${isMobileApp ? 'border-b border-gray-100' : ''}`}>
                 {isMobileApp && (
-                    <button onClick={() => window.history.back()} className="mr-3">
+                    <button onClick={() => handleBackNavigation(navigate)} className="mr-3">
                         <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>

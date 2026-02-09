@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import useAddressStore from "../../store/addressStore";
 import useAuthStore from "../../store/authStore";
 import useNotificationStore from "../../store/notificationStore";
 import MobileMapAddressPicker from "../Address/MobileMapAddressPicker";
 import AddressList from "../Address/AddressList";
 import AddressForm from "../Address/AddressForm";
+import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 
 const AddressManager = () => {
+    const navigate = useNavigate();
     const {
         addresses,
         loading: addressLoading,
@@ -78,7 +81,13 @@ const AddressManager = () => {
             <div className={`flex items-center justify-between ${isMobileApp ? "p-4 border-b bg-white sticky top-0 z-10" : "mb-6"}`}>
                 <div className="flex items-center">
                     {isMobileApp && (
-                        <button onClick={() => window.history.back()} className="mr-3">
+                        <button onClick={() => {
+                            if (isWebViewMode()) {
+                                navigate("/profile-tab");
+                            } else {
+                                window.history.back();
+                            }
+                        }} className="mr-3">
                             <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
@@ -112,12 +121,12 @@ const AddressManager = () => {
             {!isMobileApp && !showAddressForm && (
                 <div
                     onClick={() => {
-                            if (useAuthStore.getState().user) {
-                                setShowAddressForm(true);
-                            } else {
-                                setModalOpen(true);
-                            }
-                        }}
+                        if (useAuthStore.getState().user) {
+                            setShowAddressForm(true);
+                        } else {
+                            setModalOpen(true);
+                        }
+                    }}
                     className="mb-6 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors flex items-center text-blue-600 font-semibold uppercase tracking-wide"
                 >
                     <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ChevronRight,
@@ -18,6 +19,7 @@ import {
   FileText
 } from "lucide-react";
 import AddressMapPreview from "../Address/AddressMapPreview";
+import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 
 import useApiRoutesStore from "../../store/apiRoutesStore";
 
@@ -227,6 +229,7 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
 };
 
 const OrdersSection = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -250,20 +253,20 @@ const OrdersSection = () => {
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
-        const [isMobileApp, setIsMobileApp] = useState(false);
+  const [isMobileApp, setIsMobileApp] = useState(false);
 
-      useEffect(() => {
-          const checkMobile = () => {
-              const isApp = localStorage.getItem("isMobileApp") === "true" ||
-                  window.location.search.includes("mode=webview");
-              const isMobileScreen = window.innerWidth < 768;
-              setIsMobileApp(isApp || isMobileScreen);
-          };
-  
-          checkMobile();
-          window.addEventListener('resize', checkMobile);
-          return () => window.removeEventListener('resize', checkMobile);
-      }, []);
+  useEffect(() => {
+    const checkMobile = () => {
+      const isApp = localStorage.getItem("isMobileApp") === "true" ||
+        window.location.search.includes("mode=webview");
+      const isMobileScreen = window.innerWidth < 768;
+      setIsMobileApp(isApp || isMobileScreen);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -1482,7 +1485,7 @@ const OrdersSection = () => {
     );
   };
 
-  
+
 
 
 
@@ -1494,7 +1497,13 @@ const OrdersSection = () => {
         <>
           <div className="flex items-center p-4">
             {isMobileApp && (
-              <button onClick={() => window.history.back()} className="mr-3">
+              <button onClick={() => {
+                if (isWebViewMode()) {
+                  navigate("/profile-tab");
+                } else {
+                  window.history.back();
+                }
+              }} className="mr-3">
                 <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>

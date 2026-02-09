@@ -4,6 +4,7 @@ import SearchBar from "../../components/Common/SearchBar";
 import useCartStore from "../../store/cartStore";
 import useAuthStore from "../../store/authStore";
 import useNotificationStore from "../../store/notificationStore";
+import { handleBackNavigation } from "../../utils/navigation";
 
 function CartPage() {
   const navigate = useNavigate();
@@ -250,7 +251,7 @@ function CartPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col pb-20">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10 flex px-4">
-        <button onClick={() => window.history.back()} className="mr-3 md:hidden">
+        <button onClick={() => handleBackNavigation(navigate)} className="mr-3 md:hidden">
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>

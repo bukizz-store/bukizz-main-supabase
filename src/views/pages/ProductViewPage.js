@@ -7,6 +7,7 @@ import useUserProfileStore from "../../store/userProfileStore";
 import useCartStore from "../../store/cartStore";
 import NoProductPage from "../../components/Product/NoProductPage";
 import Breadcrumb from "../../components/Common/Breadcrumb";
+import { handleBackNavigation } from "../../utils/navigation";
 
 // ProductViewPage.js
 function ProductViewPage() {
@@ -402,7 +403,7 @@ function ProductViewPage() {
             </h2>
             <p className="text-gray-500 mb-4">{productError || error}</p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => handleBackNavigation(navigate)}
               className="text-blue-600 hover:underline mt-4 inline-block"
             >
               ← Go Back
