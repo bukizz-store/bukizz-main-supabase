@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "Bukizz",
+            "package_name": "com.bukizz.main",
+            "sha256_cert_fingerprints": [
+                "1E:4A:3E:FE:93:DC:71:48:6A:BB:C0:C5:CC:1C:2B:EF:2F:E4:B2:B0:EC:E1:D6:DC:8B:9B:1C:26:A7:7E:65:1A"
+            ]
+        }
+    }
+]

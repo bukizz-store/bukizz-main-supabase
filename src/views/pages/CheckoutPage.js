@@ -140,8 +140,9 @@ function CheckoutPage() {
     e.target.src = "/no-product-image.svg";
   }, []);
 
-  // Use a ref to store the current order for native callbacks to access
+  // Use refs to store order data for native callbacks to access
   const currentOrderRef = useRef(null);
+  const razorpayOrderIdRef = useRef(null);
 
   // Effect to handle Native Razorpay Callbacks
   useEffect(() => {
@@ -182,6 +183,10 @@ function CheckoutPage() {
             message: "Payment successful! Your order has been placed.",
           },
         });
+
+        // Clean up refs
+        currentOrderRef.current = null;
+        razorpayOrderIdRef.current = null;
       } catch (error) {
         console.error("Native Payment verification failed:", error);
         showNotification({
@@ -202,11 +207,17 @@ function CheckoutPage() {
               error: "Payment verification failed. Status is pending.",
             },
           });
+
+          // Clean up refs
+          currentOrderRef.current = null;
+          razorpayOrderIdRef.current = null;
         }
       }
     };
 
     // Failure Callback from Native
+    // Flutter sends: { "code": <int>, "description": <string> }
+    // code 2 = user cancelled, other codes = actual payment failure
     window.onNativePaymentFailure = async (data) => {
       console.log("Native payment failure callback received:", data);
       try {
@@ -216,26 +227,44 @@ function CheckoutPage() {
         }
 
         const order = currentOrderRef.current;
+        const razorpayOrderId = razorpayOrderIdRef.current;
 
         if (!order) {
           console.error("No active order found for native payment failure");
           return;
         }
 
-        console.error("Native Payment failed:", response);
-        showNotification({
-          message: `Payment failed: ${response.description || "Please try again."}`,
-          type: "error",
-        });
+        // Distinguish cancellation (code 2) from actual payment failure
+        const isCancellation = response.code === 2;
 
-        // Report failure to backend
+        if (isCancellation) {
+          console.warn("Native Payment cancelled by user");
+          showNotification({
+            message: "Payment process cancelled. Order cancelled.",
+            type: "warning",
+          });
+        } else {
+          console.error("Native Payment failed:", response);
+          showNotification({
+            message: `Payment failed: ${response.description || "Please try again."}`,
+            type: "error",
+          });
+        }
+
+        // Report failure/cancellation to backend using the stored Razorpay order ID
         await reportPaymentFailure({
-          razorpay_order_id: response.metadata?.order_id, // Might need adjustment based on native response structure
-          razorpay_payment_id: response.metadata?.payment_id,
-          error_code: response.code,
-          error_description: response.description,
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: null,
+          error_code: isCancellation ? "CANCELLED" : response.code,
+          error_description: isCancellation
+            ? "User cancelled payment from native app"
+            : (response.description || "Payment failed"),
           orderId: order.id
         });
+
+        // Clean up refs
+        currentOrderRef.current = null;
+        razorpayOrderIdRef.current = null;
       } catch (e) {
         console.error("Error handling native payment failure:", e);
       }
@@ -680,8 +709,9 @@ function CheckoutPage() {
         try {
           const razorpayOrder = await initiateRazorpayPayment(order.id);
 
-          // Store order for native callbacks
+          // Store order and Razorpay order ID for native callbacks
           currentOrderRef.current = order;
+          razorpayOrderIdRef.current = razorpayOrder.id;
 
           const options = {
             key: razorpayOrder.key,
