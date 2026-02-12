@@ -364,7 +364,8 @@ function ProductViewPage() {
 
     try {
       initiateBuyNowFlow(productData, selectedVariant, selectedQuantity);
-      navigate("/checkout", { state: { mode: 'buy_now' } });
+      // Navigate to Cart instead of Checkout
+      navigate("/cart?mode=buy_now");
     } catch (error) {
       console.error("Error with Buy Now:", error);
     }

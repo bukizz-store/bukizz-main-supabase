@@ -102,7 +102,11 @@ const AddressManager = () => {
                     <button
                         onClick={() => {
                             if (useAuthStore.getState().user) {
-                                setShowMobileMapPicker(true);
+                                if (isWebViewMode()) {
+                                    setShowAddressForm(true);
+                                } else {
+                                    setShowMobileMapPicker(true);
+                                }
                             } else {
                                 setModalOpen(true);
                             }

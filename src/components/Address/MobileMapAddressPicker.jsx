@@ -51,6 +51,8 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         isDefault: false,
     });
 
+    const [errors, setErrors] = useState({});
+
     // Populate form data when address is selected
     useEffect(() => {
         if (selectedAddress) {
@@ -376,28 +378,38 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             ...prev,
             [field]: value,
         }));
+        // Clear error when user types
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: null }));
+        }
     };
 
     // Handle form submission
     const handleSaveAddress = async () => {
         // Validate required fields
-        if (!formData.flatBuilding.trim()) {
-            showNotification({
-                message: "Please enter flat/house/building name",
-                type: "error",
-            });
-            return;
+        const newErrors = {};
+        if (!formData.flatBuilding.trim()) newErrors.flatBuilding = "Flat/House/Building is required";
+        if (!formData.recipientName.trim()) newErrors.recipientName = "Full Name is required";
+
+        if (!formData.phone.trim()) {
+            newErrors.phone = "Phone number is required";
+        } else if (!/^[0-9]{10}$/.test(formData.phone)) {
+            newErrors.phone = "Invalid 10-digit phone number";
         }
-        if (!formData.recipientName.trim()) {
-            showNotification({
-                message: "Please enter your full name",
-                type: "error",
-            });
-            return;
+
+        if (!formData.city.trim()) newErrors.city = "City is required";
+        if (!formData.state.trim()) newErrors.state = "State is required";
+
+        if (!formData.postalCode.trim()) {
+            newErrors.postalCode = "Pincode is required";
+        } else if (!/^\d{6}$/.test(formData.postalCode)) {
+            newErrors.postalCode = "Invalid 6-digit pincode";
         }
-        if (!formData.phone.trim() || !/^[0-9]{10}$/.test(formData.phone)) {
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             showNotification({
-                message: "Please enter a valid 10-digit phone number",
+                message: "Please fix the highlighted errors",
                 type: "error",
             });
             return;
@@ -678,7 +690,9 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     value={formData.flatBuilding}
                                     onChange={(e) => handleFormChange("flatBuilding", e.target.value)}
                                     placeholder=""
+                                    style={errors.flatBuilding ? { borderColor: '#ef4444' } : {}}
                                 />
+                                {errors.flatBuilding && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.flatBuilding}</span>}
                             </div>
 
                             <div className="form-group area-group">
@@ -702,7 +716,9 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     value={formData.recipientName}
                                     onChange={(e) => handleFormChange("recipientName", e.target.value)}
                                     placeholder=""
+                                    style={errors.recipientName ? { borderColor: '#ef4444' } : {}}
                                 />
+                                {errors.recipientName && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.recipientName}</span>}
                             </div>
 
                             <div className="form-group">
@@ -713,7 +729,9 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     onChange={(e) => handleFormChange("phone", e.target.value)}
                                     placeholder=""
                                     maxLength={10}
+                                    style={errors.phone ? { borderColor: '#ef4444' } : {}}
                                 />
+                                {errors.phone && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.phone}</span>}
                             </div>
 
                             <div className="form-group">
@@ -735,7 +753,9 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         value={formData.postalCode}
                                         onChange={(e) => handleFormChange("postalCode", e.target.value)}
                                         placeholder=""
+                                        style={errors.postalCode ? { borderColor: '#ef4444' } : {}}
                                     />
+                                    {errors.postalCode && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.postalCode}</span>}
                                 </div>
                                 <div>
                                     <label>City *</label>
@@ -744,7 +764,9 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         value={formData.city}
                                         onChange={(e) => handleFormChange("city", e.target.value)}
                                         placeholder=""
+                                        style={errors.city ? { borderColor: '#ef4444' } : {}}
                                     />
+                                    {errors.city && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.city}</span>}
                                 </div>
                             </div>
 
@@ -755,7 +777,9 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     value={formData.state}
                                     onChange={(e) => handleFormChange("state", e.target.value)}
                                     placeholder=""
+                                    style={errors.state ? { borderColor: '#ef4444' } : {}}
                                 />
+                                {errors.state && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.state}</span>}
                             </div>
 
                             <div className="form-group">

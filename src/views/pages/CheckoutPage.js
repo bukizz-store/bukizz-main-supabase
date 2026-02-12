@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
+import { isWebViewMode } from "../../utils/navigation";
 import MobileMapAddressPicker from "../../components/Address/MobileMapAddressPicker";
 import AddressList from "../../components/Address/AddressList";
 import AddressForm from "../../components/Address/AddressForm";
@@ -30,6 +31,7 @@ function CheckoutPage() {
     clearBuyNowItem,
     initiateBuyNowFlow,
     updateBuyNowItemQuantity,
+    restoreCart,
   } = useCartStore();
 
   // Track images that failed to load to prevent infinite retry loops
@@ -57,9 +59,10 @@ function CheckoutPage() {
   }, [isBuyNow, buyNowItem, navigate]);
 
   // Process state management with enhanced validation tracking
-  // If Buy Now mode (direct purchase), start at Step 1 (Order Summary/Review)
-  // If Cart mode (standard checkout), start at Step 2 (Delivery Address) as Summary is already reviewed in Cart
-  const [processState, setProcessState] = useState(isBuyNow ? 1 : 2);
+  // Process state management with enhanced validation tracking
+  // Both Buy Now and Cart modes now start at Step 2 (Delivery Address) 
+  // because Buy Now items are reviewed in the Cart page first.
+  const [processState, setProcessState] = useState(2);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [showMobileMapPicker, setShowMobileMapPicker] = useState(false);
@@ -173,7 +176,7 @@ function CheckoutPage() {
 
         // Success
         if (isBuyNow) {
-          clearBuyNowItem();
+          restoreCart();
         } else {
           clearCart();
         }
@@ -197,7 +200,7 @@ function CheckoutPage() {
         const order = currentOrderRef.current;
         if (order) {
           if (isBuyNow) {
-            clearBuyNowItem();
+            restoreCart();
           } else {
             clearCart();
           }
@@ -694,7 +697,7 @@ function CheckoutPage() {
       if (paymentMethod === "cod") {
         // COD Order - Success immediately
         if (isBuyNow) {
-          clearBuyNowItem();
+          restoreCart();
         } else {
           clearCart();
         }
@@ -740,7 +743,7 @@ function CheckoutPage() {
 
                 // Success
                 if (isBuyNow) {
-                  clearBuyNowItem();
+                  restoreCart();
                 } else {
                   clearCart();
                 }
@@ -758,7 +761,7 @@ function CheckoutPage() {
                 });
                 // Navigate to order page anyway, status will be pending/failed
                 if (isBuyNow) {
-                  clearBuyNowItem();
+                  restoreCart();
                 } else {
                   clearCart();
                 }
@@ -1238,7 +1241,11 @@ function CheckoutPage() {
                     <button
                       onClick={() => {
                         if (isAuthenticated()) {
-                          setShowMobileMapPicker(true);
+                          if (isWebViewMode()) {
+                            setShowAddressForm(true);
+                          } else {
+                            setShowMobileMapPicker(true);
+                          }
                         } else {
                           setModalOpen(true);
                         }

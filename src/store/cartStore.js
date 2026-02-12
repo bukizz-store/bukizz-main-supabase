@@ -17,11 +17,18 @@ const useCartStore = create((set, get) => ({
   // Buy Now state (for direct checkout bypassing cart)
   buyNowItem: null,
   isBuyNowMode: false,
+  savedCart: null, // Store original cart during buy now flow
 
   // Add item to cart
   addToCart: async (product, variant, quantity = 1) => {
     set({ loading: true, error: null });
     try {
+      // If we are in Buy Now mode, restore the original cart first
+      // This handles the case where user abandoned Buy Now and is now adding items normally
+      if (get().isBuyNowMode) {
+        get().restoreCart();
+      }
+
       const { cart } = get();
       const existingItemIndex = cart.items.findIndex(
         (item) =>
@@ -271,8 +278,19 @@ const useCartStore = create((set, get) => ({
         totalAmount: 0,
       };
 
+      // If in Buy Now mode, we are clearing the "buy now cart"
+      // The original cart is safe in savedCart
+
       set({ cart: emptyCart, error: null });
-      localStorage.removeItem("bukizz_cart");
+
+      // Update localStorage based on mode
+      if (get().isBuyNowMode) {
+        // We don't want to overwrite the actual cart in localstorage with empty buy now cart
+        // But we might want to clear the "active" cart persistence
+        localStorage.removeItem("bukizz_cart");
+      } else {
+        localStorage.removeItem("bukizz_cart");
+      }
     } catch (error) {
       console.error("Error clearing cart:", error);
       set({ error: error.message });
@@ -571,13 +589,102 @@ const useCartStore = create((set, get) => ({
     set({ buyNowItem: null, isBuyNowMode: false });
   },
 
-  // Initiate Buy Now Flow
+  // Initiate Buy Now Flow - Swaps current cart with buy now item
   initiateBuyNowFlow: (product, variant, quantity = 1) => {
     try {
-      get().setBuyNowItem(product, variant, quantity);
+      // 1. Backup current cart
+      const currentCart = get().cart;
+
+      // Only backup if we're not already in buy now mode (prevent overwriting backup)
+      if (!get().isBuyNowMode) {
+        set({ savedCart: currentCart });
+        localStorage.setItem("bukizz_saved_cart", JSON.stringify(currentCart));
+      }
+
+      // 2. Prepare Buy Now Item
+      const buyNowItem = get().setBuyNowItem(product, variant, quantity);
+
+      // 3. Create a temporary cart with just this item
+      const buyNowCartItems = [{
+        ...buyNowItem,
+        // Ensure structure matches standard cart items
+        variantDetails: buyNowItem.variantDetails,
+        productDetails: buyNowItem.productDetails
+      }];
+
+      const totals = calculateCartTotals(buyNowCartItems);
+      const tempCart = {
+        items: buyNowCartItems,
+        ...totals
+      };
+
+      // 4. Set State
+      set({
+        cart: tempCart,
+        isBuyNowMode: true,
+        error: null
+      });
+
+      // 5. Update localStorage to reflect this new state 
+      // (so page reloads show the buy now item in cart)
+      localStorage.setItem("bukizz_cart", JSON.stringify(tempCart));
+
       return { success: true };
     } catch (error) {
       console.error("Error initiating Buy Now flow:", error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Restore Original Cart (Cancel Buy Now or after success)
+  restoreCart: () => {
+    try {
+      // 1. Get saved cart
+      let savedCart = get().savedCart;
+
+      // Fallback to local storage if state is lost
+      if (!savedCart) {
+        const storedSavedCart = localStorage.getItem("bukizz_saved_cart");
+        if (storedSavedCart) {
+          savedCart = JSON.parse(storedSavedCart);
+        }
+      }
+
+      // 2. Restore if exists, otherwise empty
+      if (savedCart) {
+        set({
+          cart: savedCart,
+          savedCart: null,
+          isBuyNowMode: false,
+          buyNowItem: null
+        });
+        localStorage.setItem("bukizz_cart", JSON.stringify(savedCart));
+        localStorage.removeItem("bukizz_saved_cart");
+      } else {
+        // If no backup, just clear buy now mode and empty cart
+        // But we should try to reload from 'standard' storage if possible? 
+        // No, 'bukizz_cart' was overwritten. If backup is missing, user loses cart.
+        // Initialize empty to be safe.
+        const emptyCart = {
+          items: [],
+          totalItems: 0,
+          subtotal: 0,
+          discount: 0,
+          deliveryCharges: 0,
+          platformFees: 0,
+          totalAmount: 0,
+        };
+        set({
+          cart: emptyCart,
+          isBuyNowMode: false,
+          buyNowItem: null
+        });
+        localStorage.removeItem("bukizz_cart");
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error restoring cart:", error);
       return { success: false, error: error.message };
     }
   },
