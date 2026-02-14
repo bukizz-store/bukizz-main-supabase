@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useApiRoutesStore from "../../store/apiRoutesStore";
-import useAuthStore from "../../store/authStore";
 import SearchBar from "../../components/Common/SearchBar";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 
@@ -17,14 +16,7 @@ function CategoryProductsPage() {
   const [categorySlug, setCategorySlug] = useState("");
   const [source, setSource] = useState("");
 
-  const { isAuthenticated } = useAuthStore();
-
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/");
-      return;
-    }
-
     // Get category slug from route state or URL params
     const state = location.state || {};
     const slug = state.categorySlug || new URLSearchParams(location.search).get("category");
@@ -38,7 +30,9 @@ function CategoryProductsPage() {
     setCategorySlug(slug);
     setSource(state.source || "Products");
     fetchCategoryProducts(slug);
-  }, [isAuthenticated, navigate, location]);
+    setSource(state.source || "Products");
+    fetchCategoryProducts(slug);
+  }, [navigate, location]);
 
   const fetchCategoryProducts = async (slug) => {
     try {

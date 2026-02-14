@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import HomeCarousel from "../../components/Sections/HomeCarousel";
 import Category from "../../components/Sections/Category";
 import DealsSection from "../../components/Sections/DealsSection";
@@ -75,12 +76,12 @@ function HomePage() {
           <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#7E30E1] to-[#39A7FF] text-transparent bg-clip-text text-center">
             Pick Your School in {selectedCity}
           </h1>
-          <a
-            href="/school"
+          <Link
+            to="/school"
             className="text-blue-600 hover:underline mt-28 md:mt-16 absolute right-0 text-sm md:text-base"
           >
             View All Schools &rarr;
-          </a>
+          </Link>
         </div>
         <p className="font-nunito font-semibold text-green text-center text-sm md:text-base md:mt-1">
           Fresh Look , New Term - Grab Your Uniform Today
