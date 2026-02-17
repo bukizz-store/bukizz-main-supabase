@@ -376,7 +376,7 @@ const SchoolScreen = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 justify-items-center">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-12">
             {selectedCategory === "School Uniform" ? (
               uniforms.map((uniform, idx) => (
                 <UniformCard key={idx} props={uniform} />

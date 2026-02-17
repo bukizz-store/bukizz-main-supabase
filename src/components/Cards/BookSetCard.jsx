@@ -51,10 +51,10 @@ export const BookSetCard = ({ props }) => {
 
   return (
     <div
-      className="relative w-full max-w-[154px] h-[151px] md:max-w-[225px] md:h-[221px] bg-white rounded-[13px] md:rounded-[19px] shadow-lg hover:scale-105 transition-transform cursor-pointer"
+      className="relative w-[140px] h-[151px] md:w-[225px] md:h-[221px] bg-white rounded-[13px] md:rounded-[19px] shadow-lg hover:scale-105 transition-transform cursor-pointer"
       onClick={handleClick}
     >
-      <div className="absolute w-[154px] h-[100px] md:w-[225px] md:h-[146px] top-0 left-0 rounded-[13px_13px_0px_0px] md:rounded-[19px_19px_0px_0px] overflow-hidden bg-[linear-gradient(180deg,rgba(57,167,255,1)_0%,rgba(0,116,209,1)_100%)]"></div>
+      <div className="absolute w-[140px] h-[100px] md:w-[225px] md:h-[146px] top-0 left-0 rounded-[13px_13px_0px_0px] md:rounded-[19px_19px_0px_0px] overflow-hidden bg-[linear-gradient(180deg,rgba(57,167,255,1)_0%,rgba(0,116,209,1)_100%)]"></div>
       <div className="flex flex-col w-full h-[65px] md:h-[95px] items-center justify-center gap-[1.5px] md:gap-[2.5px] relative top-[18px] md:top-[26px]">
         <div className="relative w-fit mt-[-0.6px] font-nunito font-semibold text-[#f4f4f4cc] text-base md:text-2xl tracking-[0] leading-[22.4px] md:leading-[33.6px] whitespace-nowrap">
           CLASS
