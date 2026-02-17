@@ -9,26 +9,31 @@ import DealsSection from "../../components/Sections/DealsSection";
 
 const SchoolCategory = [
   { name: "BookSet", color: "blue", img: "bookset_cat.svg" },
-  { name: "Uniform", color: "yellow", img: "uniform_cat.svg" },
+  { name: "School Uniform", color: "yellow", img: "uniform_cat.svg" },
   { name: "Stationary", color: "green", img: "stationary_cat.svg" },
-  { name: "About", color: "pink", img: "admissions_cat.svg" },
+  { name: "About School", color: "pink", img: "admissions_cat.svg" },
 ];
 
 // Dynamic book sets based on school catalog
 const getBookSetsForSchool = (schoolCatalog, schoolData) => {
   if (schoolCatalog && schoolCatalog.products) {
     // Filter for book sets from the school's actual product catalog
+    // Catalog API returns snake_case: base_price, min_price, product_type
     return schoolCatalog.products
       .filter((product) => product.product_type === "bookset")
-      .map((product) => ({
-        class: product.schoolInfo?.grade || "General",
-        originalPrice: (product.min_price || product.base_price || 0) + 200, // Mock original price for discount display
-        discountedPrice: product.min_price || product.base_price || 0,
-        rating: 4.5, // Mock rating
-        name: product.title,
-        id: product.product_id,
-        school: schoolData,
-      }));
+      .map((product) => {
+        const basePrice = product.min_price || product.base_price || 0;
+        const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+        return {
+          class: product.schoolInfo?.grade || "General",
+          originalPrice: comparePrice,
+          discountedPrice: basePrice,
+          rating: 4.5,
+          name: product.title,
+          id: product.product_id,
+          school: schoolData,
+        };
+      });
   }
 
   // Fallback mock data if no products available
@@ -48,22 +53,31 @@ const getBookSetsForSchool = (schoolCatalog, schoolData) => {
 const getUniformsForSchool = (schoolCatalog, schoolData) => {
   if (schoolCatalog && schoolCatalog.products) {
     // Filter for uniforms from the school's actual product catalog
+    // Catalog API returns snake_case: base_price, min_price, product_type
     return schoolCatalog.products
       .filter((product) => product.product_type === "uniform")
-      .map((product) => ({
-        name: product.title,
-        originalPrice: (product.min_price || product.base_price || 0) + 150,
-        discountedPrice: product.min_price || product.base_price || 0,
-        rating: 4.3,
-        category: product.category || "School Uniform",
-        image:
-          product.image_url ||
-          product.images?.[0] ||
-          `https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=200&fit=crop&auto=format`,
-        id: product.product_id,
-        discount: "25% off",
-        school: schoolData,
-      }));
+      .map((product) => {
+        const basePrice = product.min_price || product.base_price || 0;
+        const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+        const discountPct = comparePrice > basePrice
+          ? Math.round(((comparePrice - basePrice) / comparePrice) * 100)
+          : 0;
+        return {
+          name: product.title,
+          originalPrice: comparePrice,
+          discountedPrice: basePrice,
+          rating: 4.3,
+          category: product.category || "School Uniform",
+          image:
+            product.primary_image ||
+            product.image_url ||
+            product.images?.[0] ||
+            `https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=200&fit=crop&auto=format`,
+          id: product.product_id,
+          discount: discountPct > 0 ? `${discountPct}% off` : "",
+          school: schoolData,
+        };
+      });
   }
 
   // Fallback mock uniform data if no products available
@@ -181,6 +195,10 @@ const SchoolScreen = () => {
       setSelectedCategory("School Uniform");
     } else if (categoryParam === "bookset") {
       setSelectedCategory("BookSet");
+    } else if (categoryParam === "stationary") {
+      setSelectedCategory("Stationary");
+    } else if (categoryParam === "about") {
+      setSelectedCategory("About School");
     } else {
       setSelectedCategory("BookSet");
     }
@@ -191,7 +209,7 @@ const SchoolScreen = () => {
     setSchoolError(null);
 
     fetchSchoolData();
-  }, [id, fetchSchoolData, location.search]); // Added 'id' and 'location.search' as dependency to trigger reset on school change
+  }, [id, fetchSchoolData, location.search]);
 
   // Handle category selection
   const handleCategoryClick = (categoryName) => {
@@ -358,13 +376,15 @@ const SchoolScreen = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-6 md:gap-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 justify-items-center">
             {selectedCategory === "School Uniform" ? (
               uniforms.map((uniform, idx) => (
                 <UniformCard key={idx} props={uniform} />
               ))
             ) : selectedCategory === "BookSet" ? (
               bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)
+            ) : selectedCategory === "Stationary" ? (
+              <Stationary />
             ) : (
               // Placeholder for other categories
               <div className="col-span-4 text-center py-16">

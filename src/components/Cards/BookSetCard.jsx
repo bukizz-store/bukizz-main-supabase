@@ -6,6 +6,7 @@ export const BookSetCard = ({ props }) => {
 
   const getOrdinalSuffix = (number) => {
     const num = parseInt(number);
+    if (isNaN(num)) return number || "";
     if (num >= 11 && num <= 13) return `${num}th`;
     switch (num % 10) {
       case 1:
@@ -50,16 +51,16 @@ export const BookSetCard = ({ props }) => {
 
   return (
     <div
-      className="relative w-[154px] h-[151px] md:w-[225px] md:h-[221px] bg-white rounded-[13px] md:rounded-[19px] shadow-lg hover:scale-105 transition-transform cursor-pointer"
+      className="relative w-full max-w-[154px] h-[151px] md:max-w-[225px] md:h-[221px] bg-white rounded-[13px] md:rounded-[19px] shadow-lg hover:scale-105 transition-transform cursor-pointer"
       onClick={handleClick}
     >
       <div className="absolute w-[154px] h-[100px] md:w-[225px] md:h-[146px] top-0 left-0 rounded-[13px_13px_0px_0px] md:rounded-[19px_19px_0px_0px] overflow-hidden bg-[linear-gradient(180deg,rgba(57,167,255,1)_0%,rgba(0,116,209,1)_100%)]"></div>
-      <div className="inline-flex flex-col h-[65px] md:h-[95px] items-center gap-[1.5px] md:gap-[2.5px] relative top-[18px] md:top-[26px] left-[50px] md:left-[74px]">
+      <div className="flex flex-col w-full h-[65px] md:h-[95px] items-center justify-center gap-[1.5px] md:gap-[2.5px] relative top-[18px] md:top-[26px]">
         <div className="relative w-fit mt-[-0.6px] font-nunito font-semibold text-[#f4f4f4cc] text-base md:text-2xl tracking-[0] leading-[22.4px] md:leading-[33.6px] whitespace-nowrap">
           CLASS
         </div>
         <div className="relative w-fit mt-[-0.6px] [font-family:'Lora-Bold',Helvetica] font-bold text-white text-[25px] md:text-4xl tracking-[0] leading-[34px] md:leading-[50.4px] whitespace-nowrap">
-          {getOrdinalSuffix(props.class.replace("Class ", ""))}
+          {getOrdinalSuffix((props.class || "").replace("Class ", ""))}
         </div>
       </div>
 
@@ -78,9 +79,11 @@ export const BookSetCard = ({ props }) => {
           </div>
         </div>
 
-        <div className="absolute top-[17px] md:top-[25px] left-[6px] md:left-[8px] [font-family:'Nunito-Bold',Helvetica] font-bold text-primaryblue-700 text-xs md:text-lg tracking-[0] leading-[17px] md:leading-[25.2px] whitespace-nowrap overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
-          {((props.originalPrice - props.discountedPrice) / props.originalPrice).toFixed(1) * 100}% off
-        </div>
+        {props.originalPrice > props.discountedPrice && (
+          <div className="absolute top-[17px] md:top-[25px] left-[6px] md:left-[8px] [font-family:'Nunito-Bold',Helvetica] font-bold text-primaryblue-700 text-xs md:text-lg tracking-[0] leading-[17px] md:leading-[25.2px] whitespace-nowrap overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
+            {Math.round(((props.originalPrice - props.discountedPrice) / props.originalPrice) * 100)}% off
+          </div>
+        )}
 
         <div className="flex flex-col w-[84px] h-[16px] md:w-[123px] md:h-[23px] items-start gap-0.5 px-1 md:px-2 py-0.5 absolute top-[31px] md:top-[46px] left-0">
           <div className="inline-flex items-center gap-[3px] md:gap-1 relative flex-[0_0_auto]">

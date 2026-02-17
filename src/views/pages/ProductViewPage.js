@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { BookSetCard } from "../../components/Cards/BookSetCard";
-import { UniformCard } from "../../components/Cards/UniformCard";
 import SearchBar from "../../components/Common/SearchBar";
 import useUserProfileStore from "../../store/userProfileStore";
 import useCartStore from "../../store/cartStore";
@@ -276,24 +275,24 @@ function ProductViewPage() {
   // Get current price based on selected variant
   const getCurrentPrice = () => {
     if (selectedVariant) {
-      // Use the variant's price directly (already calculated on backend)
-      const currentPrice =
-        selectedVariant.price || productData?.base_price || 0;
-      const comparePrice =
-        selectedVariant.compare_at_price || currentPrice + 200;
+      // Variant selected: selling price = variant.price, strikethrough = variant.base_price
+      const currentPrice = selectedVariant.price || 0;
+      const variantBasePrice = selectedVariant.base_price || 0;
 
       return {
         current: currentPrice,
-        original: comparePrice,
-        basePrice: selectedVariant.base_price || productData?.base_price || 0,
+        original: variantBasePrice > currentPrice ? variantBasePrice : 0,
+        basePrice: variantBasePrice,
         variantPrice: selectedVariant.variant_price || null,
       };
     }
 
+    // No variant: selling price = product.base_price, strikethrough = metadata.compare_price
     const basePrice = productData?.base_price || 0;
+    const comparePrice = productData?.metadata?.compare_price || productData?.metadata?.compare_at_price || 0;
     return {
       current: basePrice,
-      original: basePrice + 200,
+      original: comparePrice > basePrice ? comparePrice : 0,
       basePrice: basePrice,
       variantPrice: null,
     };
@@ -309,31 +308,46 @@ function ProductViewPage() {
 
   // Convert product data to card format
   const getCardProps = (product) => {
-    const prices = getCurrentPrice();
-
-    if (product.product_type === "uniform") {
+    if (product.product_type === "bookset") {
+      // BookSet card format — matches SchoolScreen BookSetCard props
+      const basePrice = product.base_price || product.min_price || 0;
+      const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
       return {
-        name: product.title,
-        originalPrice: prices.original,
-        discountedPrice: prices.current,
-        rating: 4.5,
-        category: "School Uniform",
-        image:
-          product.mainImages?.[0]?.url ||
-          product.images?.[0]?.url ||
-          "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=300&h=200&fit=crop&auto=format",
-        discount: "20% off",
-      };
-    } else {
-      // BookSet format
-      return {
-        class: product.metadata?.grade || "General",
-        originalPrice: prices.original,
-        discountedPrice: prices.current,
+        class: product.metadata?.grade || product.schoolInfo?.grade || "General",
+        originalPrice: comparePrice,
+        discountedPrice: basePrice,
         rating: 4.5,
         name: product.title,
+        id: product.id,
+        school: location.state?.school,
       };
     }
+
+    // General product card format — matches CategoryProductsPage design
+    const basePrice = product.basePrice || product.base_price || product.min_price || 0;
+    const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || 0;
+    const discount = comparePrice > basePrice
+      ? Math.round(((comparePrice - basePrice) / comparePrice) * 100)
+      : (product.discount || 0);
+    return {
+      title: product.title,
+      basePrice: basePrice,
+      comparePrice: comparePrice,
+      discount: discount,
+      primaryImage: product.primaryImage || product.mainImages?.[0] || product.images?.[0] || null,
+      brands: product.brands || [],
+      rating: product.rating || "4.3",
+      reviewCount: product.reviewCount || "434",
+      id: product.id,
+    };
+  };
+
+  // Format price consistently
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(price);
   };
 
   // Handle add to cart
@@ -601,19 +615,25 @@ function ProductViewPage() {
             )}
           </h1>
 
-          <span className="text-sm text-green-600 font-bold">Offer Price</span>
+          {prices.original > prices.current && (
+            <span className="text-sm text-green-600 font-bold">Offer Price</span>
+          )}
           <div className="flex gap-2 font-semibold">
-            <h2 className="text-2xl text-green-600">
-              {Math.round(
-                ((prices.original - prices.current) / prices.original) * 100
-              )}
-              %
-            </h2>
+            {prices.original > prices.current && (
+              <h2 className="text-2xl text-green-600">
+                {Math.round(
+                  ((prices.original - prices.current) / prices.original) * 100
+                )}
+                %
+              </h2>
+            )}
             <h2 className="text-3xl">₹ {prices.current}</h2>
           </div>
-          <div className="text-sm">
-            MRP ₹ <span className="line-through">{prices.original}</span> (Inclusive of all taxes)
-          </div>
+          {prices.original > prices.current && (
+            <div className="text-sm">
+              MRP ₹ <span className="line-through">{prices.original}</span> (Inclusive of all taxes)
+            </div>
+          )}
 
           {/* Product Options - Separate Groups */}
           {productOptions && productOptions.length > 0 && (
@@ -846,25 +866,131 @@ function ProductViewPage() {
         similarProducts.length > 0 && (
           <div className="mx-4 md:mx-12 my-4">
             <h2 className="text-2xl font-semibold my-4">Similar Products</h2>
-            <div className="flex overflow-x-auto pb-4 gap-4 no-scrollbar md:grid md:grid-cols-4 md:gap-4 md:overflow-visible">
-              {similarProducts.map((product, idx) => {
-                const cardProps = getCardProps(product);
 
-                return (
-                  <div
-                    key={product.id}
-                    onClick={() => navigate(`/product/${product.id}`)}
-                    className="cursor-pointer min-w-[160px] md:min-w-0 flex-shrink-0"
-                  >
-                    {product.product_type === "uniform" ? (
-                      <UniformCard props={cardProps} />
-                    ) : (
-                      <BookSetCard props={cardProps} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {/* Bookset flow → BookSetCard (matching SchoolScreen design) */}
+            {productData?.product_type === "bookset" ? (
+              <div className="flex overflow-x-auto pb-4 gap-4 md:gap-8 no-scrollbar md:flex-wrap md:overflow-visible">
+                {similarProducts.map((product) => {
+                  // Always build bookset-format props here since we're rendering BookSetCard
+                  const basePrice = product.basePrice || product.base_price || product.min_price || 0;
+                  const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+                  // Extract grade from multiple sources, fallback to parsing title
+                  let grade = product.metadata?.grade || product.schoolInfo?.grade;
+                  if (!grade && product.title) {
+                    const match = product.title.match(/(?:class|grade)\s*(\d+)/i);
+                    if (match) grade = match[1];
+                  }
+                  const booksetProps = {
+                    class: grade || "General",
+                    originalPrice: comparePrice,
+                    discountedPrice: basePrice,
+                    rating: 4.5,
+                    name: product.title,
+                    id: product.id,
+                    school: location.state?.school,
+                  };
+                  return (
+                    <div
+                      key={product.id}
+                      className="cursor-pointer flex-shrink-0"
+                    >
+                      <BookSetCard props={booksetProps} />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Uniform / Category flow → General product card (matching CategoryProductsPage) */
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+                {similarProducts.map((product) => {
+                  const cardProps = getCardProps(product);
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => navigate(`/product/${product.id}`)}
+                      className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:cursor-pointer overflow-hidden border border-gray-100 flex flex-col"
+                    >
+                      {/* Product Image */}
+                      <div className="relative aspect-[4/5] bg-gray-50 overflow-hidden">
+                        <div className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white/50 hover:bg-white text-gray-400 hover:text-red-500 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                          </svg>
+                        </div>
+
+                        {cardProps.primaryImage ? (
+                          <img
+                            src={cardProps.primaryImage.url}
+                            alt={cardProps.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <span className="text-gray-300 text-xs">No image</span>
+                          </div>
+                        )}
+
+                        {/* Mobile Rating Badge */}
+                        <div className="md:hidden absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5 shadow-sm">
+                          <span>{cardProps.rating}</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 text-green-600">
+                            <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-gray-400 font-normal ml-0.5">| {cardProps.reviewCount}</span>
+                        </div>
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="p-3 flex flex-col gap-1">
+                        <p className="text-xs md:text-[11px] font-bold md:font-medium text-black md:text-gray-500 uppercase tracking-wide">
+                          {cardProps.brands && cardProps.brands.length > 0 ? cardProps.brands[0].name : "Brand"}
+                        </p>
+                        <h3 className="text-xs md:text-sm font-normal text-gray-500 md:text-gray-800 line-clamp-1">
+                          {cardProps.title}
+                        </h3>
+
+                        {/* Price Row */}
+                        <div className="mt-1 flex items-center flex-wrap gap-2">
+                          {/* Mobile: Discount → Original → Current */}
+                          <div className="flex md:hidden items-center gap-2 w-full">
+                            {cardProps.discount > 0 && (
+                              <span className="text-xs font-bold text-green-600 flex items-center">
+                                ↓ {cardProps.discount}%
+                              </span>
+                            )}
+                            {cardProps.comparePrice > cardProps.basePrice && (
+                              <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                                {formatPrice(cardProps.comparePrice)}
+                              </span>
+                            )}
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatPrice(cardProps.basePrice)}
+                            </span>
+                          </div>
+
+                          {/* Desktop: Current → Original → Discount */}
+                          <div className="hidden md:flex items-center gap-2 w-full">
+                            <span className="text-base font-bold text-gray-900">
+                              {formatPrice(cardProps.basePrice)}
+                            </span>
+                            {cardProps.comparePrice > cardProps.basePrice && (
+                              <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                                {formatPrice(cardProps.comparePrice)}
+                              </span>
+                            )}
+                            {cardProps.discount > 0 && (
+                              <span className="text-xs font-medium text-green-600">
+                                {cardProps.discount}% off
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )
       }
