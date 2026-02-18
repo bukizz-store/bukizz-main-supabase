@@ -10,11 +10,11 @@ import OrderConfirmationPage from "./views/pages/OrderConfirmationPage";
 import OrdersPage from "./views/pages/OrdersPage";
 import ProductViewPage from "./views/pages/ProductViewPage";
 import CategoryProductsPage from "./views/pages/CategoryProductsPage";
-import ProfilePage from "./views/pages/ProfilePage";
-import MyCityPage from "./views/pages/MyCityPage";
-
+import ResetPasswordPage from "./views/pages/ResetPasswordPage";
 import CategoryPage from "./views/pages/CategoryPage";
 import VerifyEmailPage from "./views/pages/VerifyEmailPage";
+import ProfilePage from "./views/pages/ProfilePage";
+import MyCityPage from "./views/pages/MyCityPage";
 
 import ContactUsPage from "./views/pages/ContactUsPage";
 import PaymentPolicyPage from "./views/pages/PaymentPolicyPage";
@@ -164,7 +164,7 @@ function App() {
           <Route path="/product" element={<ProductViewPage />} />
           <Route path="/product/:id" element={<ProductViewPage />} />
           <Route path="/products" element={<CategoryProductsPage />} />
-
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/category" element={<CategoryPage />} />
 
 

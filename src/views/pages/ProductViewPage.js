@@ -4,6 +4,7 @@ import { BookSetCard } from "../../components/Cards/BookSetCard";
 import SearchBar from "../../components/Common/SearchBar";
 import useUserProfileStore from "../../store/userProfileStore";
 import useCartStore from "../../store/cartStore";
+import useApiRoutesStore from "../../store/apiRoutesStore"; // Import apiRoutesStore
 import NoProductPage from "../../components/Product/NoProductPage";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 import { handleBackNavigation } from "../../utils/navigation";
@@ -33,8 +34,40 @@ function ProductViewPage() {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [deliveryPincode, setDeliveryPincode] = useState("");
+  const [pincodeStatus, setPincodeStatus] = useState(null); // 'checking', 'available', 'unavailable', 'error'
+  const [pincodeMessage, setPincodeMessage] = useState("");
   const [productOptions, setProductOptions] = useState([]);
   const [showCartDialog, setShowCartDialog] = useState(false);
+
+  // Check pincode availability
+  const checkPincode = async () => {
+    if (!deliveryPincode || deliveryPincode.length !== 6) {
+      setPincodeStatus("error");
+      setPincodeMessage("Please enter a valid 6-digit pincode");
+      return;
+    }
+
+    setPincodeStatus("checking");
+    setPincodeMessage("");
+
+    try {
+      const checkUrl = useApiRoutesStore.getState().pincodes.check(deliveryPincode);
+      const response = await fetch(checkUrl);
+      const data = await response.json();
+
+      if (data.serviceable) {
+        setPincodeStatus("available");
+        setPincodeMessage("Delivery available for this pincode");
+      } else {
+        setPincodeStatus("unavailable");
+        setPincodeMessage("Sorry, we do not deliver to this pincode");
+      }
+    } catch (error) {
+      console.error("Error checking pincode:", error);
+      setPincodeStatus("error");
+      setPincodeMessage("Error checking pincode. Please try again.");
+    }
+  };
 
   // Extract unique option groups from variants
   const extractOptionGroups = (variants) => {
@@ -442,6 +475,31 @@ function ProductViewPage() {
         <SearchBar />
       </div>
 
+      {/* Out of Stock Banner */}
+      {(selectedVariant ? selectedVariant.stock <= 0 : ((productData?.stock || 0) <= 0)) && (
+        <div className="mx-4 md:mx-12 mt-4 mb-2">
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Out of Stock
+                </h3>
+                <div className="mt-1 text-sm text-red-700">
+                  <p>
+                    This product is currently unavailable. Please check back later or explore similar items.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Breadcrumb */}
       {productData && (
         <div className="md:hidden px-4 mt-2 mb-2">
@@ -769,53 +827,91 @@ function ProductViewPage() {
             <h2 className="text-xl font-bold my-3 text-gray-800">Delivery details</h2>
             <div className="bg-white/50 rounded-xl overflow-hidden border border-blue-50">
               {/* Row 1: Pincode */}
-              <div className="p-4 border-b border-blue-100 flex items-center justify-between hover:bg-white transition-colors cursor-pointer group">
-                <div className="flex items-center gap-3">
-                  <svg
-                    className="w-5 h-5 text-gray-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter Pincode"
-                      value={deliveryPincode}
-                      onChange={(e) => setDeliveryPincode(e.target.value)}
-                      className="bg-transparent border-none focus:ring-0 p-0 text-gray-800 font-medium placeholder-gray-400 w-28 text-sm"
-                    />
+              <div className="p-4 border-b border-blue-100 flex flex-col gap-2 hover:bg-white transition-colors cursor-pointer group">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-3">
+                    <svg
+                      className="w-5 h-5 text-gray-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter Pincode"
+                        value={deliveryPincode}
+                        onChange={(e) => {
+                          setDeliveryPincode(e.target.value);
+                          if (pincodeStatus) {
+                            setPincodeStatus(null);
+                            setPincodeMessage("");
+                          }
+                        }}
+                        className="bg-transparent border-none focus:ring-0 p-0 text-gray-800 font-medium placeholder-gray-400 w-28 text-sm"
+                        maxLength={6}
+                      />
+                    </div>
                   </div>
+                  <button
+                    onClick={checkPincode}
+                    disabled={pincodeStatus === "checking"}
+                    className="text-blue-600 font-semibold text-sm hover:text-blue-700 disabled:opacity-50"
+                  >
+                    {pincodeStatus === "checking" ? "Checking..." : "Check"}
+                  </button>
                 </div>
-                <button className="text-blue-600 font-semibold text-sm hover:text-blue-700">
-                  Check
-                </button>
               </div>
 
-              {/* Row 2: Delivery Estimate */}
-              <div className="p-4 border-b border-blue-100 flex items-center gap-3 bg-white/50">
-                <img
-                  src="/delivery_truck.svg"
-                  alt="delivery"
-                  className="w-5 h-5 text-gray-600 opacity-70"
-                />
-                <p className="text-sm font-semibold text-gray-800">
-                  Delivery by Tomorrow, 11 AM - 1 PM
-                </p>
-              </div>
+              {/* Row 2: Delivery Estimate / Status */}
+              {(pincodeStatus === "available" || pincodeStatus === "unavailable") && (
+                <div className={`p-4 border-b border-blue-100 flex items-center gap-3 ${pincodeStatus === "unavailable" ? "bg-red-50" : "bg-white/50"}`}>
+                  {pincodeStatus === "available" ? (
+                    <>
+                      <img
+                        src="/delivery_truck.svg"
+                        alt="delivery"
+                        className="w-5 h-5 text-gray-600 opacity-70"
+                      />
+                      <p className="text-sm font-semibold text-gray-800">
+                        Delivery by Tomorrow, 11 AM - 1 PM
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5 text-red-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <p className="text-sm font-semibold text-red-600">
+                        Delivery not available at this pincode
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Row 3: Fulfilled By */}
               <div className="p-4 flex items-center gap-3 bg-white/50">
