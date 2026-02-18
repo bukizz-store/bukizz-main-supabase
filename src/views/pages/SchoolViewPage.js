@@ -13,7 +13,7 @@ function SchoolViewPage() {
   const [searchResults, setSearchResults] = useState(null);
   const [searchTerm, setSearchTerm] = useState(location.state?.searchTerm || "");
   const [isSearchActive, setIsSearchActive] = useState(!!location.state?.searchTerm);
-  const [selectedCity, setSelectedCity] = useState("Gurugram");
+  const [selectedCity, setSelectedCity] = useState("Kanpur");
 
   useEffect(() => {
     // Get selected city from localStorage
@@ -27,7 +27,7 @@ function SchoolViewPage() {
         };
         setSelectedCity(cityNameMap[city] || city);
       } else {
-        setSelectedCity("Gurugram");
+        setSelectedCity("Kanpur");
       }
     };
 

@@ -37,9 +37,9 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
         setLoading(true);
         let selectedCity = localStorage.getItem("selectedCity");
 
-        // Default to Gurgaon if no city is selected
+        // Default to Kanpur if no city is selected
         if (!selectedCity) {
-          selectedCity = "gurugram";
+          selectedCity = "kanpur";
         }
 
         // Map city id to city name for API
@@ -97,9 +97,9 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
         let selectedCity = localStorage.getItem("selectedCity");
 
-        // Default to Gurgaon if no city is selected
+        // Default to Kanpur if no city is selected
         if (!selectedCity) {
-          selectedCity = "gurugram";
+          selectedCity = "kanpur";
         }
 
         // Map city id to city name for API

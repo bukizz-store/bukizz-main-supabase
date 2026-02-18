@@ -151,9 +151,9 @@ const AuthModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="flex w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden rounded-lg">
+            <div className="flex w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden rounded-lg items-center justify-center ">
                 {/* Form Section */}
-                <div className="w-full md:w-1/2 p-8 bg-white rounded-l-lg md:rounded-r-none rounded-r-lg">
+                <div className="w-full md:w-1/2 p-8 bg-white rounded-lg">
                     <div className="flex justify-between items-center mb-6">
                         <img src="/Logo.svg" alt="Bukizz Logo" className="h-10" />
                         <button
@@ -336,13 +336,13 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Image Section */}
-                <div className="hidden md:block md:w-1/2 rounded-r-lg overflow-hidden">
+                {/* <div className="hidden md:block md:w-1/2 rounded-r-lg overflow-hidden">
                     <img
                         src="/login_model.svg"
                         alt="Login Illustration"
                         className="h-full w-full object-cover"
                     />
-                </div>
+                </div> */}
             </div>
         </div>
     );

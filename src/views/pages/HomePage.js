@@ -26,7 +26,7 @@ function HomePage() {
       };
       setSelectedCity(cityNameMap[city] || city);
     } else {
-      setSelectedCity("Gurugram"); // Default city
+      setSelectedCity("Kanpur"); // Default city
     }
 
     // Listen for changes in localStorage

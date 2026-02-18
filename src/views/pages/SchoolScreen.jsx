@@ -4,7 +4,6 @@ import { CategoryCard, CategoryCardMobile } from "../../components/Cards/Categor
 import { BookSetCard } from "../../components/Cards/BookSetCard";
 import { UniformCard } from "../../components/Cards/UniformCard";
 import useUserProfileStore from "../../store/userProfileStore";
-import Stationary from "../../components/Sections/Stationary";
 import DealsSection from "../../components/Sections/DealsSection";
 
 const SchoolCategory = [
@@ -33,6 +32,11 @@ const getBookSetsForSchool = (schoolCatalog, schoolData) => {
           id: product.product_id,
           school: schoolData,
         };
+      })
+      .sort((a, b) => {
+        const numA = parseInt(a.class) || Infinity;
+        const numB = parseInt(b.class) || Infinity;
+        return numA - numB;
       });
   }
 
@@ -143,6 +147,38 @@ const getUniformsForSchool = (schoolCatalog, schoolData) => {
       discount: "25% off",
     },
   ];
+};
+
+// Dynamic stationery based on school catalog
+const getStationaryForSchool = (schoolCatalog, schoolData) => {
+  if (schoolCatalog && schoolCatalog.products) {
+    return schoolCatalog.products
+      .filter((product) => product.product_type === "stationary")
+      .map((product) => {
+        const basePrice = product.min_price || product.base_price || 0;
+        const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+        const discountPct = comparePrice > basePrice
+          ? Math.round(((comparePrice - basePrice) / comparePrice) * 100)
+          : 0;
+        return {
+          name: product.title,
+          originalPrice: comparePrice,
+          discountedPrice: basePrice,
+          rating: 4.3,
+          category: product.category || "Stationery",
+          image:
+            product.primary_image ||
+            product.image_url ||
+            product.images?.[0] ||
+            "https://images.unsplash.com/photo-1586523969132-a3cf25b48d1c?w=300&h=200&fit=crop&auto=format",
+          id: product.product_id,
+          discount: discountPct > 0 ? `${discountPct}% off` : "",
+          school: schoolData,
+        };
+      });
+  }
+
+  return [];
 };
 
 const SchoolScreen = () => {
@@ -274,6 +310,7 @@ const SchoolScreen = () => {
 
   const bookSets = getBookSetsForSchool(schoolCatalog, schoolData);
   const uniforms = getUniformsForSchool(schoolCatalog, schoolData);
+  const stationery = getStationaryForSchool(schoolCatalog, schoolData);
 
   // Format location display
   const formatLocation = (school) => {
@@ -305,13 +342,13 @@ const SchoolScreen = () => {
   };
 
   return (
-    <div className="mx-4 md:mx-12">
+    <div className="mx-4 md:mx-12 my-2">
       {/* School Header Image and Info */}
-      <div className="relative max-w-7xl mx-auto rounded-lg shadow-md mb-4">
+      <div className="relative max-w-7xl mx-auto rounded-2xl shadow-lg mb-4 md:mb-5 overflow-hidden">
         <img
           src={getSchoolImage(schoolData)}
           alt={schoolData.name}
-          className="w-full sm:h-[300px] md:h-[250px] lg:h-[250px] object-cover rounded-lg"
+          className="w-full h-[178px] sm:h-[300px] md:h-[250px] lg:h-[250px] object-cover"
         />
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/70 to-transparent"></div>
         <p className="absolute bottom-2 left-4 text-white text-lg md:text-4xl font-semibold mb-4 truncate max-w-[calc(100%-3rem)]">
@@ -384,7 +421,13 @@ const SchoolScreen = () => {
             ) : selectedCategory === "BookSet" ? (
               bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)
             ) : selectedCategory === "Stationary" ? (
-              <Stationary />
+              stationery.length > 0 ? (
+                stationery.map((item, idx) => <UniformCard key={idx} props={item} />)
+              ) : (
+                <div className="col-span-4 text-center py-16">
+                  <p className="text-gray-500 text-lg">No stationery products available for this school yet.</p>
+                </div>
+              )
             ) : (
               // Placeholder for other categories
               <div className="col-span-4 text-center py-16">

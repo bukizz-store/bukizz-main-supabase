@@ -87,8 +87,8 @@ function App() {
         // Check if city is selected in local storage
         const storedCity = localStorage.getItem("selectedCity");
         if (!storedCity) {
-          // Default to Gurugram automatically
-          localStorage.setItem("selectedCity", "gurugram");
+          // Default to Kanpur automatically
+          localStorage.setItem("selectedCity", "kanpur");
           // openCityPopup(); // Removed popup trigger
         }
       }
