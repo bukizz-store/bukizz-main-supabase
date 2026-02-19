@@ -44,27 +44,22 @@ const useAuthStore = create(
 
           const data = await response.json();
 
+          console.log("data", data);
+
           // Store tokens securely - handle both response structures
           const tokens = data.data || data;
           const user = tokens.user || data.user;
 
-          if (tokens.accessToken) {
-            localStorage.setItem("access_token", tokens.accessToken);
-            localStorage.setItem("custom_token", tokens.accessToken);
+          const accessToken = tokens.accessToken || tokens.access_token || data.session?.access_token || data.token;
+          const refreshToken = tokens.refreshToken || tokens.refresh_token || data.session?.refresh_token;
+
+          if (accessToken) {
+            localStorage.setItem("access_token", accessToken);
+            localStorage.setItem("custom_token", accessToken);
           }
-          if (tokens.refreshToken) {
-            localStorage.setItem("refresh_token", tokens.refreshToken);
-          }
-          // Handle legacy response structure
-          if (data.session?.access_token) {
-            localStorage.setItem("access_token", data.session.access_token);
-            localStorage.setItem("custom_token", data.session.access_token);
-          }
-          if (data.session?.refresh_token) {
-            localStorage.setItem("refresh_token", data.session.refresh_token);
-          }
-          if (data.token) {
-            localStorage.setItem("custom_token", data.token);
+
+          if (refreshToken) {
+            localStorage.setItem("refresh_token", refreshToken);
           }
 
           if (user) {
@@ -279,12 +274,15 @@ const useAuthStore = create(
           const tokens = data.data || data;
 
           // Update tokens in localStorage
-          if (tokens.accessToken) {
-            localStorage.setItem("access_token", tokens.accessToken);
-            localStorage.setItem("custom_token", tokens.accessToken);
+          const newAccessToken = tokens.accessToken || tokens.access_token;
+          const newRefreshToken = tokens.refreshToken || tokens.refresh_token;
+
+          if (newAccessToken) {
+            localStorage.setItem("access_token", newAccessToken);
+            localStorage.setItem("custom_token", newAccessToken);
           }
-          if (tokens.refreshToken) {
-            localStorage.setItem("refresh_token", tokens.refreshToken);
+          if (newRefreshToken) {
+            localStorage.setItem("refresh_token", newRefreshToken);
           }
 
           console.log("Token refresh successful");
@@ -397,12 +395,15 @@ const useAuthStore = create(
           const tokens = data.data || data;
           const user = tokens.user || data.user;
 
-          if (tokens.accessToken) {
-            localStorage.setItem("access_token", tokens.accessToken);
-            localStorage.setItem("custom_token", tokens.accessToken);
+          const accessToken = tokens.accessToken || tokens.access_token;
+          const refreshToken = tokens.refreshToken || tokens.refresh_token;
+
+          if (accessToken) {
+            localStorage.setItem("access_token", accessToken);
+            localStorage.setItem("custom_token", accessToken);
           }
-          if (tokens.refreshToken) {
-            localStorage.setItem("refresh_token", tokens.refreshToken);
+          if (refreshToken) {
+            localStorage.setItem("refresh_token", refreshToken);
           }
 
           if (user) {

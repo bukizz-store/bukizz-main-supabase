@@ -37,6 +37,9 @@ function CheckoutPage() {
   // Track images that failed to load to prevent infinite retry loops
   const failedImagesRef = useRef(new Set());
 
+  // Track if we are navigating away (to success page) to prevent validation redirects
+  const isNavigatingAway = useRef(false);
+
   // Determine checkout mode explicitly from navigation state
   // This prevents stale store state from causing issues
   const checkoutMode = location.state?.mode; // 'buy_now' or 'cart'
@@ -52,7 +55,7 @@ function CheckoutPage() {
   // Validate generic state on mount
   useEffect(() => {
     // If trying to do Buy Now but no item exists, redirect home
-    if (isBuyNow && !buyNowItem) {
+    if (isBuyNow && !buyNowItem && !isNavigatingAway.current) {
       console.warn("Buy Now mode active but no item found. Redirecting to home.");
       navigate("/", { replace: true });
     }
@@ -175,6 +178,8 @@ function CheckoutPage() {
         });
 
         // Success
+        isNavigatingAway.current = true;
+
         if (isBuyNow) {
           restoreCart();
         } else {
@@ -199,6 +204,9 @@ function CheckoutPage() {
 
         const order = currentOrderRef.current;
         if (order) {
+
+          isNavigatingAway.current = true;
+
           if (isBuyNow) {
             restoreCart();
           } else {
@@ -574,30 +582,53 @@ function CheckoutPage() {
     // Find the address object
     const selectedAddr = addresses.find((a) => a.id === addressId);
 
-    if (selectedAddr && selectedAddr.postalCode) {
-      try {
-        // Check pincode availability
-        const response = await fetch(
-          useApiRoutesStore.getState().pincodes.check(selectedAddr.postalCode)
-        );
-        const data = await response.json();
+    // Strict Validation for Selected Address
+    if (selectedAddr) {
+      const phoneDigits = selectedAddr.phone?.replace(/\D/g, '') || "";
+      const pincodeDigits = selectedAddr.postalCode?.replace(/\D/g, '') || "";
 
-        if (!data.success || !data.serviceable) {
+      const isNameValid = selectedAddr.recipientName?.trim().length >= 2;
+      const isPhoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
+      const isPincodeValid = /^\d{6}$/.test(pincodeDigits);
+      const isLine1Valid = selectedAddr.line1?.trim().length >= 5;
+      const isCityValid = !!selectedAddr.city?.trim();
+      const isStateValid = !!selectedAddr.state?.trim();
+
+      if (!isNameValid || !isPhoneValid || !isPincodeValid || !isLine1Valid || !isCityValid || !isStateValid) {
+        showNotification({
+          message: "Please update this address with correct details (Name, Phone, Pincode)",
+          type: "warning",
+        });
+        handleEditAddress(selectedAddr);
+        return;
+      }
+
+      // Backend Pincode Serviceability Check
+      if (selectedAddr.postalCode) {
+        try {
+          // Check pincode availability
+          const response = await fetch(
+            useApiRoutesStore.getState().pincodes.check(selectedAddr.postalCode)
+          );
+          const data = await response.json();
+
+          if (!data.success || !data.serviceable) {
+            showNotification({
+              message:
+                "This address is not deliverable. Kindly change the address and pincode.",
+              type: "error",
+            });
+            return;
+          }
+        } catch (error) {
+          console.error("Pincode check failed:", error);
           showNotification({
             message:
-              "This address is not deliverable. Kindly change the address and pincode.",
+              "Unable to verify delivery availability. Please try again.",
             type: "error",
           });
           return;
         }
-      } catch (error) {
-        console.error("Pincode check failed:", error);
-        showNotification({
-          message:
-            "Unable to verify delivery availability. Please try again.",
-          type: "error",
-        });
-        return;
       }
     }
 
@@ -623,8 +654,26 @@ function CheckoutPage() {
     }
 
     // Check selected address
-    if (!selectedAddressId || !getSelectedAddress()) {
+    const selectedAddress = getSelectedAddress();
+    if (!selectedAddressId || !selectedAddress) {
       errors.push("Please select a delivery address");
+    } else {
+      // Strict Re-validation of selected address content
+      const phoneDigits = selectedAddress.phone?.replace(/\D/g, '') || "";
+      const pincodeDigits = selectedAddress.postalCode?.replace(/\D/g, '') || "";
+
+      const isNameValid = selectedAddress.recipientName?.trim().length >= 2;
+      const isPhoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
+      const isPincodeValid = /^\d{6}$/.test(pincodeDigits);
+      const isLine1Valid = selectedAddress.line1?.trim().length >= 5;
+
+      if (!isNameValid || !isPhoneValid || !isPincodeValid || !isLine1Valid) {
+        errors.push("Selected address has invalid details. Please update it.");
+        // Optionally trigger edit mode here, but might be jarring. Better to just error.
+        // We can also try to highlight IT.
+        // Force user back to address step if validation fails
+        if (processState > 2) setProcessState(2);
+      }
     }
 
     // Check contact details
@@ -696,6 +745,8 @@ function CheckoutPage() {
 
       if (paymentMethod === "cod") {
         // COD Order - Success immediately
+        isNavigatingAway.current = true;
+
         if (isBuyNow) {
           restoreCart();
         } else {
@@ -742,6 +793,8 @@ function CheckoutPage() {
                 });
 
                 // Success
+                isNavigatingAway.current = true;
+
                 if (isBuyNow) {
                   restoreCart();
                 } else {
@@ -760,6 +813,8 @@ function CheckoutPage() {
                   type: "error",
                 });
                 // Navigate to order page anyway, status will be pending/failed
+                isNavigatingAway.current = true;
+
                 if (isBuyNow) {
                   restoreCart();
                 } else {
@@ -862,19 +917,9 @@ function CheckoutPage() {
           type: "error"
         });
         navigate("/");
-      } else if (
-        retryCount < maxRetries &&
-        !error.message.includes("validation")
-      ) {
-        // Retry logic for network or temporary errors
-        setRetryCount((prev) => prev + 1);
-        showNotification({
-          message: `Order placement failed. Retrying... (${retryCount + 1}/${maxRetries})`,
-          type: "warning",
-        });
-        setTimeout(() => handlePlaceOrder(), 2000 * (retryCount + 1)); // Exponential backoff
       } else {
-        setValidationErrors([error.message]);
+        // No automatic retry for other errors, just show validation modal or error
+        setValidationErrors([error.message || "Something went wrong. Please try again."]);
         setShowValidationModal(true);
       }
     }

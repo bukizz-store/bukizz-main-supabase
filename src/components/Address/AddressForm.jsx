@@ -52,20 +52,40 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
 
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.recipientName.trim()) newErrors.recipientName = true;
-        if (!formData.phone.trim()) {
-            newErrors.phone = true;
-        } else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-            newErrors.phone = true;
+
+        // Recipient Name
+        if (!formData.recipientName?.trim()) {
+            newErrors.recipientName = "Name is required";
+        } else if (formData.recipientName.trim().length < 2) {
+            newErrors.recipientName = "Name is too short";
         }
-        if (!formData.postalCode.trim()) {
-            newErrors.postalCode = true;
-        } else if (!/^\d{6}$/.test(formData.postalCode.replace(/\D/g, ''))) {
-            newErrors.postalCode = true;
+
+        // Phone Validation (Strict 10 digits)
+        const phoneDigits = formData.phone?.replace(/\D/g, '') || "";
+        if (!formData.phone?.trim()) {
+            newErrors.phone = "Phone number is required";
+        } else if (!/^[6-9]\d{9}$/.test(phoneDigits)) { // India specific mobile validation
+            newErrors.phone = "Enter valid 10-digit mobile number";
         }
-        if (!formData.line1.trim()) newErrors.line1 = true;
-        if (!formData.city.trim()) newErrors.city = true;
-        if (!formData.state.trim()) newErrors.state = true;
+
+        // Pincode Validation (Strict 6 digits)
+        const pincodeDigits = formData.postalCode?.replace(/\D/g, '') || "";
+        if (!formData.postalCode?.trim()) {
+            newErrors.postalCode = "Pincode is required";
+        } else if (!/^\d{6}$/.test(pincodeDigits)) {
+            newErrors.postalCode = "Pincode must be 6 digits";
+        }
+
+        // Address Line 1
+        if (!formData.line1?.trim()) {
+            newErrors.line1 = "Address is required";
+        } else if (formData.line1.trim().length < 5) {
+            newErrors.line1 = "Address is too short";
+        }
+
+        // City & State
+        if (!formData.city?.trim()) newErrors.city = "City is required";
+        if (!formData.state?.trim()) newErrors.state = "State is required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -162,7 +182,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             className={`w-full px-4 py-3 border ${errors.recipientName ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
 
                         />
-                        {errors.recipientName && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Name is required</span>}
+                        {errors.recipientName && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.recipientName}</span>}
                     </div>
                     <div className="relative">
                         <input
@@ -174,7 +194,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             className={`w-full px-4 py-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
 
                         />
-                        {errors.phone && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Valid 10-digit phone required</span>}
+                        {errors.phone && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.phone}</span>}
                     </div>
                 </div>
 
@@ -189,7 +209,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             className={`w-full px-4 py-3 border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
 
                         />
-                        {errors.postalCode && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Valid 6-digit pincode required</span>}
+                        {errors.postalCode && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.postalCode}</span>}
                     </div>
                     <div className="relative">
                         <input
@@ -213,7 +233,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                         className={`w-full px-4 py-3 border ${errors.line1 ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500 resize-none`}
 
                     />
-                    {errors.line1 && <span className="text-xs text-red-500 absolute -bottom-4 left-0">Address is required</span>}
+                    {errors.line1 && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.line1}</span>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,7 +247,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             className={`w-full px-4 py-3 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
 
                         />
-                        {errors.city && <span className="text-xs text-red-500 absolute -bottom-4 left-0">City is required</span>}
+                        {errors.city && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.city}</span>}
                     </div>
                     <div className="relative">
                         <select
@@ -275,7 +295,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             <option value="Lakshadweep">Lakshadweep</option>
                             <option value="Puducherry">Puducherry</option>
                         </select>
-                        {errors.state && <span className="text-xs text-red-500 absolute -bottom-4 left-0">State is required</span>}
+                        {errors.state && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.state}</span>}
                     </div>
                 </div>
 
