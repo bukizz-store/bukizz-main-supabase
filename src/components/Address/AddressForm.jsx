@@ -83,6 +83,11 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
             newErrors.line1 = "Address is too short";
         }
 
+        // Locality (Line 2)
+        if (!formData.line2?.trim()) {
+            newErrors.line2 = "Locality is required";
+        }
+
         // City & State
         if (!formData.city?.trim()) newErrors.city = "City is required";
         if (!formData.state?.trim()) newErrors.state = "State is required";
@@ -218,8 +223,9 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
                             value={formData.line2}
                             onChange={handleChange}
                             placeholder="Locality"
-                            className="w-full px-4 py-3 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500"
+                            className={`w-full px-4 py-3 border ${errors.line2 ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
                         />
+                        {errors.line2 && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.line2}</span>}
                     </div>
                 </div>
 
