@@ -1126,7 +1126,7 @@ const OrdersSection = () => {
                   }
 
                   return (
-                    <div key={step.key} className="flex flex-col items-center gap-2 bg-white px-1 relative">
+                    <div key={step.key} className="flex flex-col items-center gap-2 bg-transparent px-1 relative">
                       <div className={`w-6 h-6 rounded-full border-2 ${borderColorClass} ${circleColorClass} flex items-center justify-center shadow-sm`}>
                         {iconContent}
                       </div>
