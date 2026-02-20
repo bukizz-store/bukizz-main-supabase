@@ -23,6 +23,13 @@ const useCartStore = create((set, get) => ({
   addToCart: async (product, variant, quantity = 1) => {
     set({ loading: true, error: null });
     try {
+      // Self-hydrate: if Zustand cart is empty but localStorage has data,
+      // load it first. This handles webview page reloads where Navbar
+      // (which normally calls loadCart on mount) is hidden in mobile app mode.
+      if (get().cart.items.length === 0) {
+        get().loadCart();
+      }
+
       // If we are in Buy Now mode, restore the original cart first
       // This handles the case where user abandoned Buy Now and is now adding items normally
       if (get().isBuyNowMode) {
@@ -361,6 +368,10 @@ const useCartStore = create((set, get) => ({
 
   // Check if item is in cart
   isInCart: (productId, variantId = null) => {
+    // Self-hydrate: ensure cart is loaded so badge shows correctly after webview reload
+    if (get().cart.items.length === 0 && localStorage.getItem("bukizz_cart")) {
+      get().loadCart();
+    }
     const { cart } = get();
     return cart.items.some(
       (item) => item.productId === productId && item.variantId === variantId
@@ -624,6 +635,17 @@ const useCartStore = create((set, get) => ({
   // Initiate Buy Now Flow - Swaps current cart with buy now item
   initiateBuyNowFlow: (product, variant, quantity = 1) => {
     try {
+      // Self-hydrate: ensure cart is loaded from localStorage before backing up.
+      // Without this, a webview page reload leaves Zustand cart empty,
+      // and we'd back up an empty cart — losing the real one.
+      if (get().cart.items.length === 0) {
+        // Only hydrate if NOT already in buy-now mode (to avoid restoring during active flow)
+        const wasBuyNow = localStorage.getItem("bukizz_buy_now_mode") === "true";
+        if (!wasBuyNow) {
+          get().loadCart();
+        }
+      }
+
       // 1. Backup current cart
       const currentCart = get().cart;
 
@@ -726,12 +748,18 @@ const useCartStore = create((set, get) => ({
     }
   },
 
-  // Initiate Cart Flow
+  // Initiate Cart Flow — restores original cart and exits buy-now mode
   initiateCartFlow: () => {
     try {
-      // Explicitly clear Buy Now item to ensure we are in Cart mode
-      set({ buyNowItem: null, isBuyNowMode: false });
-      localStorage.removeItem("bukizz_buy_now_mode");
+      // If we were in buy now mode, properly restore the original cart
+      // instead of just clearing flags (which would leave bukizz_saved_cart orphaned)
+      if (get().isBuyNowMode || localStorage.getItem("bukizz_saved_cart")) {
+        get().restoreCart();
+      } else {
+        // Just clear buy now flags
+        set({ buyNowItem: null, isBuyNowMode: false });
+        localStorage.removeItem("bukizz_buy_now_mode");
+      }
       return { success: true };
     } catch (error) {
       console.error("Error initiating Cart flow:", error);
@@ -785,7 +813,13 @@ const useCartStore = create((set, get) => ({
         quantity: Math.max(1, Math.min(1000, quantity))
       };
 
-      set({ buyNowItem: updatedItem, error: null });
+      // Also update the temp cart in Zustand + localStorage so reloads stay consistent
+      const buyNowCartItems = [updatedItem];
+      const totals = calculateCartTotals(buyNowCartItems);
+      const tempCart = { items: buyNowCartItems, ...totals };
+
+      set({ buyNowItem: updatedItem, cart: tempCart, error: null });
+      localStorage.setItem("bukizz_cart", JSON.stringify(tempCart));
     } catch (error) {
       console.error("Error updating buy now quantity:", error);
       set({ error: error.message });
