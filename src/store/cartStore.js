@@ -296,9 +296,12 @@ const useCartStore = create((set, get) => ({
       set({ cart: emptyCart, error: null });
       localStorage.removeItem("bukizz_cart");
 
-      // Safety: do NOT remove bukizz_saved_cart here —
-      // it's the backup of the real cart during buy-now flow.
-      // restoreCart is responsible for cleaning it up.
+      // Also clean up any buy-now artifacts to prevent stale state
+      // If the checkout flow called clearCart instead of restoreCart,
+      // these flags would otherwise persist and break future buy-now flows.
+      localStorage.removeItem("bukizz_buy_now_mode");
+      localStorage.removeItem("bukizz_saved_cart");
+      set({ isBuyNowMode: false, buyNowItem: null, savedCart: null });
     } catch (error) {
       console.error("Error clearing cart:", error);
       set({ error: error.message });
@@ -634,11 +637,19 @@ const useCartStore = create((set, get) => ({
       // Without this, a webview page reload leaves Zustand cart empty,
       // and we'd back up an empty cart — losing the real one.
       if (get().cart.items.length === 0) {
-        // Only hydrate if NOT already in buy-now mode (to avoid restoring during active flow)
-        const wasBuyNow = localStorage.getItem("bukizz_buy_now_mode") === "true";
-        if (!wasBuyNow) {
-          get().loadCart();
+        // Always clean up stale buy-now flags BEFORE calling loadCart,
+        // so loadCart does a normal cart load (not buy-now reconstruction).
+        // We're about to start a NEW buy-now flow, so old flags are irrelevant.
+        localStorage.removeItem("bukizz_buy_now_mode");
+        // Restore saved cart if it exists (from a previous abandoned buy-now)
+        const previousSavedCart = localStorage.getItem("bukizz_saved_cart");
+        if (previousSavedCart) {
+          // Put the real cart back into bukizz_cart so loadCart picks it up
+          localStorage.setItem("bukizz_cart", previousSavedCart);
+          localStorage.removeItem("bukizz_saved_cart");
         }
+        set({ isBuyNowMode: false, buyNowItem: null, savedCart: null });
+        get().loadCart();
       }
 
       // 1. Backup current cart
