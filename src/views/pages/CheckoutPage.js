@@ -125,6 +125,7 @@ function CheckoutPage() {
     initiateRazorpayPayment,
     verifyRazorpayPayment,
     reportPaymentFailure,
+    reconcilePaymentStatus,
   } = useOrderStore();
   const { showNotification } = useNotificationStore();
 
@@ -202,6 +203,14 @@ function CheckoutPage() {
         const order = currentOrderRef.current;
         if (order) {
 
+          try {
+            // Attempt auto-recovery
+            console.log("Attempting auto-recovery for payment...");
+            await reconcilePaymentStatus(order.id);
+          } catch (recError) {
+            console.error("Auto-recovery also failed:", recError);
+          }
+
           isNavigatingAway.current = true;
 
           if (isBuyNow) {
@@ -212,7 +221,7 @@ function CheckoutPage() {
           navigate(`/order-success/${order.id}`, {
             state: {
               order,
-              error: "Payment verification failed. Status is pending.",
+              error: "Payment verification failed. Check order details to retry or view status.",
             },
           });
 
@@ -773,6 +782,14 @@ function CheckoutPage() {
                   message: "Payment verification failed. Please contact support.",
                   type: "error",
                 });
+                try {
+                  // Attempt auto-recovery
+                  console.log("Attempting auto-recovery for payment...");
+                  await reconcilePaymentStatus(order.id);
+                } catch (recError) {
+                  console.error("Auto-recovery also failed:", recError);
+                }
+
                 // Navigate to order page anyway, status will be pending/failed
                 isNavigatingAway.current = true;
 
@@ -784,7 +801,7 @@ function CheckoutPage() {
                 navigate(`/order-success/${order.id}`, {
                   state: {
                     order,
-                    error: "Payment verification failed. Status is pending.",
+                    error: "Payment verification failed. Check order details to retry or view status.",
                   },
                 });
               }

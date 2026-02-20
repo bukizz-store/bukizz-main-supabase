@@ -970,10 +970,37 @@ const OrdersSection = () => {
     const isPayable = isCOD && itemStatus !== 'delivered' && itemStatus !== 'cancelled' && itemStatus !== 'refunded';
     const amountToPay = order.totalAmount; // Assuming full order amount for now
 
+    // Determine Status Box Styling and Text
+    const isPaymentIncomplete = order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid';
+
+    let boxBorderColor = "border-blue-600";
+    let statusTitle = "Order Confirmed";
+    let statusDesc = "Your Order has been placed.";
+    let alertBox = null;
+
+    if (itemStatus === 'cancelled') {
+      boxBorderColor = "border-red-500 bg-red-50";
+      statusTitle = "Order Cancelled";
+      statusDesc = "This order has been cancelled.";
+    } else if (isPaymentIncomplete) {
+      boxBorderColor = "border-orange-500 bg-orange-50";
+      statusTitle = "Payment Incomplete";
+      statusDesc = "Your order is pending because the payment was not completed.";
+      alertBox = (
+        <div className="mt-4 bg-orange-100/50 text-orange-800 text-sm p-3 rounded-lg flex items-start gap-2 border border-orange-200">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold mb-1">Payment Not Completed</p>
+            <p className="text-orange-700/90">If money was deducted from your account, it will automatically update here soon or be refunded by your bank within 3-5 days. If not, please place a new order.</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-gray-50 md:pb-0">
         {/* Header */}
-        <div className="bg-white sticky top-0 px-2 py-3 flex items-center justify-between border-b border-gray-200">
+        <div className="bg-white sticky top-0 z-20 px-2 py-3 flex items-center justify-between border-b border-gray-200">
           <div className="flex items-center gap-3">
             <button onClick={onBack} className="text-gray-700">
               <ArrowLeft className="w-6 h-6" />
@@ -1036,20 +1063,21 @@ const OrdersSection = () => {
               </button>
             </div>
 
-            <div className="border border-blue-600 rounded-lg p-4">
+            <div className={`border ${boxBorderColor} rounded-lg p-4`}>
               <div className="mb-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-gray-900 mb-1">Order Confirmed</h3>
+                  <h3 className="font-bold text-gray-900 mb-1">{statusTitle}</h3>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setIsQueryModalOpen(true)}
-                      className="px-4 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                      className="px-4 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-white transition-colors"
                     >
                       Raise Query
                     </button>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600">Your Order has been placed.</p>
+                <p className="text-sm text-gray-600">{statusDesc}</p>
+                {alertBox}
               </div>
 
               {/* Stepper */}
@@ -1098,7 +1126,7 @@ const OrdersSection = () => {
                   }
 
                   return (
-                    <div key={step.key} className="flex flex-col items-center gap-2 bg-white px-1 z-10">
+                    <div key={step.key} className="flex flex-col items-center gap-2 bg-white px-1 relative">
                       <div className={`w-6 h-6 rounded-full border-2 ${borderColorClass} ${circleColorClass} flex items-center justify-center shadow-sm`}>
                         {iconContent}
                       </div>

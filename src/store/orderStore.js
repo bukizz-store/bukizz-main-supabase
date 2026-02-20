@@ -620,9 +620,7 @@ const useOrderStore = create((set, get) => ({
       const token = localStorage.getItem("custom_token");
       if (!token) return; // Can't report if not logged in
 
-      // We use the failure endpoint from apiRoutes or hardcode if not available yet
-      // Assuming /api/v1/payments/failure based on paymentController
-      const url = `${API_BASE_URL}/payments/failure`;
+      const url = useApiRoutesStore.getState().payments.failure;
 
       await fetch(url, {
         method: "POST",
@@ -635,6 +633,34 @@ const useOrderStore = create((set, get) => ({
     } catch (error) {
       console.error("Failed to report payment failure:", error);
       // Non-blocking, just log
+    }
+  },
+
+  // Reconcile payment status (Layer 3 auto-recovery)
+  reconcilePaymentStatus: async (orderId) => {
+    try {
+      const token = localStorage.getItem("custom_token");
+      if (!token) return null;
+
+      const url = useApiRoutesStore.getState().payments.reconcile;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Reconciliation failed");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Failed to reconcile payment status:", error);
+      return null;
     }
   },
 

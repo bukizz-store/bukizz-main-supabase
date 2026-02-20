@@ -187,6 +187,7 @@ const useApiRoutesStore = create((set, get) => ({
   payments: {
     createOrder: `${BASE_URL}/payments/create-order`,
     verify: `${BASE_URL}/payments/verify`,
+    reconcile: `${BASE_URL}/payments/reconcile`,
     failure: `${BASE_URL}/payments/failure`,
   },
 
