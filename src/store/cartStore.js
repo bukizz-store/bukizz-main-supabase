@@ -306,48 +306,43 @@ const useCartStore = create((set, get) => ({
   },
 
   // Load cart from localStorage
+  // This reconstructs the full Zustand state from localStorage, including
+  // buy-now mode if it was active. It does NOT auto-restore the saved cart —
+  // that decision is made by consumers (CartPage mode-mismatch effect, addToCart guard).
   loadCart: () => {
     try {
-      // Check for stale buy-now state (survives webview page reloads)
-      // Only restore if Zustand isBuyNowMode is FALSE — meaning state was lost
-      // due to a page reload. If isBuyNowMode is TRUE, the buy-now flow is
-      // actively in progress and we should NOT undo it.
-      const isActiveBuyNow = get().isBuyNowMode;
       const wasBuyNowMode = localStorage.getItem("bukizz_buy_now_mode") === "true";
-      const hasSavedCart = !!localStorage.getItem("bukizz_saved_cart");
+      const storedSavedCart = localStorage.getItem("bukizz_saved_cart");
 
-      if (!isActiveBuyNow && (wasBuyNowMode || hasSavedCart)) {
-        // Buy-now was active before reload but Zustand lost it — restore the original cart
-        console.log("[CartStore] Detected stale buy-now state on loadCart. Restoring saved cart...");
-        const storedSavedCart = localStorage.getItem("bukizz_saved_cart");
-        if (storedSavedCart) {
-          const realCart = JSON.parse(storedSavedCart);
-          if (realCart && Array.isArray(realCart.items)) {
-            const totals = calculateCartTotals(realCart.items);
-            const validatedCart = { ...realCart, ...totals };
-            set({ cart: validatedCart, isBuyNowMode: false, buyNowItem: null, savedCart: null, error: null });
-            localStorage.setItem("bukizz_cart", JSON.stringify(validatedCart));
-          }
-        }
-        // Clean up stale buy-now artifacts
-        localStorage.removeItem("bukizz_buy_now_mode");
-        localStorage.removeItem("bukizz_saved_cart");
-        return;
-      }
-
-      // Normal load path
-      const savedCart = localStorage.getItem("bukizz_cart");
-      if (savedCart) {
-        const cart = JSON.parse(savedCart);
-        // Validate cart structure before setting
+      // Load the active cart (could be normal cart or buy-now temp cart)
+      const savedCartData = localStorage.getItem("bukizz_cart");
+      if (savedCartData) {
+        const cart = JSON.parse(savedCartData);
         if (cart && Array.isArray(cart.items)) {
-          // Recalculate totals to ensure consistency
           const totals = calculateCartTotals(cart.items);
-          const validatedCart = {
-            ...cart,
-            ...totals,
-          };
-          set({ cart: validatedCart, error: null });
+          const validatedCart = { ...cart, ...totals };
+
+          if (wasBuyNowMode) {
+            // Reconstruct buy-now state: restore isBuyNowMode flag and savedCart backup
+            // so CartPage mode-mismatch effect and other guards work correctly
+            let parsedSavedCart = null;
+            if (storedSavedCart) {
+              try { parsedSavedCart = JSON.parse(storedSavedCart); } catch (e) { /* ignore */ }
+            }
+
+            // Reconstruct buyNowItem from the single item in the temp cart
+            const reconstructedBuyNowItem = validatedCart.items.length === 1 ? validatedCart.items[0] : null;
+
+            set({
+              cart: validatedCart,
+              isBuyNowMode: true,
+              buyNowItem: reconstructedBuyNowItem,
+              savedCart: parsedSavedCart,
+              error: null,
+            });
+          } else {
+            set({ cart: validatedCart, error: null });
+          }
         }
       }
     } catch (error) {
