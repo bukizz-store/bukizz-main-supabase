@@ -27,6 +27,14 @@ const useCartStore = create((set, get) => ({
       // This handles the case where user abandoned Buy Now and is now adding items normally
       if (get().isBuyNowMode) {
         get().restoreCart();
+      } else {
+        // Guard: detect orphaned saved cart after webview page reload
+        // isBuyNowMode is false (reset on reload), but bukizz_saved_cart still exists
+        const orphanedSavedCart = localStorage.getItem("bukizz_saved_cart");
+        if (orphanedSavedCart) {
+          console.log("[CartStore] Detected orphaned saved cart during addToCart. Restoring...");
+          get().restoreCart();
+        }
       }
 
       const { cart } = get();
@@ -278,19 +286,12 @@ const useCartStore = create((set, get) => ({
         totalAmount: 0,
       };
 
-      // If in Buy Now mode, we are clearing the "buy now cart"
-      // The original cart is safe in savedCart
-
       set({ cart: emptyCart, error: null });
+      localStorage.removeItem("bukizz_cart");
 
-      // Update localStorage based on mode
-      if (get().isBuyNowMode) {
-        // We don't want to overwrite the actual cart in localstorage with empty buy now cart
-        // But we might want to clear the "active" cart persistence
-        localStorage.removeItem("bukizz_cart");
-      } else {
-        localStorage.removeItem("bukizz_cart");
-      }
+      // Safety: do NOT remove bukizz_saved_cart here —
+      // it's the backup of the real cart during buy-now flow.
+      // restoreCart is responsible for cleaning it up.
     } catch (error) {
       console.error("Error clearing cart:", error);
       set({ error: error.message });
@@ -300,6 +301,34 @@ const useCartStore = create((set, get) => ({
   // Load cart from localStorage
   loadCart: () => {
     try {
+      // Check for stale buy-now state (survives webview page reloads)
+      // Only restore if Zustand isBuyNowMode is FALSE — meaning state was lost
+      // due to a page reload. If isBuyNowMode is TRUE, the buy-now flow is
+      // actively in progress and we should NOT undo it.
+      const isActiveBuyNow = get().isBuyNowMode;
+      const wasBuyNowMode = localStorage.getItem("bukizz_buy_now_mode") === "true";
+      const hasSavedCart = !!localStorage.getItem("bukizz_saved_cart");
+
+      if (!isActiveBuyNow && (wasBuyNowMode || hasSavedCart)) {
+        // Buy-now was active before reload but Zustand lost it — restore the original cart
+        console.log("[CartStore] Detected stale buy-now state on loadCart. Restoring saved cart...");
+        const storedSavedCart = localStorage.getItem("bukizz_saved_cart");
+        if (storedSavedCart) {
+          const realCart = JSON.parse(storedSavedCart);
+          if (realCart && Array.isArray(realCart.items)) {
+            const totals = calculateCartTotals(realCart.items);
+            const validatedCart = { ...realCart, ...totals };
+            set({ cart: validatedCart, isBuyNowMode: false, buyNowItem: null, savedCart: null, error: null });
+            localStorage.setItem("bukizz_cart", JSON.stringify(validatedCart));
+          }
+        }
+        // Clean up stale buy-now artifacts
+        localStorage.removeItem("bukizz_buy_now_mode");
+        localStorage.removeItem("bukizz_saved_cart");
+        return;
+      }
+
+      // Normal load path
       const savedCart = localStorage.getItem("bukizz_cart");
       if (savedCart) {
         const cart = JSON.parse(savedCart);
@@ -319,6 +348,8 @@ const useCartStore = create((set, get) => ({
       set({ error: "Failed to load saved cart" });
       // Clear corrupted cart data
       localStorage.removeItem("bukizz_cart");
+      localStorage.removeItem("bukizz_buy_now_mode");
+      localStorage.removeItem("bukizz_saved_cart");
     }
   },
 
@@ -587,6 +618,7 @@ const useCartStore = create((set, get) => ({
   // Clear Buy Now item (after successful checkout or cancellation)
   clearBuyNowItem: () => {
     set({ buyNowItem: null, isBuyNowMode: false });
+    localStorage.removeItem("bukizz_buy_now_mode");
   },
 
   // Initiate Buy Now Flow - Swaps current cart with buy now item
@@ -600,6 +632,9 @@ const useCartStore = create((set, get) => ({
         set({ savedCart: currentCart });
         localStorage.setItem("bukizz_saved_cart", JSON.stringify(currentCart));
       }
+
+      // Persist buy-now mode flag so it survives webview page reloads
+      localStorage.setItem("bukizz_buy_now_mode", "true");
 
       // 2. Prepare Buy Now Item
       const buyNowItem = get().setBuyNowItem(product, variant, quantity);
@@ -660,6 +695,7 @@ const useCartStore = create((set, get) => ({
         });
         localStorage.setItem("bukizz_cart", JSON.stringify(savedCart));
         localStorage.removeItem("bukizz_saved_cart");
+        localStorage.removeItem("bukizz_buy_now_mode");
       } else {
         // If no backup, just clear buy now mode and empty cart
         // But we should try to reload from 'standard' storage if possible? 
@@ -680,6 +716,7 @@ const useCartStore = create((set, get) => ({
           buyNowItem: null
         });
         localStorage.removeItem("bukizz_cart");
+        localStorage.removeItem("bukizz_buy_now_mode");
       }
 
       return { success: true };
@@ -694,6 +731,7 @@ const useCartStore = create((set, get) => ({
     try {
       // Explicitly clear Buy Now item to ensure we are in Cart mode
       set({ buyNowItem: null, isBuyNowMode: false });
+      localStorage.removeItem("bukizz_buy_now_mode");
       return { success: true };
     } catch (error) {
       console.error("Error initiating Cart flow:", error);
