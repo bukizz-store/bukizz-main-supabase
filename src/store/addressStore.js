@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import useApiRoutesStore from "./apiRoutesStore";
+import useNotificationStore from "./notificationStore";
 
 const API_BASE_URL = useApiRoutesStore.getState().baseUrl;
 
@@ -542,21 +543,32 @@ const useAddressStore = create((set, get) => ({
       return addresses;
     } catch (error) {
       // Handle network errors gracefully
+      const showNotification = useNotificationStore.getState().showNotification;
+
       if (
         error.message?.includes("fetch") ||
-        error.message?.includes("network")
+        error.message?.includes("network") ||
+        error.name === "TypeError"
       ) {
         set({
           loading: false,
           error: "Connection issue. Please check your internet and try again.",
+        });
+        showNotification({
+          message: "Unable to connect to the server. Please check your internet connection.",
+          type: "error"
         });
       } else {
         set({
           loading: false,
           error: error.message,
         });
+        showNotification({
+          message: "Unable to load addresses. Please try again.",
+          type: "error"
+        });
       }
-      throw error;
+      return [];
     }
   },
 
@@ -572,6 +584,7 @@ const useAddressStore = create((set, get) => ({
 
       // Validate required fields
       const requiredFields = [
+        "studentName",
         "label",
         "line1",
         "city",

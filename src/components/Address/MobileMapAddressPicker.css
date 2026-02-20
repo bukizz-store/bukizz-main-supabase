@@ -449,7 +449,7 @@
 }
 
 .form-content {
-  padding: 80px 20px 0;
+  padding: 20px 20px 0;
   /* Add top padding to clear the sticky header */
 }
 
@@ -536,7 +536,7 @@
 
 .save-address-btn {
   width: calc(100% - 40px);
-  margin: 24px 20px 0;
+  margin: 24px 20px 40px;
   padding: 16px;
   background: #3B82F6;
   color: #fff;

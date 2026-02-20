@@ -72,11 +72,7 @@ function CheckoutPage() {
   const [isMobileApp, setIsMobileApp] = useState(false);
 
   // Order placement state
-  const [paymentMethod, setPaymentMethod] = useState("cod");
-  const [contactDetails, setContactDetails] = useState({
-    phone: "",
-    email: "",
-  });
+  const [paymentMethod, setPaymentMethod] = useState("upi");
   const [orderNotes, setOrderNotes] = useState("");
 
 
@@ -84,6 +80,7 @@ function CheckoutPage() {
   const [validationErrors, setValidationErrors] = useState([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const maxRetries = 3;
 
   // Order Summary UI state (matching Cart Page)
@@ -295,14 +292,6 @@ function CheckoutPage() {
       loadCart();
       fetchAddresses();
       resetOrderState();
-
-      // Pre-populate contact details from user profile
-      if (user) {
-        setContactDetails({
-          phone: user.phone || "",
-          email: user.email || "",
-        });
-      }
     } else if (!isAuthenticated) {
       navigate("/");
     }
@@ -636,13 +625,6 @@ function CheckoutPage() {
     setProcessState(3); // Move to payment step
   };
 
-  // Handle contact details change
-  const handleContactChange = (field, value) => {
-    setContactDetails((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
 
   // Validate final order before placement
   const validateFinalOrder = () => {
@@ -676,32 +658,9 @@ function CheckoutPage() {
       }
     }
 
-    // Check contact details
-    if (!contactDetails.phone && !getSelectedAddress()?.phone) {
-      errors.push("Please provide a contact phone number");
-    }
-
     // Check payment method
     if (!paymentMethod) {
       errors.push("Please select a payment method");
-    }
-
-
-
-    // Validate phone format if provided
-    if (
-      contactDetails.phone &&
-      !/^\+?[\d\s\-\(\)]{10,15}$/.test(contactDetails.phone)
-    ) {
-      errors.push("Please enter a valid contact phone number");
-    }
-
-    // Validate email format if provided
-    if (
-      contactDetails.email &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactDetails.email)
-    ) {
-      errors.push("Please enter a valid email address");
     }
 
     return errors;
@@ -731,8 +690,8 @@ function CheckoutPage() {
         cartItems: checkoutItems,
         selectedAddress,
         paymentMethod,
-        contactPhone: contactDetails.phone || selectedAddress.phone,
-        contactEmail: contactDetails.email,
+        contactPhone: selectedAddress.phone,
+        contactEmail: user?.email || "",
         notes: orderNotes,
       };
 
@@ -761,6 +720,7 @@ function CheckoutPage() {
       } else {
         // Online Payment - Initiate Razorpay
         try {
+          setIsRazorpayLoading(true);
           const razorpayOrder = await initiateRazorpayPayment(order.id);
 
           // Store order and Razorpay order ID for native callbacks
@@ -776,13 +736,14 @@ function CheckoutPage() {
             order_id: razorpayOrder.id,
             prefill: {
               name: selectedAddress.recipientName,
-              email: contactDetails.email,
-              contact: contactDetails.phone || selectedAddress.phone,
+              email: user?.email || "",
+              contact: selectedAddress.phone,
             },
             theme: {
               color: "#3B82F6", // Blue-500
             },
             handler: async function (response) {
+              setIsRazorpayLoading(false);
               try {
                 // Verify payment on backend
                 await verifyRazorpayPayment({
@@ -830,6 +791,7 @@ function CheckoutPage() {
             },
             modal: {
               ondismiss: function () {
+                setIsRazorpayLoading(false);
                 showNotification({
                   message: "Payment process cancelled. Order cancelled.",
                   type: "warning",
@@ -850,11 +812,13 @@ function CheckoutPage() {
           if (window.RazorpayChannel) {
             console.log("Delegating payment to Native Razorpay SDK");
             window.RazorpayChannel.postMessage(JSON.stringify(options));
+            setIsRazorpayLoading(false);
           } else {
             // Fallback to Web SDK
             const rzp = new window.Razorpay(options);
 
             rzp.on("payment.failed", function (response) {
+              setIsRazorpayLoading(false);
               console.error("Payment failed:", response.error);
               showNotification({
                 message: `Payment failed: ${response.error.description || "Please try again."}`,
@@ -872,9 +836,11 @@ function CheckoutPage() {
             });
 
             rzp.open();
+            setIsRazorpayLoading(false);
           }
 
         } catch (paymentError) {
+          setIsRazorpayLoading(false);
           console.error("Payment initiation failed:", paymentError);
           showNotification({
             message: `Failed to initiate payment: ${paymentError.message || "Please try again or choose COD."}`,
@@ -1041,6 +1007,23 @@ function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      {/* Full-screen Loader for Razorpay */}
+      {isRazorpayLoading && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white bg-opacity-75 backdrop-blur-sm">
+          <div className="flex flex-col items-center space-y-4 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-blue-600 text-xl font-bold">₹</span>
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-800">Secure Payment</h3>
+              <p className="text-sm text-gray-500 mt-1 pb-2">Connecting to Razorpay...</p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mobile Map Address Picker */}
       {showMobileMapPicker && (
         <MobileMapAddressPicker
@@ -1532,44 +1515,6 @@ function CheckoutPage() {
                   </div> */}
                 {/* </div> */}
 
-                {/* Contact Information */}
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Contact Information
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Contact Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={contactDetails.phone}
-                        onChange={(e) =>
-                          handleContactChange("phone", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Phone number for order updates"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email (Optional)
-                      </label>
-                      <input
-                        type="email"
-                        value={contactDetails.email}
-                        onChange={(e) =>
-                          handleContactChange("email", e.target.value)
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Email for order confirmation"
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 {/* Payment Method */}
                 <div className="bg-white rounded-lg shadow-sm border p-6">
@@ -1579,12 +1524,12 @@ function CheckoutPage() {
 
                   <div className="space-y-3">
                     {[
-                      {
-                        value: "cod",
-                        label: "Cash on Delivery",
-                        icon: "💵",
-                        desc: "Pay when your order is delivered",
-                      },
+                      // {
+                      //   value: "cod",
+                      //   label: "Cash on Delivery",
+                      //   icon: "💵",
+                      //   desc: "Pay when your order is delivered",
+                      // },
                       {
                         value: "upi",
                         label: "UPI Payment",
@@ -1851,7 +1796,7 @@ function CheckoutPage() {
                 </div>
               )}
 
-              {processState === 3 && paymentMethod === "cod" && (
+              {/* {processState === 3 && paymentMethod === "cod" && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center text-sm text-yellow-800">
                     <span className="mr-2">💵</span>
@@ -1862,7 +1807,7 @@ function CheckoutPage() {
                     </span>
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* Security Badge */}
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">

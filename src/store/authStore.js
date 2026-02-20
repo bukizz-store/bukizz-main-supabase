@@ -205,6 +205,7 @@ const useAuthStore = create(
           localStorage.removeItem("custom_token");
           // Clear user from persist store (will automatically remove from localStorage)
           set({ user: null, loading: false, error: null });
+          window.location.href = "/";
         }
       },
 
@@ -261,7 +262,7 @@ const useAuthStore = create(
             const errorData = await response.json().catch(() => ({}));
 
             // Only logout for specific token-related errors
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401 || response.status === 403 || response.status === 400) {
               console.log("Refresh token invalid/expired, logging out");
               set({ isRefreshing: false });
               await get().logout();
@@ -295,7 +296,8 @@ const useAuthStore = create(
           if (
             error.message.includes("No refresh token available") ||
             error.message.includes("Invalid refresh token") ||
-            error.message.includes("Refresh token expired")
+            error.message.includes("Refresh token expired") ||
+            error.message.includes("Token refresh failed")
           ) {
             console.log("Invalid refresh token, logging out");
             await get().logout();

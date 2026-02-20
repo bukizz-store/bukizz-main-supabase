@@ -23,6 +23,11 @@ const AddressCard = ({
                     <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                             <span className="font-semibold text-gray-900">{address.recipientName}</span>
+                            {address.studentName && (
+                                <span className="font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-xs ml-2">
+                                    Student: {address.studentName}
+                                </span>
+                            )}
                             <span className="font-semibold text-gray-900">{address.phone}</span>
                             <span
                                 className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${address.label === "Home"
@@ -113,7 +118,12 @@ const AddressCard = ({
 
                 <div className="flex-1">
                     <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1">{address.recipientName}</h3>
+                        <div className="flex flex-col mb-1">
+                            <h3 className="font-semibold text-gray-900 text-sm">{address.recipientName}</h3>
+                            {address.studentName && (
+                                <span className="text-xs text-gray-500 mt-0.5">Student: {address.studentName}</span>
+                            )}
+                        </div>
 
                         {/* 3-Dot Menu */}
                         <div className="relative">

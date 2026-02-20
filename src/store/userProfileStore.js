@@ -207,6 +207,7 @@ const useUserProfileStore = create((set, get) => ({
       // Validate address data based on server schema
       const validatedAddress = {
         label: addressData.label || "Home", // Home, Work, School, Office, Other
+        studentName: addressData.studentName,
         recipientName: addressData.recipientName,
         phone: addressData.phone,
         line1: addressData.line1,

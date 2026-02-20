@@ -38,6 +38,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
 
     // Form state
     const [formData, setFormData] = useState({
+        studentName: "",
         flatBuilding: "",
         recipientName: "",
         phone: "",
@@ -52,6 +53,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
     });
 
     const [errors, setErrors] = useState({});
+    const [submitError, setSubmitError] = useState(null);
 
     // Populate form data when address is selected
     useEffect(() => {
@@ -68,6 +70,19 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         }
     }, [selectedAddress]);
 
+    // Lock body scroll when component mounts
+    useEffect(() => {
+        // Save current overflow style
+        const originalStyle = window.getComputedStyle(document.body).overflow;
+
+        // Prevent scrolling on the body
+        document.body.style.overflow = "hidden";
+
+        // Restore scrolling on unmount
+        return () => {
+            document.body.style.overflow = originalStyle;
+        };
+    }, []);
 
     const mapRef = useRef(null);
     const searchInputRef = useRef(null);
@@ -386,8 +401,10 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
 
     // Handle form submission
     const handleSaveAddress = async () => {
+        setSubmitError(null);
         // Validate required fields
         const newErrors = {};
+        if (!formData.studentName.trim()) newErrors.studentName = "Student Name is required";
         if (!formData.flatBuilding.trim()) newErrors.flatBuilding = "Flat/House/Building is required";
         if (!formData.recipientName.trim()) newErrors.recipientName = "Full Name is required";
 
@@ -416,6 +433,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         }
 
         const addressData = {
+            studentName: formData.studentName,
             label: formData.label,
             recipientName: formData.recipientName,
             phone: formData.phone,
@@ -457,6 +475,8 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
             }
         } catch (error) {
             console.error("Save address error:", error);
+            setSubmitError(error.message || "Failed to save address. Please try again.");
+            // Still show global notification as a fallback, but the prominent one is local
             showNotification({
                 message: error.message || "Failed to save address",
                 type: "error",
@@ -682,14 +702,35 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                             <span>Ensure your address details are accurate for a smooth delivery experience</span>
                         </div>
 
+                        {submitError && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-3 mx-5 mt-4 text-sm shadow-sm">
+                                <svg className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                                <span className="font-semibold">{submitError}</span>
+                            </div>
+                        )}
+
                         <div className="form-content">
+                            <div className="form-group">
+                                <label>Student Name *</label>
+                                <input
+                                    type="text"
+                                    value={formData.studentName}
+                                    onChange={(e) => handleFormChange("studentName", e.target.value)}
+                                    placeholder="Student Name *"
+                                    style={errors.studentName ? { borderColor: '#ef4444' } : {}}
+                                />
+                                {errors.studentName && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.studentName}</span>}
+                            </div>
+
                             <div className="form-group">
                                 <label>Flat/House/building name *</label>
                                 <input
                                     type="text"
                                     value={formData.flatBuilding}
                                     onChange={(e) => handleFormChange("flatBuilding", e.target.value)}
-                                    placeholder=""
+                                    placeholder="Flat/House/building name *"
                                     style={errors.flatBuilding ? { borderColor: '#ef4444' } : {}}
                                 />
                                 {errors.flatBuilding && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.flatBuilding}</span>}
@@ -702,7 +743,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         type="text"
                                         value={formData.line2}
                                         onChange={(e) => handleFormChange("line2", e.target.value)}
-                                        placeholder=""
+                                        placeholder="Area / Sector / Locality"
                                         className="w-full border-none p-0 focus:ring-0"
                                     />
                                     <button className="change-area-btn" onClick={() => setStep("map")}>Change</button>
@@ -715,7 +756,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     type="text"
                                     value={formData.recipientName}
                                     onChange={(e) => handleFormChange("recipientName", e.target.value)}
-                                    placeholder=""
+                                    placeholder="Enter your full name *"
                                     style={errors.recipientName ? { borderColor: '#ef4444' } : {}}
                                 />
                                 {errors.recipientName && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.recipientName}</span>}
@@ -727,7 +768,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     type="tel"
                                     value={formData.phone}
                                     onChange={(e) => handleFormChange("phone", e.target.value)}
-                                    placeholder=""
+                                    placeholder="10-digit mobile number *"
                                     maxLength={10}
                                     style={errors.phone ? { borderColor: '#ef4444' } : {}}
                                 />
@@ -740,7 +781,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     type="tel"
                                     value={formData.alternatePhone}
                                     onChange={(e) => handleFormChange("alternatePhone", e.target.value)}
-                                    placeholder=""
+                                    placeholder="Alternate phone number (Optional)"
                                     maxLength={10}
                                 />
                             </div>
@@ -752,7 +793,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         type="text"
                                         value={formData.postalCode}
                                         onChange={(e) => handleFormChange("postalCode", e.target.value)}
-                                        placeholder=""
+                                        placeholder="Pincode *"
                                         style={errors.postalCode ? { borderColor: '#ef4444' } : {}}
                                     />
                                     {errors.postalCode && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.postalCode}</span>}
@@ -763,7 +804,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         type="text"
                                         value={formData.city}
                                         onChange={(e) => handleFormChange("city", e.target.value)}
-                                        placeholder=""
+                                        placeholder="City *"
                                         style={errors.city ? { borderColor: '#ef4444' } : {}}
                                     />
                                     {errors.city && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.city}</span>}
@@ -776,7 +817,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     type="text"
                                     value={formData.state}
                                     onChange={(e) => handleFormChange("state", e.target.value)}
-                                    placeholder=""
+                                    placeholder="State *"
                                     style={errors.state ? { borderColor: '#ef4444' } : {}}
                                 />
                                 {errors.state && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.state}</span>}
@@ -788,7 +829,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     type="text"
                                     value={formData.landmark}
                                     onChange={(e) => handleFormChange("landmark", e.target.value)}
-                                    placeholder="Near..."
+                                    placeholder="Landmark (Optional, Near...)"
                                 />
                             </div>
 
@@ -830,7 +871,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                             </div>
                         </div>
 
-                        <button className="save-address-btn" onClick={handleSaveAddress}>
+                        <button className="save-address-btn mb-10" onClick={handleSaveAddress}>
                             Save address
                         </button>
                     </div>

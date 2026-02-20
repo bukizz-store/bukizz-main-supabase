@@ -261,10 +261,20 @@ function ProductViewPage() {
 
       // Fetch similar products asynchronously (non-blocking)
       if (product.product_type) {
-        searchProducts({
+        const searchFilters = {
           productType: product.product_type,
           limit: 4,
-        })
+        };
+
+        // Resolve school ID from product or navigation state
+        const resolvedSchoolId = product.school_id || location.state?.school?.id;
+
+        // If it's a school-specific category and we know the school, only show similar products from that school
+        if (resolvedSchoolId && ["bookset", "uniform", "school"].includes(product.product_type)) {
+          searchFilters.schoolId = resolvedSchoolId;
+        }
+
+        searchProducts(searchFilters)
           .then((similarResult) => {
             const filtered =
               similarResult.products?.filter((p) => p.id !== product.id) || [];

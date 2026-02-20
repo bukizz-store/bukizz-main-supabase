@@ -11,6 +11,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
     } = useAddressStore();
 
     const [formData, setFormData] = useState({
+        studentName: "",
         recipientName: "",
         phone: "",
         postalCode: "",
@@ -32,6 +33,7 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
     useEffect(() => {
         if (existingAddress) {
             setFormData({
+                studentName: existingAddress.studentName || "",
                 recipientName: existingAddress.recipientName || "",
                 phone: existingAddress.phone || "",
                 postalCode: existingAddress.postalCode || "",
@@ -52,6 +54,13 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
 
     const validateForm = () => {
         const newErrors = {};
+
+        // Student Name
+        if (!formData.studentName?.trim()) {
+            newErrors.studentName = "Student name is required";
+        } else if (formData.studentName.trim().length < 2) {
+            newErrors.studentName = "Student name is too short";
+        }
 
         // Recipient Name
         if (!formData.recipientName?.trim()) {
@@ -176,6 +185,18 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
             </button>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="relative">
+                    <input
+                        type="text"
+                        name="studentName"
+                        value={formData.studentName}
+                        onChange={handleChange}
+                        placeholder="Student Name"
+                        className={`w-full px-4 py-3 border ${errors.studentName ? 'border-red-500' : 'border-gray-300'} rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder-gray-500`}
+                    />
+                    {errors.studentName && <span className="text-xs text-red-500 absolute -bottom-4 left-0">{errors.studentName}</span>}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
                         <input
