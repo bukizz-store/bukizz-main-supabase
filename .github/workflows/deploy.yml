@@ -25,8 +25,8 @@ jobs:
           git pull origin main
 
           # 3. Install dependencies and Build
-          # (We use --force sometimes if there are version conflicts)
-          npm install
+          # (We use --legacy-peer-deps to bypass React 19 peer dependency conflicts)
+          npm install --legacy-peer-deps
           npm run build
 
           # 4. Copy the new build to the public Nginx folder
