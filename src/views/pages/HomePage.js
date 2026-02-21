@@ -99,7 +99,7 @@ function HomePage() {
         <>
           <h1 className="mx-4 md:mx-12 text-2xl md:text-4xl font-bold my-4">School Essentials</h1>
           <Stationary />
-          <DealsSection />
+          {/* <DealsSection /> */}
         </>
       )}
     </div>

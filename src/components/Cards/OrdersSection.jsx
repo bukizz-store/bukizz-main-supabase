@@ -1235,10 +1235,10 @@ const OrdersSection = () => {
               </div>
             </div>
 
-            <button className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            {/* <button className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
               <Download className="w-4 h-4" />
               Download Invoice
-            </button>
+            </button> */}
 
             {/* Cancel Order Button - Only show if cancellable */}
             {!['delivered', 'cancelled', 'refunded'].includes(itemStatus) && (

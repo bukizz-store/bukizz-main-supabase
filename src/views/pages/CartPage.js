@@ -44,17 +44,15 @@ function CartPage() {
     // If store is in BuyNowMode but URL doesn't have ?mode=buy_now,
     // it means user navigated away or "back" to standard cart.
     // We should restore the original cart.
+    // Intentionally omitting isBuyNowMode from dependencies so it doesn't fire
+    // immediately when the user clicks 'Buy Now' before the page unmounts!
     if (isBuyNowMode && mode !== 'buy_now') {
       console.log("Restoring original cart due to mode mismatch");
       restoreCart();
     }
 
-    // If not in BuyNowMode but URL has ?mode=buy_now, 
-    // we might need to clear that param or just let it be (the cart will show standard items)
-    // but better to keep URL clean if possible. For now, rely on store state.
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, isBuyNowMode, restoreCart]);
+  }, [mode, restoreCart]);
 
   useEffect(() => {
     if (cart?.items?.length > 0) {
@@ -214,7 +212,7 @@ function CartPage() {
 
       // Set this item as Buy Now item (bypasses rest of cart)
       initiateBuyNowFlow(product, variant, item.quantity);
-      navigate("/cart?mode=buy_now");
+      navigate("/checkout", { state: { mode: 'buy_now' } });
     } catch (error) {
       console.error("Error with Buy Now:", error);
       showNotification({
