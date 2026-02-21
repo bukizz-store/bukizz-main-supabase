@@ -414,6 +414,7 @@ const useOrderStore = create((set, get) => ({
         })),
         shippingAddress: {
           recipientName: selectedAddress.recipientName || "",
+          studentName: selectedAddress.studentName || "",
           phone: selectedAddress.phone || contactPhone || "",
           line1: selectedAddress.line1,
           line2: selectedAddress.line2 || "",
@@ -440,7 +441,10 @@ const useOrderStore = create((set, get) => ({
             district: selectedAddress.district,
           }),
         },
-        billingAddress: selectedAddress, // Use same as shipping for now
+        billingAddress: {
+          ...selectedAddress,
+          studentName: selectedAddress.studentName || "",
+        },
         contactPhone: contactPhone || selectedAddress.phone || "",
         contactEmail: contactEmail || "",
         paymentMethod,
