@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import HomeCarousel from "../../components/Sections/HomeCarousel";
 import Category from "../../components/Sections/Category";
 import DealsSection from "../../components/Sections/DealsSection";
@@ -63,6 +64,10 @@ function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F3F8FF] flex flex-col relative">
+      <Helmet>
+        <title>Bukizz - Buy School Uniforms & Essentials in {selectedCity}</title>
+        <meta name="description" content={`Discover top schools in ${selectedCity} and shop for books, uniforms, and stationary. Order online for fast delivery.`} />
+      </Helmet>
       <SearchBar
         onSearchResults={handleSearchResults}
         searchTerm={searchTerm}

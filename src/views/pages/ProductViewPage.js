@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { BookSetCard } from "../../components/Cards/BookSetCard";
 import SearchBar from "../../components/Common/SearchBar";
@@ -22,6 +23,7 @@ function ProductViewPage() {
   const [schoolName, setSchoolName] = useState(null);
   const [schoolAddress, setSchoolAddress] = useState(null);
   const [currentImages, setCurrentImages] = useState([]);
+  const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loadingProduct, setLoadingProduct] = useState(true);
   const [loadingImages, setLoadingImages] = useState(false);
@@ -320,7 +322,7 @@ function ProductViewPage() {
     if (selectedVariant) {
       // Variant selected: selling price = variant.price, strikethrough = variant.base_price
       const currentPrice = selectedVariant.price || 0;
-      const variantBasePrice = selectedVariant.base_price || 0;
+      const variantBasePrice = selectedVariant.compare_at_price || 0;
 
       return {
         current: currentPrice,
@@ -479,14 +481,46 @@ function ProductViewPage() {
 
   const prices = getCurrentPrice();
 
+  const isOutOfStock = (selectedVariant ? selectedVariant.stock <= 0 : ((productData?.stock || 0) <= 0));
+
+  const schemaData = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": productData.title,
+    "image": productData.primaryImage?.url || currentImages?.[0]?.url || "",
+    "description": productData.metadata?.description || `Buy ${productData.title} online at Bukizz.`,
+    "brand": {
+      "@type": "Brand",
+      "name": "Bukizz"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": window.location.href,
+      "priceCurrency": "INR",
+      "price": prices.current,
+      "availability": isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      "itemCondition": "https://schema.org/NewCondition"
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F3F8FF] flex flex-col relative pb-24 md:pb-0">
+      <Helmet>
+        <title>{productData.title} - Bukizz</title>
+        <meta name="description" content={productData.metadata?.description || `Buy ${productData.title} online at Bukizz.`} />
+        <meta property="og:title" content={`${productData.title} - Bukizz`} />
+        <meta property="og:description" content={productData.metadata?.description || `Buy ${productData.title} online at Bukizz.`} />
+        {currentImages?.[0]?.url && <meta property="og:image" content={currentImages[0].url} />}
+        <script type="application/ld+json">
+          {JSON.stringify(schemaData)}
+        </script>
+      </Helmet>
       <div className="hidden md:block">
         <SearchBar />
       </div>
 
       {/* Out of Stock Banner */}
-      {(selectedVariant ? selectedVariant.stock <= 0 : ((productData?.stock || 0) <= 0)) && (
+      {isOutOfStock && (
         <div className="mx-4 md:mx-12 mt-4 mb-2">
           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
             <div className="flex">
@@ -540,19 +574,23 @@ function ProductViewPage() {
                 key={img.id || idx}
                 src={img.url || "https://via.placeholder.com/144x144"}
                 alt={img.altText || `${productData.title} ${idx + 1}`}
-                className="w-10 h-10 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0"
+                onClick={() => {
+                  setSelectedImageIdx(idx);
+                }}
+                className={`w-10 h-10 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0 ${selectedImageIdx === idx ? 'ring-2 ring-blue-500' : ''
+                  }`}
               />
             ))}
           </div>
           <div className="flex flex-col justify-start items-start w-full">
             <img
               src={
-                currentImages?.[0]?.url ||
+                currentImages?.[selectedImageIdx]?.url ||
                 productData?.primaryImage?.url ||
                 "https://via.placeholder.com/384x384"
               }
               alt={
-                currentImages?.[0]?.altText ||
+                currentImages?.[selectedImageIdx]?.altText ||
                 productData?.primaryImage?.altText ||
                 productData.title
               }
@@ -683,23 +721,23 @@ function ProductViewPage() {
             )}
           </h1>
 
-          {prices.original > prices.current && (
+          {prices.basePrice > prices.current && (
             <span className="text-sm text-green-600 font-bold">Offer Price</span>
           )}
           <div className="flex gap-2 font-semibold">
-            {prices.original > prices.current && (
+            {prices.basePrice > prices.current && (
               <h2 className="text-2xl text-green-600">
                 {Math.round(
-                  ((prices.original - prices.current) / prices.original) * 100
+                  ((prices.basePrice - prices.current) / prices.basePrice) * 100
                 )}
                 %
               </h2>
             )}
             <h2 className="text-3xl">₹ {prices.current}</h2>
           </div>
-          {prices.original > prices.current && (
+          {prices.basePrice > prices.current && (
             <div className="text-sm">
-              MRP ₹ <span className="line-through">{prices.original}</span> (Inclusive of all taxes)
+              MRP ₹ <span className="line-through">{prices.basePrice}</span> (Inclusive of all taxes)
             </div>
           )}
 
@@ -1105,7 +1143,7 @@ function ProductViewPage() {
       <div className="mx-4 md:mx-12 my-4">
         <h2 className="text-2xl font-semibold my-4">Product Details</h2>
         <div
-          className="text-sm text-gray-700 leading-relaxed bg-white p-6 rounded-xl border border-gray-100 shadow-sm"
+          className="text-sm text-gray-700 leading-relaxed bg-white p-6 rounded-xl border border-gray-100 shadow-sm overflow-x-auto break-words w-full [&_table]:block [&_table]:overflow-x-auto [&_table]:w-full"
           dangerouslySetInnerHTML={{
             __html: productData.description || "No specific details available for this product.",
           }}
