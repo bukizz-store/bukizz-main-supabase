@@ -21,8 +21,8 @@ const getBookSetsForSchool = (schoolCatalog, schoolData) => {
     return schoolCatalog.products
       .filter((product) => product.product_type === "bookset")
       .map((product) => {
-        const basePrice = product.min_price || product.base_price || 0;
-        const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+        const basePrice = product.base_price || 0;
+        const comparePrice = product.metadata?.compare_price || basePrice;
         return {
           class: product.schoolInfo?.grade || "General",
           originalPrice: comparePrice,
@@ -61,8 +61,8 @@ const getUniformsForSchool = (schoolCatalog, schoolData) => {
     return schoolCatalog.products
       .filter((product) => product.product_type === "uniform")
       .map((product) => {
-        const basePrice = product.min_price || product.base_price || 0;
-        const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+        const basePrice = product.base_price || 0;
+        const comparePrice = product.metadata?.compare_price || basePrice;
         const discountPct = comparePrice > basePrice
           ? Math.round(((comparePrice - basePrice) / comparePrice) * 100)
           : 0;
@@ -155,8 +155,8 @@ const getStationaryForSchool = (schoolCatalog, schoolData) => {
     return schoolCatalog.products
       .filter((product) => product.product_type === "stationary")
       .map((product) => {
-        const basePrice = product.min_price || product.base_price || 0;
-        const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
+        const basePrice = product.base_price || 0;
+        const comparePrice = product.metadata?.compare_price || basePrice;
         const discountPct = comparePrice > basePrice
           ? Math.round(((comparePrice - basePrice) / comparePrice) * 100)
           : 0;
