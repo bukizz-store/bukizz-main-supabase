@@ -15,10 +15,21 @@ const AddressCard = ({
     if (!isMobile) {
         return (
             <div
-                className={`p-4 border rounded-lg transition-all relative ${isSelected ? "border-2 border-[#3B82F6] bg-blue-50" : "border-gray-200 hover:border-gray-300"
+                className={`relative flex items-start p-5 border rounded-xl cursor-pointer transition-all duration-200 ${isSelected
+                    ? "border-blue-600 bg-blue-50/30 shadow-sm ring-1 ring-blue-600"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
                     }`}
                 onClick={() => onSelect && onSelect(address)}
             >
+                <div className="flex items-center h-5 mt-1 mr-4">
+                    <input
+                        type="radio"
+                        name="addressSelection"
+                        checked={isSelected}
+                        readOnly
+                        className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer pointer-events-none"
+                    />
+                </div>
                 <div className="flex justify-between items-start">
                     <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
@@ -96,25 +107,26 @@ const AddressCard = ({
         );
     }
 
-    // Mobile Layout (Flipkart Style)
+    // Mobile Layout (Flipkart Style -> Professional Theme)
     return (
         <div
-            className={`bg-white p-4 rounded-lg border mb-3 transition-all ${isSelected ? "border-2 border-[#3B82F6] bg-blue-50" : "border-gray-200"}`}
+            className={`relative flex items-start p-4 border rounded-xl mb-3 cursor-pointer transition-all duration-200 ${isSelected
+                ? "border-blue-600 bg-blue-50/30 shadow-sm ring-1 ring-blue-600"
+                : "border-gray-200 bg-white"
+                }`}
             onClick={() => onSelect && onSelect(address)}
         >
-            <div className="flex items-start">
-                {/* Icon */}
-                <div className="mr-3 text-gray-500 mt-1">
-                    {address.label === "Work" ? (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                    ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                    )}
-                </div>
+            <div className="flex items-center h-5 mt-1 mr-3">
+                <input
+                    type="radio"
+                    name="addressSelectionMobile"
+                    checked={isSelected}
+                    readOnly
+                    className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer pointer-events-none"
+                />
+            </div>
+            <div className="flex items-start flex-1">
+                {/* Icon (Removed old icon logic to match new cleaner design) */}
 
                 <div className="flex-1">
                     <div className="flex justify-between items-start">

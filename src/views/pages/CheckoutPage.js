@@ -1277,11 +1277,16 @@ function CheckoutPage() {
 
             {/* Step 2: Delivery Address */}
             {processState === 2 && (
-              <div className="bg-white rounded-lg shadow-sm border px-4 py-2">
-                <div className="flex flex-row items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Select Address
-                  </h2>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex flex-row items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">
+                      Delivery Address
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1 hidden sm:block">
+                      Choose where you want your order to be delivered.
+                    </p>
+                  </div>
                   {isMobileApp && (
                     <button
                       onClick={() => {
@@ -1295,7 +1300,7 @@ function CheckoutPage() {
                           setModalOpen(true);
                         }
                       }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
                     >
                       + Add New
                     </button>
@@ -1310,102 +1315,106 @@ function CheckoutPage() {
                           setModalOpen(true);
                         }
                       }}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
                     >
                       + Add Address
                     </button>
                   )}
                 </div>
 
-                {/* Address Form */}
-                {showAddressForm && (
-                  <div className="mb-6">
-                    <AddressForm
-                      existingAddress={editingAddress}
-                      onCancel={handleCancelForm}
-                      onSuccess={() => {
-                        fetchAddresses();
-                        handleCancelForm();
-                        showNotification({
-                          message: editingAddress ? "Address updated successfully" : "Address added successfully",
-                          type: "success"
-                        });
-                      }}
-                    />
-                  </div>
-                )}
+                <div className="p-5">
 
-
-
-                {/* Existing Addresses */}
-                {addresses.length > 0 ? (
-                  <AddressList
-                    addresses={addresses}
-                    selectedAddressId={selectedAddressId}
-                    onSelect={(addr) => selectAddress(addr.id)}
-                    onEdit={handleEditAddress}
-                    onDelete={(address) => {
-                      if (
-                        window.confirm(
-                          "Are you sure you want to delete this address?"
-                        )
-                      ) {
-                        deleteAddress(address.id);
-                      }
-                    }}
-                    isMobile={isMobileApp}
-                    onDeliverHere={(addr) => handleDeliverHere(addr.id)}
-                  />
-                ) : (
-                  !showAddressForm && (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
-                        <svg fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-medium text-gray-800 mb-2">
-                        No addresses found
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        Add your first delivery address to continue
-                      </p>
+                  {/* Address Form */}
+                  {showAddressForm && (
+                    <div className="mb-6">
+                      <AddressForm
+                        existingAddress={editingAddress}
+                        onCancel={handleCancelForm}
+                        onSuccess={() => {
+                          fetchAddresses();
+                          handleCancelForm();
+                          showNotification({
+                            message: editingAddress ? "Address updated successfully" : "Address added successfully",
+                            type: "success"
+                          });
+                        }}
+                      />
                     </div>
-                  )
-                )}
+                  )}
 
-                {/* Sticky Footer for Step 2 */}
-                {!showAddressForm && addresses.length > 0 && (
-                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
-                    <div className="max-w-6xl mx-auto flex justify-between items-center">
-                      <button
-                        onClick={() =>
-                          processState === 2
-                            ? isBuyNow ? setProcessState(1) : navigate("/cart")
-                            : setProcessState(processState - 1)
+
+
+                  {/* Existing Addresses */}
+                  {addresses.length > 0 ? (
+                    <AddressList
+                      addresses={addresses}
+                      selectedAddressId={selectedAddressId}
+                      onSelect={(addr) => selectAddress(addr.id)}
+                      onEdit={handleEditAddress}
+                      onDelete={(address) => {
+                        if (
+                          window.confirm(
+                            "Are you sure you want to delete this address?"
+                          )
+                        ) {
+                          deleteAddress(address.id);
                         }
-                        className="text-gray-600 font-medium flex items-center gap-2 hover:text-gray-900 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Back
-                      </button>
+                      }}
+                      isMobile={isMobileApp}
+                      onDeliverHere={(addr) => handleDeliverHere(addr.id)}
+                    />
+                  ) : (
+                    !showAddressForm && (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
+                          <svg fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-800 mb-2">
+                          No addresses found
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                          Add your first delivery address to continue
+                        </p>
+                      </div>
+                    )
+                  )}
 
-                      <button
-                        onClick={() => handleDeliverHere(selectedAddressId)}
-                        disabled={!selectedAddressId}
-                        className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-sm"
-                      >
-                        Continue
-                      </button>
+                  {/* Sticky Footer for Step 2 */}
+                  {!showAddressForm && addresses.length > 0 && (
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+                      <div className="max-w-6xl mx-auto flex justify-between items-center">
+                        <button
+                          onClick={() =>
+                            processState === 2
+                              ? isBuyNow ? setProcessState(1) : navigate("/cart")
+                              : setProcessState(processState - 1)
+                          }
+                          className="text-gray-600 font-medium flex items-center gap-2 hover:text-gray-900 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                          </svg>
+                          Back
+                        </button>
+
+                        <button
+                          onClick={() => handleDeliverHere(selectedAddressId)}
+                          disabled={!selectedAddressId}
+                          className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-sm"
+                        >
+                          Continue
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                </div>
 
                 {/* Order Summary Review */}
-                <div className="bg-white rounded-lg shadow-sm border mt-6 p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <div className="border-t border-gray-100 p-5 bg-gray-50/50">
+                  <h3 className="text-base font-semibold text-gray-900 mb-4">
                     Order Details
                   </h3>
 
@@ -1534,67 +1543,51 @@ function CheckoutPage() {
 
 
                 {/* Payment Method */}
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Payment Method
-                  </h3>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      Payment Options
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      All transactions are secure and encrypted.
+                    </p>
+                  </div>
 
-                  <div className="space-y-3">
+                  <div className="p-5 space-y-4">
                     {[
-                      // {
-                      //   value: "cod",
-                      //   label: "Cash on Delivery",
-                      //   icon: "💵",
-                      //   desc: "Pay when your order is delivered",
-                      // },
                       {
                         value: "upi",
-                        label: "UPI Payment",
-                        icon: "📱",
-                        desc: "Pay using UPI apps like GPay, PhonePe, Paytm",
+                        label: "UPI (Google Pay, PhonePe, Paytm)",
+                        desc: "Pay seamlessly using your preferred UPI app.",
                       },
                       {
                         value: "card",
-                        label: "Credit/Debit Card",
-                        icon: "💳",
-                        desc: "Secure payment with your card",
+                        label: "Credit or Debit Card",
+                        desc: "We accept Visa, Mastercard, RuPay, and more.",
                       },
-                      // {
-                      //   value: "netbanking",
-                      //   label: "Net Banking",
-                      //   icon: "🏦",
-                      //   desc: "Pay using internet banking",
-                      // },
-                      // {
-                      //   value: "wallet",
-                      //   label: "Digital Wallet",
-                      //   icon: "💰",
-                      //   desc: "Pay using digital wallets",
-                      // },
                     ].map((method) => (
                       <label
                         key={method.value}
-                        className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === method.value
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                        className={`relative flex items-start p-4 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === method.value
+                          ? "border-blue-600 bg-blue-50/30 shadow-sm ring-1 ring-blue-600"
+                          : "border-gray-200 hover:border-gray-300 bg-white"
                           }`}
                       >
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value={method.value}
-                          checked={paymentMethod === method.value}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="mt-1 text-blue-600 focus:ring-blue-500"
-                        />
+                        <div className="flex items-center h-5 mt-0.5">
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={method.value}
+                            checked={paymentMethod === method.value}
+                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 cursor-pointer"
+                          />
+                        </div>
                         <div className="ml-3 flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">{method.icon}</span>
-                            <span className="font-medium text-gray-800">
-                              {method.label}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <span className="font-medium text-gray-900 block">
+                            {method.label}
+                          </span>
+                          <p className="text-sm text-gray-500 mt-0.5">
                             {method.desc}
                           </p>
                         </div>
