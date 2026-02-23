@@ -193,6 +193,7 @@ const useCartStore = create((set, get) => ({
               product.shortDescription || product.short_description,
             description: product.description,
             images: product.images || [],
+            paymentMethods: product.paymentMethods || [],
           },
           // Store complete variant details
           variantDetails: variantDetails,
@@ -609,6 +610,7 @@ const useCartStore = create((set, get) => ({
           shortDescription: product.shortDescription || product.short_description,
           description: product.description,
           images: product.images || [],
+          paymentMethods: product.paymentMethods || [],
         },
         variantDetails: variantDetails,
         productType: product.productType || product.product_type || "product",

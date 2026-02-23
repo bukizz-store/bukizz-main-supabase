@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
 import { isWebViewMode } from "../../utils/navigation";
@@ -928,6 +928,21 @@ function CheckoutPage() {
   // Get checkout items based on mode
   const checkoutItems = isBuyNow && buyNowItem ? [buyNowItem] : (cart.items || []);
 
+  // Calculate if COD is allowed for all items
+  const isCodAllowed = useMemo(() => {
+    return checkoutItems.every((item) => {
+      const methods = item.productDetails?.paymentMethods || item.paymentMethods || [];
+      if (!methods || methods.length === 0) return true; // Default allow
+      return methods.includes("cod");
+    });
+  }, [checkoutItems]);
+
+  useEffect(() => {
+    if (!isCodAllowed && paymentMethod === "cod") {
+      setPaymentMethod("upi");
+    }
+  }, [isCodAllowed, paymentMethod]);
+
   // Check if we are really in buy now mode (explicitly checked above)
   const activeBuyNowItem = isBuyNow ? buyNowItem : null;
 
@@ -1565,6 +1580,15 @@ function CheckoutPage() {
                         label: "Credit or Debit Card",
                         desc: "We accept Visa, Mastercard, RuPay, and more.",
                       },
+                      ...(isCodAllowed
+                        ? [
+                          {
+                            value: "cod",
+                            label: "Cash on Delivery",
+                            desc: "Pay when the order is delivered to you.",
+                          },
+                        ]
+                        : []),
                     ].map((method) => (
                       <label
                         key={method.value}
