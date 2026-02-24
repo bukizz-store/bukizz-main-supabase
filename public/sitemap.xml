@@ -51,6 +51,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.bukizz.in/product/032a4bd5-48f1-49eb-82b6-f997893229b2</loc>
+    <changefreq>weekly</changefreq>
+    <lastmod>2026-02-23T18:00:44.697Z</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://www.bukizz.in/product/a0de6e87-8e08-4077-933d-33d951e849a4</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2026-01-21T23:08:03.503Z</lastmod>
@@ -69,12 +75,6 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.bukizz.in/product/1996fa75-a4c2-4aeb-b63a-5a5793e5c3b9</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-08T10:00:54.098Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://www.bukizz.in/product/30f719ab-f293-45aa-b200-b47d09d323c2</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2026-02-08T12:30:23.256Z</lastmod>
@@ -87,51 +87,15 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.bukizz.in/product/d8372322-3e25-468e-8223-3728888c2dba</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T08:39:45.837Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://www.bukizz.in/product/c3a4841c-d016-4543-b3ac-8653a6c1cac7</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2026-02-14T08:25:40.240Z</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.bukizz.in/product/579d95fa-8324-48e7-84bf-642558f3bb1e</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T08:26:31.103Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/76fc2523-f47a-4a1e-8c36-d489790ee749</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T08:30:45.906Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/ed1356c1-575e-4fed-b642-91a61a495c2d</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T08:45:05.413Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
     <loc>https://www.bukizz.in/product/61a64fd3-5a1d-47bd-b057-7fb6f82fa4d8</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2026-02-14T08:48:18.877Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/f5ef28b0-be96-43d9-8a83-a5e61c35e434</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T09:00:54.649Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/558a35f7-4837-4414-a051-d0387bce816a</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T09:07:12.868Z</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
@@ -144,18 +108,6 @@
     <loc>https://www.bukizz.in/product/a0441b8a-b658-4e37-8650-854970136ea0</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2026-02-14T09:38:04.964Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/781dacbc-ee91-492f-a1ee-d2e27bad2840</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-14T21:42:38.553Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/f419a1a2-e589-43e1-9140-545337ad9e75</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-15T05:13:32.854Z</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
@@ -191,19 +143,19 @@
   <url>
     <loc>https://www.bukizz.in/product/8b930ccf-d8c4-4efe-b1af-7c6d311bff68</loc>
     <changefreq>weekly</changefreq>
-    <lastmod>2026-02-21T11:24:10.657Z</lastmod>
+    <lastmod>2026-02-24T02:58:59.816Z</lastmod>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/product/b589fb25-ffdc-4043-997f-ef219272092b</loc>
+    <changefreq>weekly</changefreq>
+    <lastmod>2026-02-24T02:58:08.837Z</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://www.bukizz.in/product/c9eeafe3-87cd-4baf-b458-a1d628c7c3dc</loc>
     <changefreq>weekly</changefreq>
     <lastmod>2026-02-22T12:17:03.846Z</lastmod>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/product/b589fb25-ffdc-4043-997f-ef219272092b</loc>
-    <changefreq>weekly</changefreq>
-    <lastmod>2026-02-23T08:25:12.889Z</lastmod>
     <priority>0.9</priority>
   </url>
   <url>

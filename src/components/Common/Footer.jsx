@@ -85,7 +85,7 @@ const Footer = () => {
           <div>
             <img src="/logo.svg" alt="Bukizz Logo" className="h-12" />
             <p className="text-gray-600 mt-2">Wisdom Rd , Sco 142 Nirman Point</p>
-            <p className="text-gray-600 mt-2">+919520443591</p>
+            <p className="text-gray-600 mt-2">+918545892770</p>
           </div>
           <div className="flex flex-wrap gap-12 md:gap-16">
             <div className="flex justify-between w-full">
