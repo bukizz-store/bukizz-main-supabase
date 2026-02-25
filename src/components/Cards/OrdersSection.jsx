@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -16,12 +16,14 @@ import {
   Download,
   Trophy,
   AlertTriangle,
-  FileText
+  FileText,
+  CreditCard
 } from "lucide-react";
 import AddressMapPreview from "../Address/AddressMapPreview";
 import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 
 import useApiRoutesStore from "../../store/apiRoutesStore";
+import useOrderStore from "../../store/orderStore";
 
 const getVariantDescription = (item) => {
   // 1. If explicit string exists (legacy support)
@@ -102,7 +104,7 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
           {/* Status Line */}
           <div className="flex items-center justify-between mb-1">
             <p className="text-gray-900 font-medium text-sm">
-              {getStatusText(status)} on {formatDateShort(order.createdAt)}
+              {getStatusText(status, order.createdAt)} on {formatDateShort(order.createdAt)}
             </p>
             <ChevronRight className="w-4 h-4 text-gray-400" />
           </div>
@@ -184,9 +186,9 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
             <div className="flex flex-col items-end gap-3 min-w-[200px]">
               {/* Status Badge */}
               {/* Status Badge */}
-              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(item.status || order.status).bg} ${getStatusColor(item.status || order.status).text} ${getStatusColor(item.status || order.status).border || 'border-transparent'}`}>
-                <div className={`w-2 h-2 rounded-full ${getStatusColor(item.status || order.status).dotColor}`}></div>
-                {getStatusText(item.status || order.status)}
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(item.status || order.status, order.createdAt).bg} ${getStatusColor(item.status || order.status, order.createdAt).text} ${getStatusColor(item.status || order.status, order.createdAt).border || 'border-transparent'}`}>
+                <div className={`w-2 h-2 rounded-full ${getStatusColor(item.status || order.status, order.createdAt).dotColor}`}></div>
+                {getStatusText(item.status || order.status, order.createdAt)}
               </div>
 
               {/* Main Actions */}
@@ -423,7 +425,15 @@ const OrdersSection = () => {
     setActionError(null);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status, createdAt = null) => {
+    // Override for old initialized orders
+    if (status === "initialized" && createdAt) {
+      const now = new Date();
+      if (now - new Date(createdAt) > 10 * 60 * 1000) {
+        return { bg: "bg-red-100", text: "text-red-800", icon: "🔴", dotColor: "bg-red-600", border: "border-red-200" };
+      }
+    }
+
     switch (status) {
       case "delivered":
         return { bg: "bg-green-100", text: "text-green-800", icon: "🟢", dotColor: "bg-green-600", border: "border-green-200" };
@@ -439,7 +449,15 @@ const OrdersSection = () => {
     }
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status, createdAt = null) => {
+    // Override for old initialized orders
+    if (status === "initialized" && createdAt) {
+      const now = new Date();
+      if (now - new Date(createdAt) > 10 * 60 * 1000) {
+        return "Payment Failed";
+      }
+    }
+
     // Simplifying status text for item cards
     const statusMap = {
       initialized: "Ordered",
@@ -709,6 +727,139 @@ const OrdersSection = () => {
     const [queries, setQueries] = useState([]);
     const [queriesLoading, setQueriesLoading] = useState(false);
     const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false); // Address Sheet state
+    const [payOnlineLoading, setPayOnlineLoading] = useState(false);
+
+    const { initiateRazorpayPayment, verifyRazorpayPayment, reportPaymentFailure } = useOrderStore();
+
+    // Handle Pay Online for COD orders
+    const handlePayOnline = async () => {
+      try {
+        setPayOnlineLoading(true);
+
+        // 1. Create Razorpay order from existing order
+        const razorpayOrder = await initiateRazorpayPayment(order.id);
+
+        // 2. Check if running in native app (Flutter WebView)
+        const isNativeApp = typeof window.PaymentBridge !== 'undefined' ||
+          localStorage.getItem('isMobileApp') === 'true' ||
+          window.location.search.includes('mode=webview');
+
+        if (isNativeApp && typeof window.PaymentBridge !== 'undefined') {
+          // Native app: pass to Flutter bridge
+          const paymentData = JSON.stringify({
+            key: razorpayOrder.key,
+            amount: razorpayOrder.amount,
+            currency: razorpayOrder.currency,
+            name: "Bukizz Books",
+            description: `Order #${order.orderNumber || order.id}`,
+            order_id: razorpayOrder.id,
+            prefill: razorpayOrder.prefill || {},
+            theme: { color: "#3B82F6" },
+          });
+
+          // Set up native callbacks
+          window.onNativePaymentSuccess = async (data) => {
+            try {
+              let response = typeof data === 'string' ? JSON.parse(data) : data;
+              await verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: order.id
+              });
+              alert("Payment successful! Your order is now paid.");
+              setRefreshTrigger(prev => prev + 1);
+              onBack();
+            } catch (err) {
+              console.error("Native payment verification failed:", err);
+              alert("Payment verification failed. Please contact support.");
+            } finally {
+              setPayOnlineLoading(false);
+            }
+          };
+
+          window.onNativePaymentFailure = async (data) => {
+            let response = typeof data === 'string' ? JSON.parse(data) : data;
+            console.error("Native payment failed:", response);
+            await reportPaymentFailure({
+              razorpay_order_id: razorpayOrder.id,
+              error_code: response.code,
+              error_description: response.description || "Payment failed",
+              orderId: order.id
+            });
+            alert(response.code === 2 ? "Payment cancelled." : "Payment failed. Please try again.");
+            setPayOnlineLoading(false);
+          };
+
+          window.PaymentBridge.postMessage(paymentData);
+          return;
+        }
+
+        // 3. Web: Use Razorpay Checkout.js
+        // Load Razorpay script if not already loaded
+        if (!window.Razorpay) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+            document.head.appendChild(script);
+          });
+        }
+
+        const options = {
+          key: razorpayOrder.key,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          name: "Bukizz Books",
+          description: `Order #${order.orderNumber || order.id}`,
+          order_id: razorpayOrder.id,
+          prefill: razorpayOrder.prefill || {},
+          theme: { color: "#3B82F6" },
+          handler: async function (response) {
+            try {
+              await verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: order.id
+              });
+              alert("Payment successful! Your order is now paid.");
+              setRefreshTrigger(prev => prev + 1);
+              onBack();
+            } catch (err) {
+              console.error("Payment verification failed:", err);
+              alert("Payment verification failed. Please contact support.");
+            } finally {
+              setPayOnlineLoading(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setPayOnlineLoading(false);
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', async function (response) {
+          await reportPaymentFailure({
+            razorpay_order_id: razorpayOrder.id,
+            razorpay_payment_id: response.error?.metadata?.payment_id,
+            error_code: response.error?.code,
+            error_description: response.error?.description || "Payment failed",
+            orderId: order.id
+          });
+          alert("Payment failed. Please try again.");
+          setPayOnlineLoading(false);
+        });
+        rzp.open();
+      } catch (err) {
+        console.error("Pay Online failed:", err);
+        alert(err.message || "Failed to initiate payment. Please try again.");
+        setPayOnlineLoading(false);
+      }
+    };
 
     // Fetch queries
     const fetchQueries = async () => {
@@ -973,10 +1124,39 @@ const OrdersSection = () => {
     // Determine Status Box Styling and Text
     const isPaymentIncomplete = order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid';
 
+    // Determine if payment has failed for initialized orders older than 10 minutes
+    const now = new Date();
+    const orderCreated = new Date(order.createdAt);
+    const diffMs = now - orderCreated;
+    const isPaymentFailed = (itemStatus === "initialized") && diffMs > 10 * 60 * 1000;
+
     let boxBorderColor = "border-blue-600";
     let statusTitle = "Order Confirmed";
     let statusDesc = "Your Order has been placed.";
     let alertBox = null;
+
+    if (itemStatus === "cancelled") {
+      boxBorderColor = "border-red-500 bg-red-50";
+      statusTitle = "Order Cancelled";
+      statusDesc = "This order has been cancelled.";
+    } else if (isPaymentFailed) {
+      boxBorderColor = "border-red-500 bg-red-50";
+      statusTitle = "Payment Failed";
+      statusDesc = "If payment was deducted from your bank account then raise a query, team will reply shortly.";
+    } else if (isPaymentIncomplete) {
+      boxBorderColor = "border-orange-500 bg-orange-50";
+      statusTitle = "Payment Incomplete";
+      statusDesc = "Your order is pending because the payment was not completed.";
+      alertBox = (
+        <div className="mt-4 bg-orange-100/50 text-orange-800 text-sm p-3 rounded-lg flex items-start gap-2 border border-orange-200">
+          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+          <div>
+            <p className="font-semibold mb-1">Payment Not Completed</p>
+            <p className="text-orange-700/90">If money was deducted from your account, it will automatically update here soon or be refunded by your bank within 3-5 days. If not, please place a new order.</p>
+          </div>
+        </div>
+      );
+    }
 
     if (itemStatus === 'cancelled') {
       boxBorderColor = "border-red-500 bg-red-50";
@@ -1038,14 +1218,28 @@ const OrdersSection = () => {
           </div>
 
           {/* Payment CTA (COD Only) */}
-          {isPayable && (
+          {isPayable && order.paymentStatus !== 'paid' && (
             <div className="py-2">
               <div className="bg-blue-50 rounded-lg p-3 flex items-center justify-between border border-blue-100">
-                <p className="text-xs text-gray-700 font-medium leading-tight max-w-[60%]">
-                  Pay online for a smooth doorstep experience
-                </p>
-                <button className="px-4 py-1.5 bg-white text-blue-600 text-xs md:text-sm font-bold border border-blue-200 rounded shadow-sm hover:bg-blue-50">
-                  Pay {formatCurrency(amountToPay)}
+                <div className="flex items-center gap-2 max-w-[60%]">
+                  <CreditCard className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <p className="text-xs text-gray-700 font-medium leading-tight">
+                    Pay online for a smooth doorstep experience
+                  </p>
+                </div>
+                <button
+                  onClick={handlePayOnline}
+                  disabled={payOnlineLoading}
+                  className="px-4 py-1.5 bg-white text-blue-600 text-xs md:text-sm font-bold border border-blue-200 rounded shadow-sm hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {payOnlineLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-blue-600 border-t-transparent"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    `Pay ${formatCurrency(amountToPay)}`
+                  )}
                 </button>
               </div>
             </div>
@@ -1190,33 +1384,30 @@ const OrdersSection = () => {
           <div className="bg-white px-2 py-2 md:px-4 rounded-lg">
             <h3 className="text-sm font-bold text-gray-900 mb-4">Price details</h3>
             <div className="space-y-2 mb-4">
-              {/* Listing Price */}
+              {/* Item Price */}
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">MRP</span>
-                <span className="text-gray-900 line-through">₹{(item.totalPrice * 1.2).toLocaleString('en-IN')}</span> {/* Mock Initial Price */}
-              </div>
-              {/* Special Price */}
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-1 text-gray-600">
-                  Special price <Info className="w-3 h-3 text-gray-400" />
-                </div>
-                <span className="text-gray-900">₹{item.totalPrice.toLocaleString('en-IN')}</span>
+                <span className="text-gray-600">Item price ({item.quantity} × {formatCurrency(item.unitPrice)})</span>
+                <span className="text-gray-900">{formatCurrency(item.totalPrice)}</span>
               </div>
 
-              {/* Fees (Mock) */}
+              {/* Delivery Fee */}
               <div className="flex justify-between items-center text-sm">
                 <div className="flex items-center gap-1 text-gray-600">
-                  Total fees <ChevronDown className="w-3 h-3 text-gray-400" />
+                  <Truck className="w-3.5 h-3.5" /> Delivery fee
                 </div>
-                <span className="text-gray-900">₹{10}</span>
+                {(item.deliveryFee || 0) > 0 ? (
+                  <span className="text-gray-900">{formatCurrency(item.deliveryFee)}</span>
+                ) : (
+                  <span className="text-green-600 font-medium">FREE</span>
+                )}
               </div>
 
-              {/* Discount (Mock) */}
+              {/* Platform Fee */}
               <div className="flex justify-between items-center text-sm">
                 <div className="flex items-center gap-1 text-gray-600">
-                  Other discount <ChevronDown className="w-3 h-3 text-gray-400" />
+                  Platform fee <Info className="w-3 h-3 text-gray-400" />
                 </div>
-                <span className="text-green-600 font-medium">-₹{10}</span>
+                <span className="text-gray-900">{formatCurrency(item.platformFee || 0)}</span>
               </div>
             </div>
 
@@ -1224,7 +1415,9 @@ const OrdersSection = () => {
 
             <div className="flex justify-between items-center mb-4">
               <span className="text-base font-bold text-gray-900">Total amount</span>
-              <span className="text-base font-bold text-gray-900">₹{item.totalPrice.toLocaleString('en-IN')}</span>
+              <span className="text-base font-bold text-gray-900">
+                {formatCurrency(item.totalPrice + (item.deliveryFee || 0) + (item.platformFee || 0))}
+              </span>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-3 flex justify-between items-center mb-4">
@@ -1234,11 +1427,6 @@ const OrdersSection = () => {
                 <span className="text-xs font-medium text-gray-600 uppercase">{order.paymentMethod}</span>
               </div>
             </div>
-
-            {/* <button className="w-full flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              <Download className="w-4 h-4" />
-              Download Invoice
-            </button> */}
 
             {/* Cancel Order Button - Only show if cancellable */}
             {!['delivered', 'cancelled', 'refunded'].includes(itemStatus) && (

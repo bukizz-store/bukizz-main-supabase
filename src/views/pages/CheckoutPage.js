@@ -1251,7 +1251,7 @@ function CheckoutPage() {
                         {/* Delivery Info and Stock Status */}
                         <div className="flex items-center justify-between mt-3 text-sm">
                           <span className="text-gray-600">
-                            Delivery by {getDeliveryDate()}
+                            Delivery in 1 Day
                           </span>
                           {stockStatus && (
                             <span className={`font-medium ${stockStatus.color}`}>
