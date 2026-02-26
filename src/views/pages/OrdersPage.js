@@ -8,10 +8,11 @@ const OrdersPage = () => {
 
   useEffect(() => {
     if (!user) {
+      useAuthStore.getState().setRedirectPath("/profile?tab=orders");
       navigate("/");
       return;
     }
-    
+
     // Redirect to profile page with orders tab active
     navigate("/profile?tab=orders", { replace: true });
   }, [user, navigate]);

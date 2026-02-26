@@ -12,7 +12,6 @@ const useAuthStore = create(
       isModalOpen: false,
       error: null,
       isHydrated: false, // Add flag to track hydration status
-      isRefreshing: false, // Add flag to prevent multiple simultaneous refreshes
       redirectPath: null, // Path to redirect to after successful login
 
       // Basic setters
@@ -209,104 +208,96 @@ const useAuthStore = create(
         }
       },
 
-      // Updated refreshToken method with better error handling
+      // Shared promise for concurrent refresh requests (not persisted in store)
+      _refreshPromise: null,
+
+      // Robust refreshToken method with promise-based deduplication
       refreshToken: async () => {
         const state = get();
 
-        // Prevent multiple simultaneous refresh attempts
-        if (state.isRefreshing) {
-          console.log("Token refresh already in progress, waiting...");
-          // Wait for current refresh to complete
-          return new Promise((resolve, reject) => {
-            const checkRefresh = () => {
-              const currentState = get();
-              if (!currentState.isRefreshing) {
-                const token = localStorage.getItem("custom_token");
-                if (token) {
-                  resolve({ accessToken: token });
-                } else {
-                  reject(new Error("Refresh failed"));
-                }
-              } else {
-                setTimeout(checkRefresh, 100);
-              }
-            };
-            setTimeout(checkRefresh, 100);
-          });
+        // If a refresh is already in progress, return the existing promise
+        // This ensures all concurrent 401 handlers share a single network request
+        if (state._refreshPromise) {
+          console.log("Token refresh already in progress, reusing promise...");
+          return state._refreshPromise;
         }
 
-        set({ isRefreshing: true });
+        const refreshPromise = (async () => {
+          try {
+            const refreshToken = localStorage.getItem("refresh_token");
 
-        try {
-          const refreshToken = localStorage.getItem("refresh_token");
-
-          if (!refreshToken) {
-            throw new Error("No refresh token available");
-          }
-
-          // Use direct headers to avoid circular dependency
-          const response = await fetch(
-            useApiRoutesStore.getState().auth.refreshToken,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ refreshToken }),
+            if (!refreshToken) {
+              throw new Error("No refresh token available");
             }
-          );
 
-          console.log("Refresh token response status:", response.status);
+            const response = await fetch(
+              useApiRoutesStore.getState().auth.refreshToken,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ refreshToken }),
+              }
+            );
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            console.log("Refresh token response status:", response.status);
 
-            // Only logout for specific token-related errors
-            if (response.status === 401 || response.status === 403 || response.status === 400) {
-              console.log("Refresh token invalid/expired, logging out");
-              set({ isRefreshing: false });
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              const errorMessage = errorData.message || "Token refresh failed";
+
+              // Only logout for definitive auth failures, not transient errors
+              if (response.status === 401 || response.status === 403) {
+                console.log("Refresh token invalid/expired, logging out");
+                await get().logout();
+              }
+
+              throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            const tokens = data.data || data;
+
+            // Update tokens in localStorage
+            const newAccessToken = tokens.accessToken || tokens.access_token;
+            const newRefreshToken = tokens.refreshToken || tokens.refresh_token;
+
+            if (newAccessToken) {
+              localStorage.setItem("access_token", newAccessToken);
+              localStorage.setItem("custom_token", newAccessToken);
+            }
+            if (newRefreshToken) {
+              localStorage.setItem("refresh_token", newRefreshToken);
+            }
+
+            console.log("Token refresh successful");
+            return tokens;
+          } catch (error) {
+            console.error("Token refresh failed:", error);
+
+            // Only logout for truly unrecoverable auth errors
+            // Do NOT logout for network errors, server 500s, or transient failures
+            if (
+              error.message.includes("No refresh token available") ||
+              error.message.includes("Invalid refresh token") ||
+              error.message.includes("Refresh token expired")
+            ) {
+              console.log("Unrecoverable refresh error, logging out");
               await get().logout();
             }
 
-            throw new Error(errorData.message || "Token refresh failed");
+            throw error;
+          } finally {
+            // Clear the shared promise so future refreshes can proceed
+            set({ _refreshPromise: null });
           }
+        })();
 
-          const data = await response.json();
-          const tokens = data.data || data;
+        // Store the promise in state so concurrent callers can reuse it
+        set({ _refreshPromise: refreshPromise });
 
-          // Update tokens in localStorage
-          const newAccessToken = tokens.accessToken || tokens.access_token;
-          const newRefreshToken = tokens.refreshToken || tokens.refresh_token;
-
-          if (newAccessToken) {
-            localStorage.setItem("access_token", newAccessToken);
-            localStorage.setItem("custom_token", newAccessToken);
-          }
-          if (newRefreshToken) {
-            localStorage.setItem("refresh_token", newRefreshToken);
-          }
-
-          console.log("Token refresh successful");
-          return tokens;
-        } catch (error) {
-          console.error("Token refresh failed:", error);
-
-          // Only logout if the error message indicates invalid refresh token
-          // Don't logout for network errors or server issues
-          if (
-            error.message.includes("No refresh token available") ||
-            error.message.includes("Invalid refresh token") ||
-            error.message.includes("Refresh token expired") ||
-            error.message.includes("Token refresh failed")
-          ) {
-            console.log("Invalid refresh token, logging out");
-            await get().logout();
-          }
-
-          throw error;
-        } finally {
-          set({ isRefreshing: false });
-        }
+        return refreshPromise;
       },
 
       // ...existing verifyToken method...
@@ -410,6 +401,14 @@ const useAuthStore = create(
 
           if (user) {
             set({ user, loading: false, error: null, isModalOpen: false });
+
+            // Handle post-login redirect if path exists
+            const redirectPath = get().redirectPath;
+            if (redirectPath) {
+              console.log("Redirecting to preserved path after Google login:", redirectPath);
+              window.location.href = redirectPath;
+              set({ redirectPath: null });
+            }
           }
 
           // Clear URL fragment params to prevent loop
@@ -583,6 +582,7 @@ const useAuthStore = create(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,
+        redirectPath: state.redirectPath,
       }),
       onRehydrateStorage: () => {
         console.log("Starting rehydration...");

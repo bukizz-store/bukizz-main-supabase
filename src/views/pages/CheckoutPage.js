@@ -74,9 +74,11 @@ function CheckoutPage() {
   // Order placement state
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [orderNotes, setOrderNotes] = useState("");
+  const [studentNameForOrder, setStudentNameForOrder] = useState("");
 
 
   // Validation states
+  const [studentNameError, setStudentNameError] = useState("");
   const [validationErrors, setValidationErrors] = useState([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -302,6 +304,8 @@ function CheckoutPage() {
       fetchAddresses();
       resetOrderState();
     } else if (!isAuthenticated) {
+      const currentPath = window.location.pathname + window.location.search;
+      useAuthStore.getState().setRedirectPath(currentPath);
       navigate("/");
     }
 
@@ -601,6 +605,18 @@ function CheckoutPage() {
         return;
       }
 
+      // Validate Student Name for Order
+      if (!studentNameForOrder?.trim()) {
+        setStudentNameError("Student Name is required for this order");
+        // Scroll to the student name field or just rely on the red border
+        return;
+      } else if (studentNameForOrder.trim().length < 2) {
+        setStudentNameError("Student Name is too short");
+        return;
+      }
+
+      setStudentNameError(""); // Clear error on valid input
+
       // Backend Pincode Serviceability Check
       if (selectedAddr.postalCode) {
         try {
@@ -667,6 +683,19 @@ function CheckoutPage() {
       }
     }
 
+    // Validate Student Name for Order
+    if (!studentNameForOrder?.trim()) {
+      errors.push("Student Name is required");
+      if (processState > 2) setProcessState(2);
+      setStudentNameError("Student Name is required for this order");
+    } else if (studentNameForOrder.trim().length < 2) {
+      errors.push("Student Name is too short");
+      if (processState > 2) setProcessState(2);
+      setStudentNameError("Student Name is too short");
+    } else {
+      setStudentNameError("");
+    }
+
     // Check payment method
     if (!paymentMethod) {
       errors.push("Please select a payment method");
@@ -697,7 +726,10 @@ function CheckoutPage() {
 
       const orderData = {
         cartItems: checkoutItems,
-        selectedAddress,
+        selectedAddress: {
+          ...selectedAddress,
+          studentName: studentNameForOrder.trim()
+        },
         paymentMethod,
         contactPhone: selectedAddress.phone,
         contactEmail: user?.email || "",
@@ -1421,6 +1453,45 @@ function CheckoutPage() {
                         >
                           Continue
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Student Name for Order (Appears after an address is selected or while editing) */}
+                  {!showAddressForm && addresses.length > 0 && selectedAddressId && (
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
+                        <div className="mb-4">
+                          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Who is this order for?
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Please provide the student's name for this specific order. This helps us ensure the items are prepared correctly.
+                          </p>
+                        </div>
+                        <div className="relative max-w-md">
+                          <input
+                            type="text"
+                            value={studentNameForOrder}
+                            onChange={(e) => {
+                              setStudentNameForOrder(e.target.value);
+                              if (studentNameError) setStudentNameError("");
+                            }}
+                            placeholder="Enter Student Name *"
+                            className={`w-full px-4 py-3 bg-white border ${studentNameError ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'} rounded-lg outline-none transition-all placeholder-gray-400`}
+                          />
+                          {studentNameError && (
+                            <div className="absolute -bottom-5 left-1 flex items-center gap-1 text-red-500 text-xs font-medium">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <span>{studentNameError}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

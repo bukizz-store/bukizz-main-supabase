@@ -84,14 +84,13 @@ function App() {
       // Check for city param
       const cityParam = searchParams.get("city");
       if (cityParam) {
+        // City passed via URL (e.g. mobile app flow) — use it directly
         localStorage.setItem("selectedCity", cityParam);
       } else {
-        // Check if city is selected in local storage
+        // Show city selection popup for first-time visitors
         const storedCity = localStorage.getItem("selectedCity");
         if (!storedCity) {
-          // Default to Kanpur automatically
-          localStorage.setItem("selectedCity", "kanpur");
-          // openCityPopup(); // Removed popup trigger
+          openCityPopup();
         }
       }
 

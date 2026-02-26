@@ -75,6 +75,8 @@ function ProfilePage() {
     const isCityTab = searchParams.get("tab") === "city";
 
     if (!isAuthenticated && !isCityTab) {
+      const currentPath = window.location.pathname + window.location.search;
+      useAuthStore.getState().setRedirectPath(currentPath);
       navigate("/");
       return;
     }

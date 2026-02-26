@@ -144,6 +144,8 @@ function CartPage() {
 
   const handlePlaceOrder = () => {
     if (!isAuthenticated) {
+      const targetPath = mode === 'buy_now' ? "/checkout?mode=buy_now" : "/checkout";
+      useAuthStore.getState().setRedirectPath(targetPath);
       setModalOpen(true);
       return;
     }
@@ -165,6 +167,7 @@ function CartPage() {
 
   const handleBuyNow = (item) => {
     if (!isAuthenticated) {
+      useAuthStore.getState().setRedirectPath("/checkout?mode=buy_now");
       setModalOpen(true);
       return;
     }

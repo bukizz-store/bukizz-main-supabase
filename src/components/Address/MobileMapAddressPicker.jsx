@@ -38,7 +38,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
 
     // Form state
     const [formData, setFormData] = useState({
-        studentName: "",
         flatBuilding: "",
         recipientName: "",
         phone: "",
@@ -404,7 +403,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         setSubmitError(null);
         // Validate required fields
         const newErrors = {};
-        if (!formData.studentName.trim()) newErrors.studentName = "Student Name is required";
         if (!formData.flatBuilding.trim()) newErrors.flatBuilding = "Flat/House/Building is required";
         if (!formData.recipientName.trim()) newErrors.recipientName = "Full Name is required";
 
@@ -433,7 +431,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
         }
 
         const addressData = {
-            studentName: formData.studentName,
             label: formData.label,
             recipientName: formData.recipientName,
             phone: formData.phone,
@@ -712,18 +709,6 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                         )}
 
                         <div className="form-content">
-                            <div className="form-group">
-                                <label>Student Name *</label>
-                                <input
-                                    type="text"
-                                    value={formData.studentName}
-                                    onChange={(e) => handleFormChange("studentName", e.target.value)}
-                                    placeholder="Student Name *"
-                                    style={errors.studentName ? { borderColor: '#ef4444' } : {}}
-                                />
-                                {errors.studentName && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.studentName}</span>}
-                            </div>
-
                             <div className="form-group">
                                 <label>Flat/House/building name *</label>
                                 <input

@@ -7,7 +7,7 @@ import CitySelector from "../Common/CitySelector";
 import MobileSidebar from "./MobileSidebar";
 
 const Navbar = () => {
-  const { user, isModalOpen, setModalOpen, logout } = useAuthStore();
+  const { user, isModalOpen, setModalOpen, logout, setRedirectPath } = useAuthStore();
   const { cart, loadCart } = useCartStore();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -143,6 +143,7 @@ const Navbar = () => {
           ) : (
             <button
               onClick={() => {
+                setRedirectPath(window.location.pathname + window.location.search);
                 setModalOpen(true);
                 setSidebarOpen(false);
               }}
