@@ -1,0 +1,65 @@
+{
+    "order_item_data": {
+        "sku": "PROD-002-Complete Set",
+        "title": "Class 2nd",
+        "quantity": 1,
+        "productId": "c4f1d0ab-722d-4c94-b9c3-755a83f06daa",
+        "unitPrice": 4550,
+        "variantId": "fd56467d-309e-4701-947f-7c66d92ea233",
+        "totalPrice": 4550,
+        "warehouseId": "93c386e1-9c28-4f74-a7dc-cc0608a5c7b6",
+        "productSnapshot": {
+            "image": "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/products/temp/1771058239414-pdqsvb-Image_banner-1.png",
+            "title": "Class 2nd",
+            "basePrice": 4550,
+            "image_url": "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/products/temp/1771058239414-pdqsvb-Image_banner-1.png",
+            "productType": "bookset"
+        },
+        "events": [
+        {
+            "id": "ba756ca4-2fdd-47cb-88dd-bbd27d0340e4",
+            "previousStatus": null,
+            "newStatus": "initialized",
+            "changedBy": "29bfd646-0bfa-4843-8269-a4c70574d66e",
+            "changedByName": "Shivam Varshney",
+            "note": "Order created successfully",
+            "createdAt": "2026-02-20T22:10:48.704152+00:00"
+        }],
+        "canCancel": true,
+        "canReturn": false,
+        "trackingInfo": {
+            "carrier": "Local Delivery",
+            "trackingUrl": null
+        }
+    },
+    "order_data": {
+        "id": "b788f0e4-c3a0-4151-8009-14843aaa2f1c",
+        "orderNumber": "ORD-1771625448525-fyajdf",
+        "userId": "29bfd646-0bfa-4843-8269-a4c70574d66e",
+        "shippingAddress": {
+            "city": "Gurugram",
+            "line1": "B1123",
+            "line2": "C Block, Near Kids",
+            "phone": "9520443592",
+            "state": "Haryana",
+            "country": "India",
+            "postalCode": "400001",
+            "recipientName": "Ram Malhotra"
+        },
+        "billingAddress": {
+            "city": "Gurugram",
+            "line1": "B1123",
+            "line2": "C Block, Near Kids",
+            "phone": "9520443592",
+            "state": "Haryana",
+            "country": "India",
+            "postalCode": "400001",
+            "recipientName": "Ram Malhotra"
+        },
+        "contactPhone": "9520443592",
+        "contactEmail": "shivamvarshney114@gmail.com",
+        "paymentMethod": "upi",
+        "paymentStatus": "paid"
+
+    }
+}

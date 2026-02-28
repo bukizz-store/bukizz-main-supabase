@@ -40,6 +40,9 @@ function CheckoutPage() {
   // Track if we are navigating away (to success page) to prevent validation redirects
   const isNavigatingAway = useRef(false);
 
+  // Ref to scroll to student name field when validation fails
+  const studentNameRef = useRef(null);
+
   // Determine checkout mode explicitly from navigation state
   // This prevents stale store state from causing issues
   const checkoutMode = location.state?.mode; // 'buy_now' or 'cart'
@@ -608,10 +611,11 @@ function CheckoutPage() {
       // Validate Student Name for Order
       if (!studentNameForOrder?.trim()) {
         setStudentNameError("Student Name is required for this order");
-        // Scroll to the student name field or just rely on the red border
+        setTimeout(() => studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
         return;
       } else if (studentNameForOrder.trim().length < 2) {
         setStudentNameError("Student Name is too short");
+        setTimeout(() => studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
         return;
       }
 
@@ -1029,7 +1033,8 @@ function CheckoutPage() {
   };
 
   // Render loading state
-  if (orderLoading || addressLoading) {
+  // Don't show full-page loader when map picker is open — it would unmount the picker mid-save
+  if (orderLoading || (addressLoading && !showMobileMapPicker && !showAddressForm)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -1095,6 +1100,11 @@ function CheckoutPage() {
           onAddressSelect={(newAddress) => {
             selectAddress(newAddress.id);
             setShowMobileMapPicker(false);
+            // Scroll to student name field after picker closes so user sees it
+            setTimeout(() => {
+              studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              studentNameRef.current?.querySelector('input')?.focus();
+            }, 400);
           }}
         />
       )}
@@ -1369,7 +1379,7 @@ function CheckoutPage() {
                   )}
                 </div>
 
-                <div className="p-5">
+                <div className="p-5 pb-28">
 
                   {/* Address Form */}
                   {showAddressForm && (
@@ -1428,6 +1438,56 @@ function CheckoutPage() {
                     )
                   )}
 
+                  {/* Student Name for Order — shown right after address selection, before Continue */}
+                  {!showAddressForm && addresses.length > 0 && selectedAddressId && (
+                    <div ref={studentNameRef} className="mt-5 mb-4">
+                      <div className="rounded-2xl border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-4 shadow-sm">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-bold text-gray-900 leading-tight">Student Name for this Order</h3>
+                              {!studentNameForOrder.trim() && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Required</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-0.5 leading-snug">
+                              Needed before you can continue — helps us pack for the right student.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={studentNameForOrder}
+                            onChange={(e) => {
+                              setStudentNameForOrder(e.target.value);
+                              if (studentNameError) setStudentNameError("");
+                            }}
+                            placeholder="Enter student's full name *"
+                            className={`w-full px-4 py-3 bg-white border-2 text-sm font-medium ${studentNameError
+                              ? 'border-red-400 ring-1 ring-red-300 placeholder-red-300'
+                              : 'border-blue-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-300 placeholder-gray-400'
+                              } rounded-xl outline-none transition-all`}
+                          />
+                          {studentNameError && (
+                            <div className="mt-1.5 flex items-center gap-1.5 text-red-500 text-xs font-semibold">
+                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              {studentNameError}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Sticky Footer for Step 2 */}
                   {!showAddressForm && addresses.length > 0 && (
                     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
@@ -1448,50 +1508,11 @@ function CheckoutPage() {
 
                         <button
                           onClick={() => handleDeliverHere(selectedAddressId)}
-                          disabled={!selectedAddressId}
+                          disabled={!selectedAddressId || !studentNameForOrder.trim()}
                           className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-sm"
                         >
                           Continue
                         </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Student Name for Order (Appears after an address is selected or while editing) */}
-                  {!showAddressForm && addresses.length > 0 && selectedAddressId && (
-                    <div className="mt-8 pt-6 border-t border-gray-100">
-                      <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-100">
-                        <div className="mb-4">
-                          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            Who is this order for?
-                          </h3>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Please provide the student's name for this specific order. This helps us ensure the items are prepared correctly.
-                          </p>
-                        </div>
-                        <div className="relative max-w-md">
-                          <input
-                            type="text"
-                            value={studentNameForOrder}
-                            onChange={(e) => {
-                              setStudentNameForOrder(e.target.value);
-                              if (studentNameError) setStudentNameError("");
-                            }}
-                            placeholder="Enter Student Name *"
-                            className={`w-full px-4 py-3 bg-white border ${studentNameError ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'} rounded-lg outline-none transition-all placeholder-gray-400`}
-                          />
-                          {studentNameError && (
-                            <div className="absolute -bottom-5 left-1 flex items-center gap-1 text-red-500 text-xs font-medium">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              <span>{studentNameError}</span>
-                            </div>
-                          )}
-                        </div>
                       </div>
                     </div>
                   )}

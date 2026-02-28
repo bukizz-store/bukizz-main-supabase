@@ -584,7 +584,6 @@ const useAddressStore = create((set, get) => ({
 
       // Validate required fields
       const requiredFields = [
-        "studentName",
         "label",
         "line1",
         "city",
