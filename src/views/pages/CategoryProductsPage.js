@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import SearchBar from "../../components/Common/SearchBar";
 import Breadcrumb from "../../components/Common/Breadcrumb";
+import { OptimizedImage } from "../../components/Common/OptimizedImage";
 
 function CategoryProductsPage() {
   const navigate = useNavigate();
@@ -160,9 +161,10 @@ function CategoryProductsPage() {
                     </div>
 
                     {product.primaryImage ? (
-                      <img
+                      <OptimizedImage
                         src={product.primaryImage.url}
                         alt={product.title}
+                        width={300}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (

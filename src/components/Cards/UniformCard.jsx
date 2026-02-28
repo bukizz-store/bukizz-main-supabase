@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { OptimizedImage } from "../Common/OptimizedImage";
 
 export const UniformCard = ({ props }) => {
   const navigate = useNavigate();
@@ -44,12 +45,15 @@ export const UniformCard = ({ props }) => {
     >
       {/* Image Section */}
       <div className="relative w-full aspect-[300/194] rounded-t-[25px] overflow-hidden">
-        <img
+        <OptimizedImage
           src={
             props.image ||
             props.img ||
-            "https://via.placeholder.com/300x194/3fa7ff/ffffff?text=Uniform"
+            null
           }
+          fallbackSrc="https://via.placeholder.com/300x194/3fa7ff/ffffff?text=Uniform"
+          width={400}
+          quality={80}
           alt={props.name || "Uniform Item"}
           className="w-full h-full object-cover"
         />

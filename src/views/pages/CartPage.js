@@ -215,7 +215,7 @@ function CartPage() {
 
       // Set this item as Buy Now item (bypasses rest of cart)
       initiateBuyNowFlow(product, variant, item.quantity);
-      navigate("/checkout", { state: { mode: 'buy_now' } });
+      navigate("/checkout?mode=buy_now", { state: { mode: 'buy_now' } });
     } catch (error) {
       console.error("Error with Buy Now:", error);
       showNotification({

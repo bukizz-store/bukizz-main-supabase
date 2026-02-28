@@ -37,6 +37,7 @@ export const BookSetCard = ({ props }) => {
               : "invert(88%) sepia(8%) saturate(348%) hue-rotate(202deg) brightness(95%) contrast(88%)"
               }`,
           }}
+          loading="lazy"
         />
       );
     }

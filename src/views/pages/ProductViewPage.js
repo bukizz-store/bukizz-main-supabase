@@ -3,12 +3,14 @@ import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { BookSetCard } from "../../components/Cards/BookSetCard";
 import SearchBar from "../../components/Common/SearchBar";
+import { OptimizedImage } from "../../components/Common/OptimizedImage";
 import useUserProfileStore from "../../store/userProfileStore";
 import useCartStore from "../../store/cartStore";
 import useApiRoutesStore from "../../store/apiRoutesStore"; // Import apiRoutesStore
 import NoProductPage from "../../components/Product/NoProductPage";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 import { handleBackNavigation } from "../../utils/navigation";
+import useAuthStore from "../../store/authStore";
 
 // ProductViewPage.js
 function ProductViewPage() {
@@ -18,6 +20,7 @@ function ProductViewPage() {
   const { getProduct, searchProducts, loading, error } = useUserProfileStore();
 
   const { addToCart, loading: cartLoading, isInCart, initiateBuyNowFlow } = useCartStore();
+  const { isAuthenticated, setModalOpen } = useAuthStore();
 
   const [productData, setProductData] = useState(null);
   const [schoolName, setSchoolName] = useState(null);
@@ -421,10 +424,16 @@ function ProductViewPage() {
   const handleBuyNow = () => {
     if (!productData) return;
 
+    if (!isAuthenticated) {
+      setModalOpen(true);
+      useAuthStore.getState().setRedirectPath("/checkout?mode=buy_now");
+      return;
+    }
+
     try {
       initiateBuyNowFlow(productData, selectedVariant, selectedQuantity);
       // Navigate to Checkout directly
-      navigate("/checkout", { state: { mode: 'buy_now' } });
+      navigate("/checkout?mode=buy_now", { state: { mode: 'buy_now' } });
     } catch (error) {
       console.error("Error with Buy Now:", error);
     }
@@ -570,25 +579,30 @@ function ProductViewPage() {
         <div className="flex flex-col-reverse md:flex-row gap-4 justify-start items-start w-full md:w-[33%]">
           <div className="flex gap-4 flex-row md:flex-col justify-start items-start overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
             {currentImages?.slice(0, 5).map((img, idx) => (
-              <img
+              <OptimizedImage
                 key={img.id || idx}
-                src={img.url || "https://via.placeholder.com/144x144"}
+                src={img.url || null}
+                fallbackSrc="https://via.placeholder.com/144x144"
                 alt={img.altText || `${productData.title} ${idx + 1}`}
                 onClick={() => {
                   setSelectedImageIdx(idx);
                 }}
                 className={`w-10 h-10 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0 ${selectedImageIdx === idx ? 'ring-2 ring-blue-500' : ''
                   }`}
+                width={80}
               />
             ))}
           </div>
-          <div className="flex flex-col justify-start items-start w-full">
-            <img
+          <div className="flex flex-col justify-start items-start w-full relative">
+            <OptimizedImage
               src={
                 currentImages?.[selectedImageIdx]?.url ||
                 productData?.primaryImage?.url ||
-                "https://via.placeholder.com/384x384"
+                null
               }
+              fallbackSrc="https://via.placeholder.com/384x384"
+              width={600}
+              quality={85}
               alt={
                 currentImages?.[selectedImageIdx]?.altText ||
                 productData?.primaryImage?.altText ||
@@ -765,8 +779,9 @@ function ProductViewPage() {
                               }`}
                             title={option.value}
                           >
-                            <img
+                            <OptimizedImage
                               src={option.imageUrl}
+                              width={48}
                               alt={option.value}
                               className="w-full h-full object-cover"
                             />

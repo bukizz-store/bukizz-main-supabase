@@ -238,6 +238,7 @@ const useAddressStore = create((set, get) => ({
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
       {
+        cache: 'default',
         headers: {
           "User-Agent": "Bukizz-DeliveryApp/1.0",
         },
@@ -455,6 +456,7 @@ const useAddressStore = create((set, get) => ({
       const response = await fetch(
         `${API_BASE_URL}/users/addresses`,
         {
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -481,6 +483,7 @@ const useAddressStore = create((set, get) => ({
             const retryResponse = await fetch(
               `${API_BASE_URL}/users/addresses`,
               {
+                cache: 'default',
                 headers: {
                   Authorization: `Bearer ${newToken}`,
                   "Content-Type": "application/json",
@@ -621,6 +624,7 @@ const useAddressStore = create((set, get) => ({
         `${API_BASE_URL}/users/addresses`,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -688,6 +692,7 @@ const useAddressStore = create((set, get) => ({
         `${API_BASE_URL}/users/addresses/${addressId}`,
         {
           method: "PUT",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -736,6 +741,7 @@ const useAddressStore = create((set, get) => ({
         `${API_BASE_URL}/users/addresses/${addressId}`,
         {
           method: "DELETE",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

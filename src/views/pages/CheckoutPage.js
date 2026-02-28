@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import SearchBar from "../../components/Common/SearchBar";
 import { isWebViewMode } from "../../utils/navigation";
 import MobileMapAddressPicker from "../../components/Address/MobileMapAddressPicker";
@@ -45,7 +45,9 @@ function CheckoutPage() {
 
   // Determine checkout mode explicitly from navigation state
   // This prevents stale store state from causing issues
-  const checkoutMode = location.state?.mode; // 'buy_now' or 'cart'
+  const [searchParams] = useSearchParams();
+  const queryMode = searchParams.get("mode");
+  const checkoutMode = location.state?.mode || queryMode; // 'buy_now' or 'cart'
 
   // Use explicit mode if available, fallback to store state (backward compatibility)
   const isExplicitBuyNow = checkoutMode === 'buy_now';
@@ -306,10 +308,10 @@ function CheckoutPage() {
       loadCart();
       fetchAddresses();
       resetOrderState();
-    } else if (!isAuthenticated) {
+    } else if (!isAuthenticated && mounted) {
       const currentPath = window.location.pathname + window.location.search;
       useAuthStore.getState().setRedirectPath(currentPath);
-      navigate("/");
+      setModalOpen(true);
     }
 
     return () => {
@@ -868,6 +870,15 @@ function CheckoutPage() {
             setIsRazorpayLoading(false);
           } else {
             // Fallback to Web SDK
+            if (!window.Razorpay) {
+              await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+                document.head.appendChild(script);
+              });
+            }
             const rzp = new window.Razorpay(options);
 
             rzp.on("payment.failed", function (response) {
@@ -1348,11 +1359,7 @@ function CheckoutPage() {
                     <button
                       onClick={() => {
                         if (isAuthenticated()) {
-                          if (isWebViewMode()) {
-                            setShowAddressForm(true);
-                          } else {
-                            setShowMobileMapPicker(true);
-                          }
+                          setShowMobileMapPicker(true);
                         } else {
                           setModalOpen(true);
                         }

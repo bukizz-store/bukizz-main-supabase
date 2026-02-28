@@ -146,6 +146,7 @@ const useOrderStore = create((set, get) => ({
           const response = await fetch(
             `${API_BASE_URL}/products/${item.productId}/availability?${queryParams}`,
             {
+              cache: 'default',
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
@@ -214,6 +215,7 @@ const useOrderStore = create((set, get) => ({
           let url = `${API_BASE_URL}/products/${item.productId}`;
 
           const response = await fetch(url, {
+            cache: 'default',
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
@@ -475,6 +477,7 @@ const useOrderStore = create((set, get) => ({
       console.log("🚀 Step 4: Submitting order...");
       const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -568,6 +571,7 @@ const useOrderStore = create((set, get) => ({
         useApiRoutesStore.getState().payments.createOrder,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -598,6 +602,7 @@ const useOrderStore = create((set, get) => ({
         useApiRoutesStore.getState().payments.verify,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -628,6 +633,7 @@ const useOrderStore = create((set, get) => ({
 
       await fetch(url, {
         method: "POST",
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -650,6 +656,7 @@ const useOrderStore = create((set, get) => ({
 
       const response = await fetch(url, {
         method: "POST",
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -694,6 +701,7 @@ const useOrderStore = create((set, get) => ({
       const response = await fetch(
         `${API_BASE_URL}/orders/${orderId}`,
         {
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",

@@ -23,6 +23,7 @@ const useRetailerStore = create((set, get) => ({
 
             const response = await fetch(apiRoutes.retailer.createProfile, {
                 method: "POST",
+                cache: 'default',
                 headers: {
                     Authorization: `Bearer ${token}`,
                     // Content-Type is string not set manually for FormData to allow browser to set boundary
@@ -56,6 +57,7 @@ const useRetailerStore = create((set, get) => ({
 
             const response = await fetch(apiRoutes.retailer.getProfile, {
                 method: "GET",
+                cache: 'default',
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"

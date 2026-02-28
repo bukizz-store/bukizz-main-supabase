@@ -77,6 +77,7 @@ const useUserProfileStore = create((set, get) => ({
 
         const apiRoutes = useApiRoutesStore.getState();
         const response = await fetch(apiRoutes.users.profile, {
+          cache: 'default',
           headers: apiRoutes.getAuthHeaders(),
         });
 
@@ -131,6 +132,7 @@ const useUserProfileStore = create((set, get) => ({
       const apiRoutes = useApiRoutesStore.getState();
       const response = await fetch(apiRoutes.users.profile, {
         method: "PUT",
+        cache: 'default',
         headers: apiRoutes.getAuthHeaders(),
         body: JSON.stringify(validatedData),
       });
@@ -169,6 +171,7 @@ const useUserProfileStore = create((set, get) => ({
 
       const apiRoutes = useApiRoutesStore.getState();
       const response = await fetch(apiRoutes.users.addresses, {
+        cache: 'default',
         headers: apiRoutes.getAuthHeaders(),
       });
 
@@ -224,6 +227,7 @@ const useUserProfileStore = create((set, get) => ({
       const apiRoutes = useApiRoutesStore.getState();
       const response = await fetch(apiRoutes.users.addresses, {
         method: "POST",
+        cache: 'default',
         headers: apiRoutes.getAuthHeaders(),
         body: JSON.stringify(validatedAddress),
       });
@@ -259,6 +263,7 @@ const useUserProfileStore = create((set, get) => ({
       const apiRoutes = useApiRoutesStore.getState();
       const response = await fetch(apiRoutes.users.addressById(addressId), {
         method: "PUT",
+        cache: 'default',
         headers: apiRoutes.getAuthHeaders(),
         body: JSON.stringify(addressData),
       });
@@ -297,6 +302,7 @@ const useUserProfileStore = create((set, get) => ({
       const apiRoutes = useApiRoutesStore.getState();
       const response = await fetch(apiRoutes.users.addressById(addressId), {
         method: "DELETE",
+        cache: 'default',
         headers: apiRoutes.getAuthHeaders(),
       });
 
@@ -332,6 +338,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         useApiRoutesStore.getState().users.legacy.preferences,
         {
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -375,6 +382,7 @@ const useUserProfileStore = create((set, get) => ({
         useApiRoutesStore.getState().users.legacy.preferences,
         {
           method: "PUT",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -416,6 +424,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(useApiRoutesStore.getState().users.legacy.stats, {
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -458,6 +467,7 @@ const useUserProfileStore = create((set, get) => ({
         useApiRoutesStore.getState().users.verifyEmail,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -494,6 +504,7 @@ const useUserProfileStore = create((set, get) => ({
         useApiRoutesStore.getState().users.verifyEmailConfirm,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             "Content-Type": "application/json",
           },
@@ -561,6 +572,7 @@ const useUserProfileStore = create((set, get) => ({
         }`;
 
       const response = await fetch(url, {
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -620,6 +632,7 @@ const useUserProfileStore = create((set, get) => ({
 
       const response = await fetch(useApiRoutesStore.getState().orders.create, {
         method: "POST",
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -658,6 +671,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         `${BASE_URL}/orders/${orderId}`,
         {
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -696,6 +710,7 @@ const useUserProfileStore = create((set, get) => ({
         `${BASE_URL}/orders/${orderId}/cancel`,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -735,6 +750,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         useApiRoutesStore.getState().orders.stats,
         {
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -788,6 +804,7 @@ const useUserProfileStore = create((set, get) => ({
         }`;
 
       const response = await fetch(url, {
+        cache: 'default',
         headers: {
           "Content-Type": "application/json",
         },
@@ -831,6 +848,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         `${BASE_URL}/products/${productId}`,
         {
+          cache: 'default',
           headers: {
             "Content-Type": "application/json",
           },
@@ -882,6 +900,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         `${BASE_URL}/products/${productId}/variants`,
         {
+          cache: 'default',
           headers: {
             "Content-Type": "application/json",
           },
@@ -918,6 +937,7 @@ const useUserProfileStore = create((set, get) => ({
         }`;
 
       const response = await fetch(url, {
+        cache: 'default',
         headers: {
           "Content-Type": "application/json",
         },
@@ -942,34 +962,43 @@ const useUserProfileStore = create((set, get) => ({
 
   // Get featured products
   getFeaturedProducts: async (limit = 10) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await fetch(
-        `${BASE_URL}/products/featured?limit=${limit}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+    const cacheKey = get()._getCacheKey("getFeaturedProducts", limit);
+    const cachedRequest = get()._getCachedRequest(cacheKey);
+    if (cachedRequest) return cachedRequest;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to fetch featured products"
+    const promise = (async () => {
+      set({ loading: true, error: null });
+      try {
+        const response = await fetch(
+          `${BASE_URL}/products/featured?limit=${limit}`,
+          {
+            cache: 'default',
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
-      }
 
-      const data = await response.json();
-      set({ loading: false, error: null });
-      return data.data.products;
-    } catch (error) {
-      set({
-        loading: false,
-        error: error.message,
-      });
-      throw error;
-    }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || "Failed to fetch featured products"
+          );
+        }
+
+        const data = await response.json();
+        set({ loading: false, error: null });
+        return data.data.products;
+      } catch (error) {
+        set({
+          loading: false,
+          error: error.message,
+        });
+        throw error;
+      }
+    })();
+
+    return get()._setCachedRequest(cacheKey, promise);
   },
 
   // ============ SCHOOL MANAGEMENT ============
@@ -993,6 +1022,7 @@ const useUserProfileStore = create((set, get) => ({
         }`;
 
       const response = await fetch(url, {
+        cache: 'default',
         headers: {
           "Content-Type": "application/json",
         },
@@ -1028,6 +1058,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         `${BASE_URL}/schools/nearby?${queryParams}`,
         {
+          cache: 'default',
           headers: {
             "Content-Type": "application/json",
           },
@@ -1058,32 +1089,41 @@ const useUserProfileStore = create((set, get) => ({
 
   // Get school by ID
   getSchool: async (schoolId) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await fetch(
-        `${BASE_URL}/schools/${schoolId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
+    const cacheKey = get()._getCacheKey("getSchool", schoolId);
+    const cachedRequest = get()._getCachedRequest(cacheKey);
+    if (cachedRequest) return cachedRequest;
+
+    const promise = (async () => {
+      set({ loading: true, error: null });
+      try {
+        const response = await fetch(
+          `${BASE_URL}/schools/${schoolId}`,
+          {
+            cache: 'default',
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to fetch school");
         }
-      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch school");
+        const data = await response.json();
+        set({ loading: false, error: null });
+        return data.data.school;
+      } catch (error) {
+        set({
+          loading: false,
+          error: error.message,
+        });
+        throw error;
       }
+    })();
 
-      const data = await response.json();
-      set({ loading: false, error: null });
-      return data.data.school;
-    } catch (error) {
-      set({
-        loading: false,
-        error: error.message,
-      });
-      throw error;
-    }
+    return get()._setCachedRequest(cacheKey, promise);
   },
 
   // Get school catalog
@@ -1095,6 +1135,7 @@ const useUserProfileStore = create((set, get) => ({
         }`;
 
       const response = await fetch(url, {
+        cache: 'default',
         headers: {
           "Content-Type": "application/json",
         },
@@ -1148,6 +1189,7 @@ const useUserProfileStore = create((set, get) => ({
       }
 
       const response = await fetch(useApiRoutesStore.getState().orders.cart, {
+        cache: 'default',
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -1200,6 +1242,7 @@ const useUserProfileStore = create((set, get) => ({
         `${BASE_URL}/orders/${orderId}/queries`,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -1238,6 +1281,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         `${BASE_URL}/orders/${orderId}/queries`,
         {
+          cache: 'default',
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -1277,6 +1321,7 @@ const useUserProfileStore = create((set, get) => ({
         useApiRoutesStore.getState().orders.calculate,
         {
           method: "POST",
+          cache: 'default',
           headers: {
             "Content-Type": "application/json",
           },
@@ -1313,6 +1358,7 @@ const useUserProfileStore = create((set, get) => ({
       const response = await fetch(
         `${BASE_URL}/products/${productId}/availability?${queryParams}`,
         {
+          cache: 'default',
           headers: {
             "Content-Type": "application/json",
           },

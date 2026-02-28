@@ -182,6 +182,7 @@ const useAuthStore = create(
             try {
               await fetch(apiRoutes.auth.logout, {
                 method: "POST",
+                cache: 'default',
                 headers: apiRoutes.getAuthHeaders(),
                 body: JSON.stringify({ refreshToken }),
               });
@@ -234,6 +235,7 @@ const useAuthStore = create(
               useApiRoutesStore.getState().auth.refreshToken,
               {
                 method: "POST",
+                cache: 'default',
                 headers: {
                   "Content-Type": "application/json",
                 },
@@ -307,6 +309,7 @@ const useAuthStore = create(
 
           const response = await fetch(apiRoutes.auth.verifyToken, {
             method: "POST",
+            cache: 'default',
             headers: {
               ...apiRoutes.getBasicHeaders(),
               Authorization: `Bearer ${token}`,
@@ -465,6 +468,7 @@ const useAuthStore = create(
           console.log("Verifying token with server...");
 
           const response = await fetch(apiRoutes.auth.getProfile, {
+            cache: 'default',
             headers: apiRoutes.getAuthHeaders(),
           });
 
@@ -486,6 +490,7 @@ const useAuthStore = create(
               const newToken = localStorage.getItem("custom_token");
               if (newToken) {
                 const verifyResponse = await fetch(apiRoutes.auth.getProfile, {
+                  cache: 'default',
                   headers: {
                     ...apiRoutes.getBasicHeaders(),
                     Authorization: `Bearer ${newToken}`,

@@ -251,6 +251,7 @@ const useApiRoutesStore = create((set, get) => ({
           // Retry the original request with the new token
           const newOptions = {
             ...options,
+            cache: 'default',
             headers: {
               ...options.headers,
               ...get().getAuthHeaders(), // Get fresh headers with new token
