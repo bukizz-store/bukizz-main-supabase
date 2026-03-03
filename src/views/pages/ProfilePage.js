@@ -87,6 +87,20 @@ function ProfilePage() {
 
       } catch (error) {
         console.error("Error loading profile data:", error);
+
+        // Auto-logout on token/auth errors
+        const errorMsg = error.message?.toLowerCase() || "";
+        if (
+          errorMsg.includes("refresh your token") ||
+          errorMsg.includes("token expired") ||
+          errorMsg.includes("unauthorized") ||
+          errorMsg.includes("invalid token") ||
+          errorMsg.includes("jwt")
+        ) {
+          console.warn("Token error detected, auto-logging out...");
+          logout();
+          navigate("/");
+        }
       }
     };
 

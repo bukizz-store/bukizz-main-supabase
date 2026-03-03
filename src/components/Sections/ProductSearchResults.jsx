@@ -41,7 +41,10 @@ const ProductSearchResults = ({ products, searchTerm }) => {
                             <div className="h-[150px] md:h-[200px] w-full flex items-center justify-center bg-gray-50 rounded-xl mb-3 overflow-hidden">
                                 <img
                                     src={
+                                        product.primaryImage?.url ||
+                                        product.images?.[0]?.url ||
                                         product.images?.[0] ||
+                                        product.image ||
                                         product.image_url ||
                                         "https://placehold.co/300x300?text=Product"
                                     }
@@ -56,14 +59,19 @@ const ProductSearchResults = ({ products, searchTerm }) => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <span className="text-lg font-bold text-gray-900">
-                                            ₹{product.min_price || product.base_price || 0}
+                                            ₹{product.basePrice || product.min_price || product.base_price || 0}
                                         </span>
-                                        {(product.min_price || product.base_price) <
-                                            ((product.min_price || product.base_price || 0) * 1.2) && (
+                                        {product.metadata?.compare_price ? (
+                                            <span className="text-xs text-gray-500 line-through ml-2">
+                                                ₹{product.metadata.compare_price}
+                                            </span>
+                                        ) : (
+                                            (product.basePrice || product.min_price || product.base_price) > 0 && (
                                                 <span className="text-xs text-gray-500 line-through ml-2">
-                                                    ₹{Math.round((product.min_price || product.base_price || 0) * 1.2)}
+                                                    ₹{Math.round((product.basePrice || product.min_price || product.base_price || 0) * 1.2)}
                                                 </span>
-                                            )}
+                                            )
+                                        )}
                                     </div>
                                 </div>
                             </div>

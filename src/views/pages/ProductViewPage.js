@@ -587,7 +587,7 @@ function ProductViewPage() {
                 onClick={() => {
                   setSelectedImageIdx(idx);
                 }}
-                className={`w-10 h-10 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0 ${selectedImageIdx === idx ? 'ring-2 ring-blue-500' : ''
+                className={`w-10 h-10 md:w-20 md:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 flex-shrink-0 transition-all ${selectedImageIdx === idx ? 'border-2 border-blue-600 shadow-sm' : 'border border-gray-200'
                   }`}
                 width={80}
               />

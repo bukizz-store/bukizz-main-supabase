@@ -334,6 +334,7 @@ const SchoolScreen = () => {
   // Get default image
   const getSchoolImage = (school) => {
     return (
+      school.coverImage ||
       school.image ||
       school.image_url ||
       school.img ||
@@ -348,7 +349,7 @@ const SchoolScreen = () => {
         <img
           src={getSchoolImage(schoolData)}
           alt={schoolData.name}
-          className="w-full h-[178px] sm:h-[300px] md:h-[250px] lg:h-[250px] object-cover"
+          className="w-full h-[178px] sm:h-[300px] md:h-[250px] lg:h-[250px] object-fill"
         />
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/70 to-transparent"></div>
         <p className="absolute bottom-2 left-4 text-white text-lg md:text-4xl font-semibold mb-4 truncate max-w-[calc(100%-3rem)]">

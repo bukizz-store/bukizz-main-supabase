@@ -20,7 +20,7 @@ const CategoryPage = () => {
     const fetchCategories = async () => {
         try {
             setLoading(true);
-            const response = await fetch(categoryRoutes.getAll);
+            const response = await fetch(`${categoryRoutes.getAll}?client=web`);
             if (!response.ok) throw new Error("Failed to fetch categories");
             const result = await response.json();
             setCategories(result.data.categories || []);

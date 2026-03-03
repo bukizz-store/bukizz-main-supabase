@@ -728,6 +728,7 @@ const OrdersSection = () => {
     const [queriesLoading, setQueriesLoading] = useState(false);
     const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false); // Address Sheet state
     const [payOnlineLoading, setPayOnlineLoading] = useState(false);
+    const [showFees, setShowFees] = useState(false);
 
     const { initiateRazorpayPayment, verifyRazorpayPayment, reportPaymentFailure } = useOrderStore();
 
@@ -1218,6 +1219,26 @@ const OrdersSection = () => {
           </div>
 
           {/* Payment CTA (COD Only) */}
+          {isCOD && order.paymentStatus === 'paid' && (
+            <div className="py-2">
+              <div className="bg-green-50 rounded-lg p-3 flex items-center justify-between border border-green-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-green-800">Payment Completed</p>
+                    <p className="text-xs text-green-600">Paid online successfully</p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-300 uppercase tracking-wide">
+                  Paid ✓
+                </span>
+              </div>
+            </div>
+          )}
           {isPayable && order.paymentStatus !== 'paid' && (
             <div className="py-2">
               <div className="bg-blue-50 rounded-lg p-3 flex items-center justify-between border border-blue-100">
@@ -1390,24 +1411,44 @@ const OrdersSection = () => {
                 <span className="text-gray-900">{formatCurrency(item.totalPrice)}</span>
               </div>
 
-              {/* Delivery Fee */}
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-1 text-gray-600">
-                  <Truck className="w-3.5 h-3.5" /> Delivery fee
-                </div>
-                {(item.deliveryFee || 0) > 0 ? (
-                  <span className="text-gray-900">{formatCurrency(item.deliveryFee)}</span>
-                ) : (
-                  <span className="text-green-600 font-medium">FREE</span>
-                )}
-              </div>
+              {/* Fee Dropdown */}
+              <div className="border-t border-gray-50 pt-2">
+                <button
+                  onClick={() => setShowFees(!showFees)}
+                  className="w-full flex justify-between items-center text-sm py-1 hover:bg-gray-50 rounded px-1 transition-colors"
+                >
+                  <div className="flex items-center gap-1.5 text-gray-600">
+                    <span className="font-medium">Fee</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showFees ? 'rotate-180' : ''}`} />
+                  </div>
+                  <span className="text-gray-900 font-medium">
+                    {formatCurrency((item.deliveryFee || 0) + (item.platformFee || 0))}
+                  </span>
+                </button>
 
-              {/* Platform Fee */}
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-1 text-gray-600">
-                  Platform fee <Info className="w-3 h-3 text-gray-400" />
-                </div>
-                <span className="text-gray-900">{formatCurrency(item.platformFee || 0)}</span>
+                {showFees && (
+                  <div className="mt-2 ml-4 space-y-2 border-l-2 border-gray-100 pl-3 py-1 animate-fade-in">
+                    {/* Delivery Fee */}
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-500">
+                        <Truck className="w-3 h-3" /> Delivery fee
+                      </div>
+                      {(item.deliveryFee || 0) > 0 ? (
+                        <span className="text-gray-700">{formatCurrency(item.deliveryFee)}</span>
+                      ) : (
+                        <span className="text-green-600 font-medium tracking-wide">FREE</span>
+                      )}
+                    </div>
+
+                    {/* Platform Fee */}
+                    <div className="flex justify-between items-center text-xs">
+                      <div className="flex items-center gap-1.5 text-gray-500">
+                        Platform fee <Info className="w-2.5 h-2.5 text-gray-400" />
+                      </div>
+                      <span className="text-gray-700">{formatCurrency(item.platformFee || 0)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1425,6 +1466,11 @@ const OrdersSection = () => {
               <div className="flex items-center gap-2">
                 {/* Icon placeholder for UPI/COD */}
                 <span className="text-xs font-medium text-gray-600 uppercase">{order.paymentMethod}</span>
+                {isCOD && order.paymentStatus === 'paid' && (
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200">
+                    PAID
+                  </span>
+                )}
               </div>
             </div>
 

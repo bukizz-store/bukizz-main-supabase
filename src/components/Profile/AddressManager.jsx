@@ -176,23 +176,41 @@ const AddressManager = () => {
                 />
             ) : (
                 !showAddressForm && (
-                    <div className="text-center py-8">
-                        <div className="w-16 h-16 mx-auto mb-4 text-gray-300">
-                            <svg fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                    <div className="flex-1 flex flex-col items-center justify-center py-24 px-4 bg-white rounded-xl h-full md:mx-0">
+                        <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                            <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-800 mb-2">
-                            No addresses found
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+                            Where should we deliver?
                         </h3>
-                        <p className="text-gray-600 mb-4">
-                            Add your first delivery address
+                        <p className="text-gray-500 mb-8 text-center max-w-sm">
+                            You have no saved addresses. Add a delivery address to ensure accurate shipping and delivery estimates for your orders.
                         </p>
                         <button
-                            onClick={() => setShowAddressForm(true)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                            onClick={() => {
+                                if (useAuthStore.getState().user) {
+                                    if (isMobileApp) {
+                                        if (isWebViewMode()) {
+                                            setShowAddressForm(true);
+                                        } else {
+                                            setShowMobileMapPicker(true);
+                                        }
+                                    } else {
+                                        setShowAddressForm(true);
+                                    }
+                                } else {
+                                    setModalOpen(true);
+                                }
+                            }}
+                            className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-bold text-white transition-all duration-200 bg-blue-600 border border-transparent rounded-full shadow-md hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
                         >
-                            Add Address
+                            <svg className="w-5 h-5 mr-2 -ml-1 text-white transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add New Address
                         </button>
                     </div>
                 )

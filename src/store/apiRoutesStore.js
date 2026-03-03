@@ -262,7 +262,14 @@ const useApiRoutesStore = create((set, get) => ({
         } catch (refreshError) {
           console.error("Token refresh failed:", refreshError);
 
-          // If refresh fails, throw the original 401 error with a helpful message
+          // Auto-logout the user when token refresh fails
+          try {
+            const useAuthStore = (await import("./authStore.js")).default;
+            await useAuthStore.getState().logout();
+          } catch (logoutError) {
+            console.error("Auto-logout after refresh failure error:", logoutError);
+          }
+
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.message || "Please refresh your token");
         }

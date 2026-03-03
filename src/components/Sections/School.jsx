@@ -66,7 +66,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
             school.image ||
             school.img ||
             "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-          location: school.city || school.address?.line1 || "Location not specified",
+          location: school.address?.line2 || school.address?.line1 || school.city || "Location not specified",
         }));
 
         // Show first 10 schools on homepage
@@ -157,7 +157,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
         school.image ||
         school.img ||
         "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-      location: school.city || school.location || "Location not specified",
+      location: school.address.line2 || "Location not specified",
       id: school.id || school.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
     }));
   } else if (location.pathname === "/school") {
@@ -242,9 +242,9 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
                 <p className="absolute bottom-6 left-2 right-2 text-white text-md truncate">
                   {school.name}
                 </p>
-                <div className="absolute bottom-2 left-2 flex items-center gap-1">
-                  <img src="/map_svg.svg" alt="location" className="w-4 h-4" />
-                  <p className="text-white text-xs">{school.location}</p>
+                <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1">
+                  <img src="/map_svg.svg" alt="location" className="w-4 h-4 shrink-0" />
+                  <p className="text-white text-xs truncate">{school.location}</p>
                 </div>
               </div>
             </div>

@@ -98,12 +98,39 @@ const AddressForm = ({ existingAddress, onCancel, onSuccess }) => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        const newValue = type === 'checkbox' ? checked : value;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value
+            [name]: newValue
         }));
-        // Clear error when user types
-        if (errors[name]) {
+
+        // Inline validation
+        let error = false;
+        if (name === 'recipientName') {
+            if (!newValue.trim()) error = "Name is required";
+            else if (newValue.trim().length < 2) error = "Name is too short";
+        } else if (name === 'phone') {
+            const phoneDigits = newValue.replace(/\D/g, '');
+            if (!newValue.trim()) error = "Phone number is required";
+            else if (!/^[6-9]\d{9}$/.test(phoneDigits) && phoneDigits.length >= 10) error = "Enter valid 10-digit mobile number";
+        } else if (name === 'postalCode') {
+            const pincodeDigits = newValue.replace(/\D/g, '');
+            if (!newValue.trim()) error = "Pincode is required";
+            else if (!/^\d{6}$/.test(pincodeDigits) && pincodeDigits.length >= 6) error = "Pincode must be 6 digits";
+        } else if (name === 'line1') {
+            if (!newValue.trim()) error = "Address is required";
+            else if (newValue.trim().length < 5) error = "Address is too short";
+        } else if (name === 'line2') {
+            if (!newValue.trim()) error = "Locality is required";
+        } else if (name === 'city') {
+            if (!newValue.trim()) error = "City is required";
+        } else if (name === 'state') {
+            if (!newValue.trim()) error = "State is required";
+        }
+
+        if (error) {
+            setErrors(prev => ({ ...prev, [name]: error }));
+        } else if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: false }));
         }
     };

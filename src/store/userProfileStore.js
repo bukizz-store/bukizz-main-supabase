@@ -83,7 +83,20 @@ const useUserProfileStore = create((set, get) => ({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to fetch profile");
+          const errorMessage = errorData.message || "Failed to fetch profile";
+
+          // Auto-logout on 401/403 (token expired/invalid)
+          if (response.status === 401 || response.status === 403) {
+            console.warn("Token error in getProfile, auto-logging out...");
+            try {
+              const useAuthStore = (await import("./authStore.js")).default;
+              await useAuthStore.getState().logout();
+            } catch (logoutErr) {
+              console.error("Auto-logout error:", logoutErr);
+            }
+          }
+
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
