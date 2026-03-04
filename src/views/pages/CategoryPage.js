@@ -33,9 +33,9 @@ const CategoryPage = () => {
     };
 
     const handleCategoryClick = (category) => {
-        // Navigate to products page with category filter
-        navigate(`/product`, {
-            state: { categorySlug: category.slug, source: "Category Page" }
+        // Navigate to product list filtered by category slug
+        navigate(`/products?category=${category.slug}`, {
+            // state: { categorySlug: category.slug, source: "Category Page" },
         });
     };
 
@@ -91,26 +91,17 @@ const CategoryPage = () => {
                                 <div
                                     key={category.id || idx}
                                     onClick={() => handleCategoryClick(category)}
-                                    className="relative w-full bg-white rounded-2xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 hover:cursor-pointer border border-gray-100"
+                                    className="relative w-full bg-white rounded-2xl shadow-lg hover:scale-105 transition-transform hover:cursor-pointer overflow-hidden flex flex-col"
                                 >
-                                    <div className="relative h-[150px] md:h-[180px] w-full overflow-hidden rounded-t-2xl bg-gray-50">
-                                        {category.image ? (
-                                            <img
-                                                src={category.image}
-                                                alt={category.name}
-                                                className="w-full h-full object-contain p-4"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                <span className="text-xs">No Image</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="px-4 py-3 flex flex-col items-start justify-start gap-1 bg-white rounded-b-2xl">
-                                        <p className="font-nunito font-semibold text-gray-800 line-clamp-1 w-full" title={category.name}>{category.name}</p>
-                                        <p className="text-xs md:text-sm text-green-600 font-nunito font-bold">
-                                            Min. 50% Off
+                                    <img
+                                        src={category.image || "/placeholder_category.png"} // Fallback image
+                                        alt={category.name}
+                                        className="w-full md:h-[200px] h-[150px] object-cover"
+                                    />
+                                    <div className="px-4 py-3 flex flex-col items-start justify-start gap-1 flex-grow">
+                                        <p className="font-nunito font-semibold text-lg line-clamp-1" title={category.name}>{category.name}</p>
+                                        <p className="text-sm text-gray-500 font-nunito line-clamp-2">
+                                            {category.description}
                                         </p>
                                     </div>
                                 </div>

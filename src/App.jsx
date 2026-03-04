@@ -35,6 +35,7 @@ const CancellationRefundPage = lazy(() => import("./views/pages/CancellationRefu
 const TermsOfUsePage = lazy(() => import("./views/pages/TermsOfUsePage"));
 const PrivacyPolicyPage = lazy(() => import("./views/pages/PrivacyPolicyPage"));
 const SchoolScreen = lazy(() => import("./views/pages/SchoolScreen"));
+const DownloadAppPage = lazy(() => import("./views/pages/DownloadAppPage"));
 
 // Main App Component
 function App() {
@@ -176,6 +177,7 @@ function App() {
               <Route path="/products" element={<CategoryProductsPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/category" element={<CategoryPage />} />
+              <Route path="/download-app" element={<DownloadAppPage />} />
 
 
               <Route path="/contact-us" element={<ContactUsPage />} />

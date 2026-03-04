@@ -1866,9 +1866,6 @@ const OrdersSection = () => {
                   ? "No orders found. Place your first order!"
                   : `No items found with status: ${activeFilter} `}
               </p>
-              <a href="/" className="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
-                Continue Shopping..
-              </a>
             </div>
           ) : (
             <div className="space-y-6">

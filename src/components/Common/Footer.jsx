@@ -27,7 +27,7 @@ const Footer = () => {
                 <a href="https://bukizz.com/about1" className="hover:text-blue-600 cursor-pointer">About Us</a>
                 <Link to="/contact-us" className="hover:text-blue-600 cursor-pointer">Contact Us</Link>
                 <a href="https://bukizz.com/solution" className="hover:text-blue-600 cursor-pointer">Solutions</a>
-                <li className="cursor-pointer">Download App</li>
+                <Link to="/download-app" className="hover:text-blue-600 cursor-pointer">Download App</Link>
               </ul>
             </div>
             <div className="gap-4 flex flex-col">
@@ -95,7 +95,7 @@ const Footer = () => {
                   <a href="https://bukizz.com/about1" className="hover:text-blue-600 cursor-pointer">About Us</a>
                   <Link to="/contact-us" className="hover:text-blue-600 cursor-pointer">Contact Us</Link>
                   <a href="https://bukizz.com/solution" className="hover:text-blue-600 cursor-pointer">Solutions</a>
-                  <li className="cursor-pointer">Download App</li>
+                  <Link to="/download-app" className="hover:text-blue-600 cursor-pointer">Download App</Link>
                 </ul>
               </div>
               <div className="gap-4 flex flex-col">

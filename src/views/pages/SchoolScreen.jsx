@@ -315,7 +315,7 @@ const SchoolScreen = () => {
   // Format location display
   const formatLocation = (school) => {
     if (school.city && school.state) {
-      return `${school.city}, ${school.state}`;
+      return `${school.address.line2}, ${school.city}`;
     }
     return school.city || school.address?.city || "Location not specified";
   };
@@ -352,7 +352,7 @@ const SchoolScreen = () => {
           className="w-full h-[178px] sm:h-[300px] md:h-[250px] lg:h-[250px] object-fill"
         />
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/70 to-transparent"></div>
-        <p className="absolute bottom-2 left-4 text-white text-lg md:text-4xl font-semibold mb-4 truncate max-w-[calc(100%-3rem)]">
+        <p className="absolute bottom-4 left-4 text-white text-lg md:text-4xl font-semibold mb-4 truncate max-w-[calc(100%-3rem)]">
           {schoolData.name}
         </p>
         <div className="absolute bottom-2 left-4 flex items-center">
