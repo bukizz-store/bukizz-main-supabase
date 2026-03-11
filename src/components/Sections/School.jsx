@@ -69,8 +69,8 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
           location: school.address?.line2 || school.address?.line1 || school.city || "Location not specified",
         }));
 
-        // Show first 10 schools on homepage
-        setSchoolsByCity(schools.slice(0, 10));
+        // Show all fetched schools on homepage
+        setSchoolsByCity(schools);
         setError(null);
       } catch (err) {
         console.error("Error fetching schools by city:", err);
@@ -127,7 +127,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
             school.image ||
             school.img ||
             "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-          location: school.city || school.address?.line1 || "Location not specified",
+          location: school.address?.line2 || school.address?.line1 || school.city || "Location not specified",
         }));
 
         setAllSchools(schools);

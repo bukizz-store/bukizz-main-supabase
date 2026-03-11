@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 import useNotificationStore from "../../store/notificationStore";
 import LoginGoogleButton from "./LoginGoogleButton";
+import LoginAppleButton from "./LoginAppleButton";
 
 const AuthModal = ({ isOpen, onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
@@ -298,7 +299,10 @@ const AuthModal = ({ isOpen, onClose }) => {
                                     <span className="px-2 bg-white text-gray-500">Or continue with</span>
                                 </div>
                             </div>
-                            <LoginGoogleButton />
+                            <div className="flex flex-col gap-3">
+                                <LoginGoogleButton />
+                                <LoginAppleButton />
+                            </div>
                         </>
                     )}
 

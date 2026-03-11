@@ -45,7 +45,7 @@ function App() {
 
   // Check for mobile app mode
   const [isMobileApp, setIsMobileApp] = useState(false);
-  const { handleGoogleCallback } = useAuthStore();
+  const { handleGoogleCallback, handleAppleCallback } = useAuthStore();
 
   useEffect(() => {
     // Listen for auth state changes from Supabase
@@ -63,9 +63,12 @@ function App() {
         }
 
         console.log("User signed in via Supabase, triggering backend sync...");
-        // Check if this is a Google login callback (usually has provider_token or just by context of being a redirect)
-        // For simplicity and robustness, we always ensure backend verification on SIGNED_IN if we don't have a backend token
-        await handleGoogleCallback(session);
+        const provider = session?.user?.app_metadata?.provider;
+        if (provider === 'apple') {
+          await handleAppleCallback(session);
+        } else {
+          await handleGoogleCallback(session);
+        }
       }
     });
 

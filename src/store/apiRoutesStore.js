@@ -46,6 +46,7 @@ const useApiRoutesStore = create((set, get) => ({
     verifyToken: `${BASE_URL}/auth/verify-token`,
     getProfile: `${BASE_URL}/auth/me`,
     googleLogin: `${BASE_URL}/auth/google-login`,
+    appleLogin: `${BASE_URL}/auth/apple-login`,
   },
 
   // ============ USER ROUTES ============
@@ -425,6 +426,8 @@ const useApiRoutesStore = create((set, get) => ({
         resetPassword: `${newApiBase}/auth/reset-password`,
         verifyToken: `${newApiBase}/auth/verify-token`,
         getProfile: `${newApiBase}/auth/me`,
+        googleLogin: `${newApiBase}/auth/google-login`,
+        appleLogin: `${newApiBase}/auth/apple-login`,
       },
       // Update other route categories...
       // (This would update all routes with the new base URL)

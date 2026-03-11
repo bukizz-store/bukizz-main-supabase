@@ -433,6 +433,103 @@ const useAuthStore = create(
         }
       },
 
+      loginWithApple: async () => {
+        set({ loading: true, error: null });
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: "apple",
+            options: {
+              redirectTo: `${window.location.origin}`,
+            },
+          });
+          if (error) throw error;
+        } catch (error) {
+          set({ loading: false, error: error.message });
+          throw error;
+        }
+      },
+
+      handleAppleCallback: async (session = null) => {
+        set({ loading: true });
+        console.log("handleAppleCallback initiated", { hasSessionProvided: !!session });
+
+        try {
+          let activeSession = session;
+
+          if (!activeSession) {
+            console.log("No session provided, fetching from Supabase...");
+            const { data, error: sessionError } = await supabase.auth.getSession();
+            activeSession = data?.session;
+
+            if (sessionError || !activeSession) {
+              console.error("Supabase session error or no session found:", sessionError);
+              set({ loading: false });
+              return;
+            }
+          }
+
+          console.log("Active session found, exchanging with backend...");
+
+          const apiRoutes = useApiRoutesStore.getState();
+
+          // Send Supabase token to backend
+          const response = await fetch(apiRoutes.auth.appleLogin, {
+            method: "POST",
+            headers: apiRoutes.getBasicHeaders(),
+            body: JSON.stringify({ token: activeSession.access_token }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Apple login failed on backend");
+          }
+
+          const data = await response.json();
+          console.log("Backend exchange successful");
+
+          // Store Backend Tokens
+          const tokens = data.data || data;
+          const user = tokens.user || data.user;
+
+          const accessToken = tokens.accessToken || tokens.access_token;
+          const refreshToken = tokens.refreshToken || tokens.refresh_token;
+
+          if (accessToken) {
+            localStorage.setItem("access_token", accessToken);
+            localStorage.setItem("custom_token", accessToken);
+          }
+          if (refreshToken) {
+            localStorage.setItem("refresh_token", refreshToken);
+          }
+
+          if (user) {
+            set({ user, loading: false, error: null, isModalOpen: false });
+
+            // Handle post-login redirect if path exists
+            const redirectPath = get().redirectPath;
+            if (redirectPath) {
+              console.log("Redirecting to preserved path after Apple login:", redirectPath);
+              window.location.href = redirectPath;
+              set({ redirectPath: null });
+            }
+          }
+
+          // Clear URL fragment params to prevent loop
+          if (window.location.hash) {
+            console.log("Cleaning up URL hash");
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+
+        } catch (error) {
+          console.error("Apple Callback Error:", error);
+          set({ loading: false, error: error.message });
+          // Clear URL fragment params to prevent loop or confuse user even on error
+          if (window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        }
+      },
+
       checkAuth: async () => {
         console.log("Checking authentication status...");
 
