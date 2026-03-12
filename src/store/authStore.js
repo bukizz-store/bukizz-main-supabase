@@ -7,6 +7,13 @@ import { supabase } from "./supabaseClient";
  * Safely stores auth tokens in localStorage with verification
  * Ensures tokens are actually persisted before returning success
  */
+/**
+ * Module-level flag to prevent duplicate OAuth backend exchanges.
+ * Both onAuthStateChange(INITIAL_SESSION) and checkAuth() can detect
+ * a Supabase session simultaneously — this guard deduplicates them.
+ */
+let _oauthExchangeInProgress = false;
+
 const __saveTokensSafely = (accessToken, refreshToken) => {
   try {
     if (accessToken) {
@@ -371,10 +378,16 @@ const useAuthStore = create(
       loginWithGoogle: async () => {
         set({ loading: true, error: null, isModalOpen: false });
         try {
+          // Dynamically capture the user's current origin (e.g. https://www.bukizz.in
+          // or https://bukizz.in) so Supabase redirects back to the exact subdomain
+          // the login was initiated from.  window.location.origin never includes a
+          // trailing slash, so no normalisation is needed.
+          const redirectOrigin = window.location.origin;
+
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: `${window.location.origin}`,
+              redirectTo: redirectOrigin,
               queryParams: {
                 access_type: "offline",
                 prompt: "consent",
@@ -389,6 +402,14 @@ const useAuthStore = create(
       },
 
       handleGoogleCallback: async (session = null) => {
+        // Prevent duplicate backend exchanges when both onAuthStateChange and
+        // checkAuth detect the same Supabase session simultaneously.
+        if (_oauthExchangeInProgress) {
+          console.log("⏳ Google OAuth exchange already in progress, skipping duplicate call");
+          return;
+        }
+        _oauthExchangeInProgress = true;
+
         set({ loading: true, error: null });
         console.log("🔐 handleGoogleCallback initiated", { hasSessionProvided: !!session });
 
@@ -496,16 +517,22 @@ const useAuthStore = create(
           if (window.location.hash) {
             window.history.replaceState(null, '', window.location.pathname);
           }
+        } finally {
+          _oauthExchangeInProgress = false;
         }
       },
 
       loginWithApple: async () => {
         set({ loading: true, error: null, isModalOpen: false });
         try {
+          // Same dynamic-origin approach as Google — keeps users on the
+          // exact subdomain (www / non-www) they initiated login from.
+          const redirectOrigin = window.location.origin;
+
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "apple",
             options: {
-              redirectTo: `${window.location.origin}`,
+              redirectTo: redirectOrigin,
             },
           });
           if (error) throw error;
@@ -516,6 +543,13 @@ const useAuthStore = create(
       },
 
       handleAppleCallback: async (session = null) => {
+        // Prevent duplicate backend exchanges (same guard as Google).
+        if (_oauthExchangeInProgress) {
+          console.log("⏳ Apple OAuth exchange already in progress, skipping duplicate call");
+          return;
+        }
+        _oauthExchangeInProgress = true;
+
         set({ loading: true, error: null });
         console.log("🍎 handleAppleCallback initiated", { hasSessionProvided: !!session });
 
@@ -623,6 +657,8 @@ const useAuthStore = create(
           if (window.location.hash) {
             window.history.replaceState(null, '', window.location.pathname);
           }
+        } finally {
+          _oauthExchangeInProgress = false;
         }
       },
 
@@ -652,6 +688,23 @@ const useAuthStore = create(
         // This handles cases where custom_token was lost (browser cleanup, domain change, etc.)
         // but Supabase still has a valid session from the Google/Apple OAuth flow
         if (!token) {
+          // If the onAuthStateChange listener is already handling an exchange,
+          // wait a short moment for it to finish rather than firing a duplicate.
+          if (_oauthExchangeInProgress) {
+            console.log("⏳ OAuth exchange already in-flight (via onAuthStateChange), waiting...");
+            // Poll until the exchange completes (max ~5 s)
+            const waitStart = Date.now();
+            while (_oauthExchangeInProgress && Date.now() - waitStart < 5000) {
+              await new Promise(r => setTimeout(r, 200));
+            }
+            // Re-check after waiting — the exchange may have succeeded
+            if (get().user && localStorage.getItem("custom_token")) {
+              console.log("✅ Session established by onAuthStateChange while we waited");
+              set({ loading: false });
+              return;
+            }
+          }
+
           console.log("No custom token found, attempting Supabase session recovery...");
           try {
             const { data: { session } } = await supabase.auth.getSession();
