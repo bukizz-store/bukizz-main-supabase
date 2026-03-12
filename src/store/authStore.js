@@ -3,6 +3,40 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import useApiRoutesStore from "./apiRoutesStore";
 import { supabase } from "./supabaseClient";
 
+/**
+ * Safely stores auth tokens in localStorage with verification
+ * Ensures tokens are actually persisted before returning success
+ */
+const __saveTokensSafely = (accessToken, refreshToken) => {
+  try {
+    if (accessToken) {
+      localStorage.setItem("access_token", accessToken);
+      localStorage.setItem("custom_token", accessToken);
+
+      // Verify save was successful
+      const savedAccess = localStorage.getItem("access_token");
+      const savedCustom = localStorage.getItem("custom_token");
+      if (savedAccess !== accessToken || savedCustom !== accessToken) {
+        throw new Error("Token save verification failed");
+      }
+    }
+
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+      const savedRefresh = localStorage.getItem("refresh_token");
+      if (savedRefresh !== refreshToken) {
+        throw new Error("Refresh token save verification failed");
+      }
+    }
+
+    console.log("✅ Tokens saved and verified successfully");
+    return true;
+  } catch (error) {
+    console.error("❌ Failed to save tokens securely:", error);
+    return false;
+  }
+};
+
 const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -335,7 +369,7 @@ const useAuthStore = create(
       },
 
       loginWithGoogle: async () => {
-        set({ loading: true, error: null });
+        set({ loading: true, error: null, isModalOpen: false });
         try {
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
@@ -355,84 +389,110 @@ const useAuthStore = create(
       },
 
       handleGoogleCallback: async (session = null) => {
-        set({ loading: true });
-        console.log("handleGoogleCallback initiated", { hasSessionProvided: !!session });
+        set({ loading: true, error: null });
+        console.log("🔐 handleGoogleCallback initiated", { hasSessionProvided: !!session });
 
-        try {
-          let activeSession = session;
+        const MAX_RETRIES = 3;
+        let retryCount = 0;
 
-          if (!activeSession) {
-            console.log("No session provided, fetching from Supabase...");
-            // 1. Get Supabase session
-            const { data, error: sessionError } = await supabase.auth.getSession();
-            activeSession = data?.session;
+        const attemptBackendExchange = async () => {
+          try {
+            let activeSession = session;
 
-            if (sessionError || !activeSession) {
-              console.error("Supabase session error or no session found:", sessionError);
-              set({ loading: false });
-              return;
+            if (!activeSession) {
+              console.log("📋 No session provided, fetching from Supabase...");
+              const { data, error: sessionError } = await supabase.auth.getSession();
+              activeSession = data?.session;
+
+              if (sessionError || !activeSession) {
+                console.error("❌ Supabase session error or no session found:", sessionError);
+                throw new Error("No valid Supabase session found");
+              }
             }
-          }
 
-          console.log("Active session found, exchanging with backend...");
+            console.log("🔄 Active session found, exchanging with backend...");
+            const apiRoutes = useApiRoutesStore.getState();
 
-          const apiRoutes = useApiRoutesStore.getState();
+            const response = await fetch(apiRoutes.auth.googleLogin, {
+              method: "POST",
+              headers: apiRoutes.getBasicHeaders(),
+              body: JSON.stringify({ token: activeSession.access_token }),
+            });
 
-          // 2. Send Supabase token to backend
-          const response = await fetch(apiRoutes.auth.googleLogin, {
-            method: "POST",
-            headers: apiRoutes.getBasicHeaders(),
-            body: JSON.stringify({ token: activeSession.access_token }),
-          });
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.message || `Backend exchange failed: ${response.status}`);
+            }
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Google login failed on backend");
-          }
+            const data = await response.json();
+            console.log("✅ Backend exchange successful");
 
-          const data = await response.json();
-          console.log("Backend exchange successful");
+            const tokens = data.data || data;
+            const user = tokens.user || data.user;
+            const accessToken = tokens.accessToken || tokens.access_token;
+            const refreshToken = tokens.refreshToken || tokens.refresh_token;
 
-          // 3. Store Backend Tokens
-          const tokens = data.data || data;
-          const user = tokens.user || data.user;
+            // Critically: Verify tokens are saved to localStorage BEFORE proceeding
+            if (!accessToken) {
+              throw new Error("No access token received from backend");
+            }
 
-          const accessToken = tokens.accessToken || tokens.access_token;
-          const refreshToken = tokens.refreshToken || tokens.refresh_token;
+            const tokensSaved = __saveTokensSafely(accessToken, refreshToken);
+            if (!tokensSaved) {
+              throw new Error("Failed to persist tokens to localStorage");
+            }
 
-          if (accessToken) {
-            localStorage.setItem("access_token", accessToken);
-            localStorage.setItem("custom_token", accessToken);
-          }
-          if (refreshToken) {
-            localStorage.setItem("refresh_token", refreshToken);
-          }
+            // Verify tokens are actually in localStorage
+            const verifyAccessToken = localStorage.getItem("custom_token");
+            if (verifyAccessToken !== accessToken) {
+              throw new Error("Token persistence verification failed");
+            }
 
-          if (user) {
+            if (!user) {
+              throw new Error("No user data in backend response");
+            }
+
+            console.log("👤 User authenticated:", user.email);
             set({ user, loading: false, error: null, isModalOpen: false });
 
-            // Handle post-login redirect if path exists
+            // Handle post-login redirect AFTER tokens are confirmed
             const redirectPath = get().redirectPath;
             if (redirectPath) {
-              console.log("Redirecting to preserved path after Google login:", redirectPath);
+              console.log("🔗 Redirecting to:", redirectPath);
               window.location.href = redirectPath;
               set({ redirectPath: null });
             }
+
+            return true; // Success
+          } catch (error) {
+            console.error(`❌ Attempt ${retryCount + 1}/${MAX_RETRIES} failed:`, error.message);
+            throw error;
+          }
+        };
+
+        try {
+          // Attempt backend exchange with retries
+          while (retryCount < MAX_RETRIES) {
+            try {
+              await attemptBackendExchange();
+              break; // Success, exit retry loop
+            } catch (error) {
+              retryCount++;
+              if (retryCount >= MAX_RETRIES) {
+                throw error; // Final attempt failed
+              }
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
           }
 
-          // Clear URL fragment params to prevent loop
+          // Clean up URL fragment
           if (window.location.hash) {
-            console.log("Cleaning up URL hash");
             window.history.replaceState(null, '', window.location.pathname);
           }
-
-          // Optional: Sign out from Supabase if we only want to keep backend session
-          // await supabase.auth.signOut();
-
         } catch (error) {
-          console.error("Google Callback Error:", error);
-          set({ loading: false, error: error.message });
-          // Clear URL fragment params to prevent loop or confuse user even on error
+          console.error("💥 Google Authentication Failed:", error.message);
+          set({ loading: false, error: error.message || "Google authentication failed. Please try again." });
           if (window.location.hash) {
             window.history.replaceState(null, '', window.location.pathname);
           }
@@ -440,7 +500,7 @@ const useAuthStore = create(
       },
 
       loginWithApple: async () => {
-        set({ loading: true, error: null });
+        set({ loading: true, error: null, isModalOpen: false });
         try {
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "apple",
@@ -456,80 +516,110 @@ const useAuthStore = create(
       },
 
       handleAppleCallback: async (session = null) => {
-        set({ loading: true });
-        console.log("handleAppleCallback initiated", { hasSessionProvided: !!session });
+        set({ loading: true, error: null });
+        console.log("🍎 handleAppleCallback initiated", { hasSessionProvided: !!session });
 
-        try {
-          let activeSession = session;
+        const MAX_RETRIES = 3;
+        let retryCount = 0;
 
-          if (!activeSession) {
-            console.log("No session provided, fetching from Supabase...");
-            const { data, error: sessionError } = await supabase.auth.getSession();
-            activeSession = data?.session;
+        const attemptBackendExchange = async () => {
+          try {
+            let activeSession = session;
 
-            if (sessionError || !activeSession) {
-              console.error("Supabase session error or no session found:", sessionError);
-              set({ loading: false });
-              return;
+            if (!activeSession) {
+              console.log("📋 No session provided, fetching from Supabase...");
+              const { data, error: sessionError } = await supabase.auth.getSession();
+              activeSession = data?.session;
+
+              if (sessionError || !activeSession) {
+                console.error("❌ Supabase session error or no session found:", sessionError);
+                throw new Error("No valid Supabase session found");
+              }
             }
-          }
 
-          console.log("Active session found, exchanging with backend...");
+            console.log("🔄 Active session found, exchanging with backend...");
+            const apiRoutes = useApiRoutesStore.getState();
 
-          const apiRoutes = useApiRoutesStore.getState();
+            const response = await fetch(apiRoutes.auth.appleLogin, {
+              method: "POST",
+              headers: apiRoutes.getBasicHeaders(),
+              body: JSON.stringify({ token: activeSession.access_token }),
+            });
 
-          // Send Supabase token to backend
-          const response = await fetch(apiRoutes.auth.appleLogin, {
-            method: "POST",
-            headers: apiRoutes.getBasicHeaders(),
-            body: JSON.stringify({ token: activeSession.access_token }),
-          });
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.message || `Backend exchange failed: ${response.status}`);
+            }
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Apple login failed on backend");
-          }
+            const data = await response.json();
+            console.log("✅ Backend exchange successful");
 
-          const data = await response.json();
-          console.log("Backend exchange successful");
+            const tokens = data.data || data;
+            const user = tokens.user || data.user;
+            const accessToken = tokens.accessToken || tokens.access_token;
+            const refreshToken = tokens.refreshToken || tokens.refresh_token;
 
-          // Store Backend Tokens
-          const tokens = data.data || data;
-          const user = tokens.user || data.user;
+            // Critically: Verify tokens are saved to localStorage BEFORE proceeding
+            if (!accessToken) {
+              throw new Error("No access token received from backend");
+            }
 
-          const accessToken = tokens.accessToken || tokens.access_token;
-          const refreshToken = tokens.refreshToken || tokens.refresh_token;
+            const tokensSaved = __saveTokensSafely(accessToken, refreshToken);
+            if (!tokensSaved) {
+              throw new Error("Failed to persist tokens to localStorage");
+            }
 
-          if (accessToken) {
-            localStorage.setItem("access_token", accessToken);
-            localStorage.setItem("custom_token", accessToken);
-          }
-          if (refreshToken) {
-            localStorage.setItem("refresh_token", refreshToken);
-          }
+            // Verify tokens are actually in localStorage
+            const verifyAccessToken = localStorage.getItem("custom_token");
+            if (verifyAccessToken !== accessToken) {
+              throw new Error("Token persistence verification failed");
+            }
 
-          if (user) {
+            if (!user) {
+              throw new Error("No user data in backend response");
+            }
+
+            console.log("👤 User authenticated:", user.email);
             set({ user, loading: false, error: null, isModalOpen: false });
 
-            // Handle post-login redirect if path exists
+            // Handle post-login redirect AFTER tokens are confirmed
             const redirectPath = get().redirectPath;
             if (redirectPath) {
-              console.log("Redirecting to preserved path after Apple login:", redirectPath);
+              console.log("🔗 Redirecting to:", redirectPath);
               window.location.href = redirectPath;
               set({ redirectPath: null });
             }
+
+            return true; // Success
+          } catch (error) {
+            console.error(`❌ Attempt ${retryCount + 1}/${MAX_RETRIES} failed:`, error.message);
+            throw error;
+          }
+        };
+
+        try {
+          // Attempt backend exchange with retries
+          while (retryCount < MAX_RETRIES) {
+            try {
+              await attemptBackendExchange();
+              break; // Success, exit retry loop
+            } catch (error) {
+              retryCount++;
+              if (retryCount >= MAX_RETRIES) {
+                throw error; // Final attempt failed
+              }
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
           }
 
-          // Clear URL fragment params to prevent loop
+          // Clean up URL fragment
           if (window.location.hash) {
-            console.log("Cleaning up URL hash");
             window.history.replaceState(null, '', window.location.pathname);
           }
-
         } catch (error) {
-          console.error("Apple Callback Error:", error);
-          set({ loading: false, error: error.message });
-          // Clear URL fragment params to prevent loop or confuse user even on error
+          console.error("💥 Apple Authentication Failed:", error.message);
+          set({ loading: false, error: error.message || "Apple authentication failed. Please try again." });
           if (window.location.hash) {
             window.history.replaceState(null, '', window.location.pathname);
           }
@@ -537,14 +627,15 @@ const useAuthStore = create(
       },
 
       checkAuth: async () => {
-        console.log("Checking authentication status...");
+        console.log("🔍 Checking authentication status...");
 
         const token = localStorage.getItem("custom_token");
         const currentUser = get().user;
 
-        console.log("Current state:", {
+        console.log("📊 Current auth state:", {
           hasToken: !!token,
           hasUser: !!currentUser,
+          userEmail: currentUser?.email || "none",
         });
 
         // If we have both user and token from persist store, set loading to false immediately
@@ -656,12 +747,26 @@ const useAuthStore = create(
       // Utility methods
       isAuthenticated: () => {
         const state = get();
-        return !!state.user && !!localStorage.getItem("custom_token");
+        const hasToken = !!localStorage.getItem("custom_token");
+        const hasUser = !!state.user;
+        
+        // Both user state AND token must exist
+        if (!hasUser || !hasToken) {
+          console.log("🔒 Auth check:", { hasUser, hasToken });
+        }
+        
+        return hasUser && hasToken;
       },
 
       getUser: () => get().user,
 
-      getToken: () => localStorage.getItem("custom_token"),
+      getToken: () => {
+        const token = localStorage.getItem("custom_token");
+        if (!token) {
+          console.warn("⚠️ Attempted to get token but none found in localStorage");
+        }
+        return token;
+      },
 
       // Alias for backwards compatibility
       signOut: async () => {
@@ -714,6 +819,12 @@ const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         redirectPath: state.redirectPath,
+        // Persist token metadata to verify authenticity on rehydration
+        _tokenMetadata: state.user ? {
+          hasTokens: !!localStorage.getItem("custom_token"),
+          tokenType: localStorage.getItem("custom_token") ? "oauth" : "local",
+          timestamp: Date.now(),
+        } : null,
       }),
       onRehydrateStorage: () => {
         console.log("Starting rehydration...");

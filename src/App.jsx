@@ -51,25 +51,30 @@ function App() {
     // Listen for auth state changes from Supabase
     // This handles the redirect flow more reliably than manually checking the hash
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Supabase Auth Event:", event);
+      console.log("🔐 Supabase Auth Event:", event, { hasSession: !!session });
 
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-        // Check BOTH Zustand store AND localStorage for existing custom backend session
-        // localStorage check is critical because Zustand may not be hydrated yet on page reload
-        const currentUser = useAuthStore.getState().user;
+        // Check if we ALREADY have a valid custom token in localStorage
+        // If we do, don't re-sync (avoid duplicate API calls)
         const hasCustomToken = localStorage.getItem("custom_token");
-
-        if (currentUser || hasCustomToken) {
-          console.log("User already authenticated with custom backend, skipping backend sync.", { event, hasUser: !!currentUser, hasToken: !!hasCustomToken });
+        
+        if (hasCustomToken) {
+          console.log("✅ User already has valid custom token, skipping backend sync");
           return;
         }
 
-        console.log("No existing custom session found, triggering backend sync...", { event });
+        // No existing custom session found, trigger backend sync
+        console.log("🔄 No custom token found, triggering backend exchange...");
         const provider = session?.user?.app_metadata?.provider;
+        
         if (provider === 'apple') {
+          console.log("🍎 Handling Apple OAuth callback...");
           await handleAppleCallback(session);
-        } else {
+        } else if (provider === 'google') {
+          console.log("🔵 Handling Google OAuth callback...");
           await handleGoogleCallback(session);
+        } else {
+          console.warn("⚠️ Unknown OAuth provider:", provider);
         }
       }
     });
