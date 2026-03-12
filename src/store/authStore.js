@@ -22,6 +22,12 @@ const useAuthStore = create(
       clearError: () => set({ error: null }),
       setHydrated: () => set({ isHydrated: true }),
 
+      // Convenience: captures current URL and opens auth modal
+      openAuthModal: () => {
+        const currentPath = window.location.pathname + window.location.search;
+        set({ redirectPath: currentPath, isModalOpen: true });
+      },
+
       // ...existing login method...
       login: async (email, password) => {
         set({ loading: true, error: null });
