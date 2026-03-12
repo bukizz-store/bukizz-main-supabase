@@ -53,16 +53,18 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Supabase Auth Event:", event);
 
-      if (event === 'SIGNED_IN' && session) {
-        // Check if we already have a user in our store to avoid unnecessary re-loading loops
-        // triggered by Supabase's auto-refresh on window focus (visibility change)
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        // Check BOTH Zustand store AND localStorage for existing custom backend session
+        // localStorage check is critical because Zustand may not be hydrated yet on page reload
         const currentUser = useAuthStore.getState().user;
-        if (currentUser) {
-          console.log("User already authenticated in store, skipping backend sync on SIGNED_IN event.");
+        const hasCustomToken = localStorage.getItem("custom_token");
+
+        if (currentUser || hasCustomToken) {
+          console.log("User already authenticated with custom backend, skipping backend sync.", { event, hasUser: !!currentUser, hasToken: !!hasCustomToken });
           return;
         }
 
-        console.log("User signed in via Supabase, triggering backend sync...");
+        console.log("No existing custom session found, triggering backend sync...", { event });
         const provider = session?.user?.app_metadata?.provider;
         if (provider === 'apple') {
           await handleAppleCallback(session);
@@ -75,7 +77,7 @@ function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [handleGoogleCallback]);
+  }, [handleGoogleCallback, handleAppleCallback]);
 
 
   useEffect(() => {

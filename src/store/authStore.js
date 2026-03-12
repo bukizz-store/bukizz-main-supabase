@@ -22,6 +22,12 @@ const useAuthStore = create(
       clearError: () => set({ error: null }),
       setHydrated: () => set({ isHydrated: true }),
 
+      // Convenience: captures current URL and opens auth modal
+      openAuthModal: () => {
+        const currentPath = window.location.pathname + window.location.search;
+        set({ redirectPath: currentPath, isModalOpen: true });
+      },
+
       // ...existing login method...
       login: async (email, password) => {
         set({ loading: true, error: null });
@@ -551,9 +557,32 @@ const useAuthStore = create(
           return;
         }
 
-        // If no token, user is not authenticated
+        // If no custom token, try to recover session from Supabase
+        // This handles cases where custom_token was lost (browser cleanup, domain change, etc.)
+        // but Supabase still has a valid session from the Google/Apple OAuth flow
         if (!token) {
-          console.log("No authentication token found");
+          console.log("No custom token found, attempting Supabase session recovery...");
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              console.log("Found valid Supabase session, re-syncing with backend...");
+              const provider = session?.user?.app_metadata?.provider;
+              if (provider === 'apple') {
+                await get().handleAppleCallback(session);
+              } else {
+                await get().handleGoogleCallback(session);
+              }
+              // If recovery succeeded, we're done
+              if (get().user && localStorage.getItem("custom_token")) {
+                console.log("Session recovery from Supabase successful");
+                return;
+              }
+            }
+          } catch (recoveryError) {
+            console.warn("Supabase session recovery failed:", recoveryError.message);
+          }
+
+          console.log("No authentication token found and no Supabase session to recover from");
           set({ loading: false, user: null });
           return;
         }

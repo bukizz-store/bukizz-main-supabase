@@ -23,7 +23,7 @@ const AddressManager = () => {
     } = useAddressStore();
 
     const { showNotification } = useNotificationStore();
-    const { setModalOpen } = useAuthStore();
+    const { openAuthModal } = useAuthStore();
 
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
@@ -108,7 +108,7 @@ const AddressManager = () => {
                                     setShowMobileMapPicker(true);
                                 }
                             } else {
-                                setModalOpen(true);
+                                openAuthModal();
                             }
                         }}
                         className="text-blue-600 font-medium text-sm flex items-center"
@@ -128,7 +128,7 @@ const AddressManager = () => {
                         if (useAuthStore.getState().user) {
                             setShowAddressForm(true);
                         } else {
-                            setModalOpen(true);
+                            openAuthModal();
                         }
                     }}
                     className="mb-6 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors flex items-center text-blue-600 font-semibold uppercase tracking-wide"
@@ -202,7 +202,7 @@ const AddressManager = () => {
                                         setShowAddressForm(true);
                                     }
                                 } else {
-                                    setModalOpen(true);
+                                    openAuthModal();
                                 }
                             }}
                             className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-bold text-white transition-all duration-200 bg-blue-600 border border-transparent rounded-full shadow-md hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"

@@ -15,7 +15,7 @@ import { useEffect } from "react";
 
 const MobileSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
-    const { user, logout, setModalOpen, setRedirectPath } = useAuthStore();
+    const { user, logout, openAuthModal } = useAuthStore();
     const { openCityPopup } = useUIStore();
 
     // Prevent body scroll when sidebar is open
@@ -40,8 +40,8 @@ const MobileSidebar = ({ isOpen, onClose }) => {
         const isCitySelection = path.includes("tab=city");
 
         if (isProtected && !user && !isCitySelection) {
-            setRedirectPath(path);
-            setModalOpen(true);
+            useAuthStore.getState().setRedirectPath(path);
+            useAuthStore.getState().setModalOpen(true);
             onClose();
             return;
         }

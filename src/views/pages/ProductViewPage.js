@@ -425,8 +425,8 @@ function ProductViewPage() {
     if (!productData) return;
 
     if (!isAuthenticated) {
-      setModalOpen(true);
       useAuthStore.getState().setRedirectPath("/checkout?mode=buy_now");
+      setModalOpen(true);
       return;
     }
 

@@ -463,8 +463,7 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                 onClose();
             } else {
                 // AddressStore returns null if no token, prompt login
-                const setModalOpen = useAuthStore.getState().setModalOpen;
-                setModalOpen(true);
+                useAuthStore.getState().openAuthModal();
                 showNotification({
                     message: "Please login to add an address",
                     type: "info",

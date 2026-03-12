@@ -7,7 +7,7 @@ import CitySelector from "../Common/CitySelector";
 import MobileSidebar from "./MobileSidebar";
 
 const Navbar = () => {
-  const { user, isModalOpen, setModalOpen, logout, setRedirectPath } = useAuthStore();
+  const { user, isModalOpen, setModalOpen, logout, openAuthModal } = useAuthStore();
   const { cart, loadCart } = useCartStore();
   const navigate = useNavigate();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -21,7 +21,7 @@ const Navbar = () => {
   const handleProfileClick = () => {
     setSidebarOpen(false);
     if (!user) {
-      setModalOpen(true);
+      openAuthModal();
     } else {
       navigate("/profile");
     }
@@ -143,8 +143,7 @@ const Navbar = () => {
           ) : (
             <button
               onClick={() => {
-                setRedirectPath(window.location.pathname + window.location.search);
-                setModalOpen(true);
+                openAuthModal();
                 setSidebarOpen(false);
               }}
               className="bg-[#39A7FF] text-white px-4 py-2 md:px-6 md:py-3 rounded-md md:rounded-md hover:bg-blue-600 focus:outline-none transition-colors flex items-center gap-2 font-medium"

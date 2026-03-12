@@ -9,4 +9,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,       // Explicitly persist Supabase session in localStorage
+    autoRefreshToken: true,     // Auto-refresh expired Supabase tokens
+    detectSessionInUrl: true,   // Detect OAuth callback params in URL (PKCE code, hash fragments)
+    storage: localStorage,      // Explicitly use localStorage (not sessionStorage)
+  },
+});

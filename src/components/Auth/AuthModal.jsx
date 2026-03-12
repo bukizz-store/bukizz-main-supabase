@@ -133,6 +133,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         setForgotPassword(false);
         setIsLogin(true);
         clearError();
+        setRedirectPath(null); // Clear redirect path when modal is dismissed
     };
 
     const switchMode = (loginMode) => {

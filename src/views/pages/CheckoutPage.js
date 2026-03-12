@@ -115,7 +115,7 @@ function CheckoutPage() {
     clearGeoError,
     getCurrentLocationAndAddress,
   } = useAddressStore();
-  const { user, isAuthenticated, setModalOpen } = useAuthStore();
+  const { user, isAuthenticated, openAuthModal } = useAuthStore();
   const {
     orderSummary,
     loading: orderLoading,
@@ -311,7 +311,7 @@ function CheckoutPage() {
     } else if (!isAuthenticated && mounted) {
       const currentPath = window.location.pathname + window.location.search;
       useAuthStore.getState().setRedirectPath(currentPath);
-      setModalOpen(true);
+      useAuthStore.getState().setModalOpen(true);
     }
 
     return () => {
@@ -497,7 +497,7 @@ function CheckoutPage() {
 
   const handleBuyNow = (item) => {
     if (!isAuthenticated) {
-      setModalOpen(true);
+      openAuthModal();
       return;
     }
 
@@ -1361,7 +1361,7 @@ function CheckoutPage() {
                         if (isAuthenticated()) {
                           setShowMobileMapPicker(true);
                         } else {
-                          setModalOpen(true);
+                          openAuthModal();
                         }
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
@@ -1376,7 +1376,7 @@ function CheckoutPage() {
                         if (isAuthenticated()) {
                           setShowAddressForm(true);
                         } else {
-                          setModalOpen(true);
+                          openAuthModal();
                         }
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
@@ -1446,16 +1446,12 @@ function CheckoutPage() {
                           onClick={() => {
                             if (isAuthenticated()) {
                               if (isMobileApp) {
-                                if (isWebViewMode()) {
-                                  setShowAddressForm(true);
-                                } else {
-                                  setShowMobileMapPicker(true);
-                                }
+                                setShowMobileMapPicker(true);
                               } else {
                                 setShowAddressForm(true);
                               }
                             } else {
-                              setModalOpen(true);
+                              openAuthModal();
                             }
                           }}
                           className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-bold text-white transition-all duration-200 bg-blue-600 border border-transparent rounded-full shadow-md hover:bg-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
