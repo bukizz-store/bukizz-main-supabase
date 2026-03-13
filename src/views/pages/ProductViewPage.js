@@ -43,6 +43,79 @@ function ProductViewPage() {
   const [pincodeMessage, setPincodeMessage] = useState("");
   const [productOptions, setProductOptions] = useState([]);
   const [showCartDialog, setShowCartDialog] = useState(false);
+  
+  // Add-on modal states
+  const [showAddonModal, setShowAddonModal] = useState(false);
+  const [addonLoading, setAddonLoading] = useState(false);
+  const [addonDetails, setAddonDetails] = useState([]);
+  const [selectedAddons, setSelectedAddons] = useState({});
+
+  const fetchAddonDetails = async (addons) => {
+    setAddonLoading(true);
+    try {
+      const details = [];
+      const defaultSelections = {};
+      
+      for (const addon of addons) {
+        if (!addon.addon_product_id) continue;
+        const product = await getProduct(addon.addon_product_id);
+        if (product) {
+          const variant = product.variants?.find(v => v.id === addon.addon_variant_id);
+          details.push({
+            addonId: addon.id,
+            product,
+            variant,
+            title: product.title,
+            price: variant?.price || product.base_price,
+            image: variant?.image || product.mainImage || product.images?.[0]?.url || "/api/placeholder/300/300"
+          });
+          // By default, do not force them into the cart. Let user select.
+          defaultSelections[addon.id] = false;
+        }
+      }
+      setAddonDetails(details);
+      setSelectedAddons(defaultSelections);
+    } catch (error) {
+      console.error("Error fetching addon details:", error);
+    } finally {
+      setAddonLoading(false);
+    }
+  };
+
+  const handleConfirmAddons = async () => {
+    try {
+      const generateId = () => window.crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+      const clientId = generateId();
+
+      // Add main product
+      await addToCart(productData, selectedVariant, selectedQuantity, { clientId });
+
+      // Add selected addons
+      for (const addon of addonDetails) {
+        if (selectedAddons[addon.addonId]) {
+          await addToCart(addon.product, addon.variant, 1, { 
+            clientId: generateId(), 
+            parentClientId: clientId 
+          });
+        }
+      }
+
+      setShowAddonModal(false);
+      setShowCartDialog(true);
+    } catch (error) {
+      console.error("Error adding items to cart:", error);
+    }
+  };
+
+  const handleSkipAddons = async () => {
+    try {
+      await addToCart(productData, selectedVariant, selectedQuantity);
+      setShowAddonModal(false);
+      setShowCartDialog(true);
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+    }
+  };
 
   // Check pincode availability
   const checkPincode = async () => {
@@ -401,6 +474,12 @@ function ProductViewPage() {
   // Handle add to cart
   const handleAddToCart = async () => {
     if (!productData) return;
+
+    if (selectedVariant?.available_addons?.length > 0) {
+      setShowAddonModal(true);
+      fetchAddonDetails(selectedVariant.available_addons);
+      return;
+    }
 
     try {
       await addToCart(productData, selectedVariant, selectedQuantity);
@@ -1206,6 +1285,104 @@ function ProductViewPage() {
           Buy Now
         </button>
       </div>
+
+      {/* Add-on Presentation Modal */}
+      {
+        showAddonModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4 font-nunito">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in flex flex-col max-h-[90vh]">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Recommended Add-ons</h3>
+                <button 
+                  onClick={() => setShowAddonModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="mb-4 text-sm text-gray-600">
+                Enhance your purchase with these frequently bought together items:
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar">
+                {addonLoading ? (
+                  <div className="py-8 flex justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : (
+                  addonDetails.map((addon) => (
+                    <div 
+                      key={addon.addonId} 
+                      className={`flex gap-3 p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                        selectedAddons[addon.addonId] ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100 hover:border-gray-200'
+                      }`}
+                      onClick={() => setSelectedAddons(prev => ({ ...prev, [addon.addonId]: !prev[addon.addonId] }))}
+                    >
+                      <div className="h-16 w-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 bg-white">
+                        <OptimizedImage
+                          src={addon.image}
+                          alt={addon.title}
+                          className="w-full h-full object-contain p-1"
+                        />
+                      </div>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <div className="font-semibold text-gray-800 text-sm line-clamp-2 leading-snug">
+                          {addon.title}
+                        </div>
+                        {addon.variant?.option_values && (
+                          <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                            {Object.values(addon.variant.option_values).join(' • ')}
+                          </div>
+                        )}
+                        <div className="text-blue-600 font-bold text-sm mt-1">
+                          ₹{addon.price}
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedAddons[addon.addonId] ? 'bg-blue-500 border-blue-500' : 'border-gray-300'
+                        }`}>
+                          {selectedAddons[addon.addonId] && (
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {!addonLoading && addonDetails.length === 0 && (
+                  <div className="text-center py-6 text-gray-500">
+                    No add-ons available right now.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-auto pt-4 border-t border-gray-100">
+                <button
+                  onClick={handleSkipAddons}
+                  className="flex-1 py-3 px-4 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={handleConfirmAddons}
+                  disabled={addonLoading}
+                  className={`flex-[2] py-3 px-4 rounded-xl font-semibold text-white transition-all shadow-lg ${
+                    addonLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                  }`}
+                >
+                  {Object.values(selectedAddons).some(v => v) ? 'Add with Selected' : 'Add to Cart'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
 
       {/* Cart Confirmation Modal */}
       {

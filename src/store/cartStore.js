@@ -20,7 +20,7 @@ const useCartStore = create((set, get) => ({
   savedCart: null, // Store original cart during buy now flow
 
   // Add item to cart
-  addToCart: async (product, variant, quantity = 1) => {
+  addToCart: async (product, variant, quantity = 1, options = {}) => {
     set({ loading: true, error: null });
     try {
       // Self-hydrate: if Zustand cart is empty but localStorage has data,
@@ -47,7 +47,9 @@ const useCartStore = create((set, get) => ({
       const { cart } = get();
       const existingItemIndex = cart.items.findIndex(
         (item) =>
-          item.productId === product.id && item.variantId === variant?.id
+          item.productId === product.id && 
+          item.variantId === variant?.id &&
+          item.parentItemId === options.parentClientId
       );
 
       let updatedItems = [...cart.items];
@@ -166,7 +168,8 @@ const useCartStore = create((set, get) => ({
         // Add new item with complete details
         const itemPrice = calculateItemPrice();
         const newItem = {
-          id: `${product.id}-${variant?.id || "default"}`,
+          id: options.clientId || `${product.id}-${variant?.id || "default"}`,
+          parentItemId: options.parentClientId || null,
           productId: product.id,
           variantId: variant?.id || null,
           title: product.title || "Product Title",
