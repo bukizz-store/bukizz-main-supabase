@@ -1746,10 +1746,78 @@ const OrdersSection = () => {
       </div >
     );
   };
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm md:p-4">
+        <div className="flex items-center p-4">
+          {isMobileApp && (
+            <button onClick={() => {
+              if (isWebViewMode()) {
+                navigate("/profile-tab");
+              } else {
+                window.history.back();
+              }
+            }} className="mr-3">
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+          )}
+          <h2 className={`${isMobileApp ? "text-lg" : "text-2xl"} font-bold text-gray-900`}>
+            My Orders
+          </h2>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your orders...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-
-
-
+  // Handle error state
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm md:p-4">
+        <div className="flex items-center p-4">
+          {isMobileApp && (
+            <button onClick={() => {
+              if (isWebViewMode()) {
+                navigate("/profile-tab");
+              } else {
+                window.history.back();
+              }
+            }} className="mr-3">
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+          )}
+          <h2 className={`${isMobileApp ? "text-lg" : "text-2xl"} font-bold text-gray-900`}>
+            My Orders
+          </h2>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4v2m0 4v2M12 3a9 9 0 110 18 9 9 0 010-18z" />
+            </svg>
+            <p className="text-red-600 font-medium mb-2">Unable to Load Orders</p>
+            <p className="text-gray-600 text-sm mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm md:p-4">

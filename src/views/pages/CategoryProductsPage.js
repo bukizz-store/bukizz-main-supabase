@@ -4,6 +4,8 @@ import useApiRoutesStore from "../../store/apiRoutesStore";
 import SearchBar from "../../components/Common/SearchBar";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 import { OptimizedImage } from "../../components/Common/OptimizedImage";
+import HomeCarousel from "../../components/Sections/HomeCarousel";
+import useCityStore from "../../store/cityStore";
 
 function CategoryProductsPage() {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ function CategoryProductsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categorySlug, setCategorySlug] = useState("");
+  const selectedCity = useCityStore((state) => state.selectedCity);
   const [source, setSource] = useState("");
 
   useEffect(() => {
@@ -134,6 +137,10 @@ function CategoryProductsPage() {
                 {getCategoryName(categorySlug)}
               </h1>
             </div>
+          </div>
+
+          <div className="mb-6 -mx-4 md:mx-0">
+             <HomeCarousel city={selectedCity} page="category" />
           </div>
 
           {error && (

@@ -6,6 +6,8 @@ import School from "../../components/Sections/School";
 import SearchBar from "../../components/Common/SearchBar";
 import Stationary from "../../components/Sections/Stationary";
 import ProductSearchResults from "../../components/Sections/ProductSearchResults";
+import HomeCarousel from "../../components/Sections/HomeCarousel";
+import useCityStore from "../../store/cityStore";
 
 // SchoolViewPage.js
 function SchoolViewPage() {
@@ -13,34 +15,8 @@ function SchoolViewPage() {
   const [searchResults, setSearchResults] = useState(null);
   const [searchTerm, setSearchTerm] = useState(location.state?.searchTerm || "");
   const [isSearchActive, setIsSearchActive] = useState(!!location.state?.searchTerm);
-  const [selectedCity, setSelectedCity] = useState("Kanpur");
+  const selectedCity = useCityStore((state) => state.selectedCity);
 
-  useEffect(() => {
-    // Get selected city from localStorage
-    const getCityFromStorage = () => {
-      const city = localStorage.getItem("selectedCity");
-      if (city) {
-        // Map city id to display name
-        const cityNameMap = {
-          gurugram: "Gurugram",
-          kanpur: "Kanpur",
-        };
-        setSelectedCity(cityNameMap[city] || city);
-      } else {
-        setSelectedCity("Kanpur");
-      }
-    };
-
-    getCityFromStorage();
-
-    // Listen for changes in localStorage
-    const handleStorageChange = () => {
-      getCityFromStorage();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
 
   const handleSearchResults = (results) => {
     setSearchResults(results);
@@ -76,6 +52,10 @@ function SchoolViewPage() {
         searchTerm={searchTerm}
         onSearchTermChange={handleSearchTermChange}
       />
+
+      <div className="w-full">
+         <HomeCarousel city={selectedCity} page="school" />
+      </div>
 
       <div className="mx-12 my-4 mb-10 max-w flex flex-col items-center justify-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-[#7E30E1] to-[#39A7FF] text-transparent bg-clip-text">

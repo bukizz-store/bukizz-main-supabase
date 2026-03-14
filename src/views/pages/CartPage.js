@@ -5,9 +5,12 @@ import useCartStore from "../../store/cartStore";
 import useAuthStore from "../../store/authStore";
 import useNotificationStore from "../../store/notificationStore";
 import { handleBackNavigation } from "../../utils/navigation";
+import HomeCarousel from "../../components/Sections/HomeCarousel";
+import useCityStore from "../../store/cityStore";
 
 function CartPage() {
   const navigate = useNavigate();
+  const selectedCity = useCityStore((state) => state.selectedCity);
   const { isAuthenticated, setModalOpen } = useAuthStore();
   const { showNotification } = useNotificationStore();
   const {
@@ -434,6 +437,8 @@ function CartPage() {
               );
             })}
           </div>
+
+          <HomeCarousel city={selectedCity} page="cart" />
 
           {/* Price Summary Section */}
           <div className="bg-white mx-4 rounded-lg shadow-sm p-4 mt-4">

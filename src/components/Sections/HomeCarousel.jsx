@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import useApiRoutesStore from "../../store/apiRoutesStore";
 
 /**
  * Validates if a URL string is a valid image source
@@ -14,46 +15,95 @@ const isValidUrl = (url) => {
     }
 };
 
-const HomeCarousel = () => {
-    // TODO: Fetch these from Supabase 'carousel_images' bucket or a database table in the future
-    const [slides, setSlides] = useState([
-        {
-            id: 1,
-            image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_1.svg", // Using the existing banner for now
-            alt: "School Supplies Delivery",
-        },
-        {
-            id: 2,
-            // Placeholder for second image - User will provide links
-            // Using a solid color or gradient placeholder if image fails, or reusing banner for demo
-            image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_2.svg",
-            alt: "Uniforms and Books",
-        },
-        {
-            id: 3,
-            image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_3.svg",
-            alt: "Stationery Essentials",
-        },
-    ]);
-    const [slidesMobile, setSlidesMobile] = useState([
-        {
-            id: 1,
-            image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_1_mobile.svg", // Using the existing banner for now
-            alt: "School Supplies Delivery",
-        },
-        {
-            id: 2,
-            // Placeholder for second image - User will provide links
-            // Using a solid color or gradient placeholder if image fails, or reusing banner for demo
-            image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_2_mobile.svg",
-            alt: "Uniforms and Books",
-        },
-        {
-            id: 3,
-            image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_3_mobile.svg",
-            alt: "Stationery Essentials",
-        }
-    ]);
+const defaultDesktopSlides = [
+    {
+        id: 1,
+        image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_1.svg",
+        alt: "School Supplies Delivery",
+    },
+    {
+        id: 2,
+        image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_2.svg",
+        alt: "Uniforms and Books",
+    },
+    {
+        id: 3,
+        image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_3.svg",
+        alt: "Stationery Essentials",
+    },
+];
+
+const defaultMobileSlides = [
+    {
+        id: 1,
+        image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_1_mobile.svg",
+        alt: "School Supplies Delivery",
+    },
+    {
+        id: 2,
+        image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_2_mobile.svg",
+        alt: "Uniforms and Books",
+    },
+    {
+        id: 3,
+        image: "https://qgufxqbsgewczleennbu.supabase.co/storage/v1/object/public/carousel_images/first/banner_3_mobile.svg",
+        alt: "Stationery Essentials",
+    }
+];
+
+const HomeCarousel = ({ city, page = "home" }) => {
+    const [slides, setSlides] = useState([]);
+    const [slidesMobile, setSlidesMobile] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    const apiStore = useApiRoutesStore();
+
+    useEffect(() => {
+        const fetchBanners = async () => {
+            setIsLoading(true);
+            try {
+                // Determine city to fetch for (fallback to Kanpur if undefined)
+                let fetchCity = city || "Kanpur";
+                
+                // Capitalize first letter if it's not already (e.g., 'kanpur' -> 'Kanpur')
+                if (fetchCity && fetchCity.toLowerCase() !== 'all') {
+                  fetchCity = fetchCity.charAt(0).toUpperCase() + fetchCity.slice(1).toLowerCase();
+                }
+                
+                const response = await apiStore.get(apiStore.banners.public(fetchCity, page));
+                
+                if (response.banners && response.banners.length > 0) {
+                    const desktop = response.banners.map(b => ({
+                        id: b.id,
+                        image: b.desktop_image_url,
+                        alt: b.alt_text || "Banner",
+                        redirectUrl: b.redirect_url
+                    }));
+                    const mobile = response.banners.map(b => ({
+                        id: b.id,
+                        image: b.mobile_image_url,
+                        alt: b.alt_text || "Banner",
+                        redirectUrl: b.redirect_url
+                    }));
+                    
+                    setSlides(desktop);
+                    setSlidesMobile(mobile);
+                } else {
+                    // Fallback to defaults if no banners found for this city/page
+                    setSlides(defaultDesktopSlides);
+                    setSlidesMobile(defaultMobileSlides);
+                }
+            } catch (error) {
+                console.error("Failed to fetch banners, falling back to defaults", error);
+                setSlides(defaultDesktopSlides);
+                setSlidesMobile(defaultMobileSlides);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchBanners();
+    }, [city, page, apiStore]);
 
     const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -91,8 +141,8 @@ const HomeCarousel = () => {
     const [isTransitioning, setIsTransitioning] = useState(true);
 
     // Extended slides with a clone of the first slide at the end for smooth looping
-    const extendedSlides = [...slides, { ...slides[0], id: 'clone-first' }];
-    const extendedSlidesMobile = [...slidesMobile, { ...slidesMobile[0], id: 'clone-first-mobile' }];
+    const extendedSlides = slides.length > 0 ? [...slides, { ...slides[0], id: 'clone-first' }] : [];
+    const extendedSlidesMobile = slidesMobile.length > 0 ? [...slidesMobile, { ...slidesMobile[0], id: 'clone-first-mobile' }] : [];
 
     // Auto-play is now handled by the progress bar animation's onAnimationEnd event
 
@@ -118,7 +168,7 @@ const HomeCarousel = () => {
 
     // Handle seamless loop reset
     useEffect(() => {
-        if (currentSlide === slides.length) {
+        if (slides.length > 0 && currentSlide === slides.length) {
             // We reached the clone (visually looks like slide 0)
             // Wait for transition to finish, then snap to real slide 0
             const timer = setTimeout(() => {
@@ -138,12 +188,21 @@ const HomeCarousel = () => {
         }
     }, [isTransitioning]);
 
+    if (isLoading) {
+        return (
+            <div className="mx-4 md:mx-12 my-4 mb-4 md:mb-5 max-w animate-pulse">
+                <div className="w-full h-[178px] sm:h-[300px] md:h-[250px] lg:h-[250px] bg-gray-200 rounded-2xl"></div>
+            </div>
+        );
+    }
+
+    if (slides.length === 0) return null;
 
     return (
         <div className="mx-4 md:mx-12 my-4 mb-4 md:mb-5 max-w">
             {/* Aspect Ratio Container - Mobile: 16:9 or taller, Desktop: 21:9 or similar */}
             <div
-                className="relative group w-full h-auto sm:h-[300px] md:h-[250px] lg:h-[250px] overflow-hidden rounded-2xl shadow-lg bg-white"
+                className="relative group w-full h-[178px] sm:h-[300px] md:h-[250px] lg:h-[250px] overflow-hidden rounded-2xl shadow-lg bg-white"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 onTouchStart={onTouchStart}
@@ -158,11 +217,21 @@ const HomeCarousel = () => {
                 >
                     {extendedSlides.map((slide, index) => (
                         <div key={`${slide.id}-${index}`} className="w-full h-full relative flex-shrink-0">
-                            <img
-                                src={slide.image}
-                                alt={slide.alt}
-                                className="w-full h-full object-cover object-center"
-                            />
+                            {slide.redirectUrl ? (
+                                <a href={slide.redirectUrl} className="w-full h-full block">
+                                    <img
+                                        src={slide.image}
+                                        alt={slide.alt}
+                                        className="w-full h-full object-cover object-center"
+                                    />
+                                </a>
+                            ) : (
+                                <img
+                                    src={slide.image}
+                                    alt={slide.alt}
+                                    className="w-full h-full object-cover object-center"
+                                />
+                            )}
                             {/* Optional: Add gradient overlay for better text readability if we add text later */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
                         </div>
@@ -171,16 +240,26 @@ const HomeCarousel = () => {
 
                 {/* Slides Mobile*/}
                 <div
-                    className={`flex md:hidden w-full h-[178px] ${isTransitioning ? 'transition-transform duration-500 ease-out' : ''}`}
+                    className={`flex md:hidden w-full h-full ${isTransitioning ? 'transition-transform duration-500 ease-out' : ''}`}
                     style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                 >
                     {extendedSlidesMobile.map((slide, index) => (
                         <div key={`${slide.id}-${index}`} className="w-full h-full relative flex-shrink-0">
-                            <img
-                                src={slide.image}
-                                alt={slide.alt}
-                                className="w-full h-full object-cover object-center"
-                            />
+                            {slide.redirectUrl ? (
+                                <a href={slide.redirectUrl} className="w-full h-full block">
+                                    <img
+                                        src={slide.image}
+                                        alt={slide.alt}
+                                        className="w-full h-full object-cover object-center"
+                                    />
+                                </a>
+                            ) : (
+                                <img
+                                    src={slide.image}
+                                    alt={slide.alt}
+                                    className="w-full h-full object-cover object-center"
+                                />
+                            )}
                             {/* Optional: Add gradient overlay for better text readability if we add text later */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
                         </div>

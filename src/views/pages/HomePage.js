@@ -7,44 +7,25 @@ import DealsSection from "../../components/Sections/DealsSection";
 import School from "../../components/Sections/School";
 import SearchBar from "../../components/Common/SearchBar";
 import Stationary from "../../components/Sections/Stationary";
-import PromoCard from "../../components/Cards/PromoCard";
+import useCityStore from "../../store/cityStore";
+import { useMemo } from "react";
 
 // HomePage.js
 function HomePage() {
   const [searchResults, setSearchResults] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [selectedCity, setSelectedCity] = useState("");
-
-  useEffect(() => {
-    // Get selected city from localStorage
-    const city = localStorage.getItem("selectedCity");
-    if (city) {
-      // Map city id to display name
-      const cityNameMap = {
-        gurugram: "Gurugram",
-        kanpur: "Kanpur",
-      };
-      setSelectedCity(cityNameMap[city] || city);
-    } else {
-      setSelectedCity("Kanpur"); // Default city
-    }
-
-    // Listen for changes in localStorage
-    const handleStorageChange = () => {
-      const city = localStorage.getItem("selectedCity");
-      if (city) {
-        const cityNameMap = {
-          gurugram: "Gurugram",
-          kanpur: "Kanpur",
-        };
-        setSelectedCity(cityNameMap[city] || city);
-      }
+  
+  // Use centralized city store
+  const rawCity = useCityStore((state) => state.selectedCity);
+  
+  const selectedCity = useMemo(() => {
+    const cityNameMap = {
+      gurgaon: "Gurugram",
+      kanpur: "Kanpur",
     };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+    return cityNameMap[rawCity] || rawCity.charAt(0).toUpperCase() + rawCity.slice(1);
+  }, [rawCity]);
 
   const handleSearchResults = (results) => {
     setSearchResults(results);
@@ -73,7 +54,7 @@ function HomePage() {
         searchTerm={searchTerm}
         onSearchTermChange={handleSearchTermChange}
       />
-      <HomeCarousel />
+      <HomeCarousel city={selectedCity} page="home" />
       <Category />
 
       <div className="mx-4 md:mx-12 my-4 mb-4 max-w flex flex-col items-center justify-center">

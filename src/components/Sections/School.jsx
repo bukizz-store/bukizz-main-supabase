@@ -1,57 +1,42 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { schoolRoutes } from "../../store/apiRoutesStore";
-
-
+import useCityStore from "../../store/cityStore";
 
 const School = ({ searchResults, isSearchActive, searchTerm }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [schoolsByCity, setSchoolsByCity] = useState([]);
-  const [allSchools, setAllSchools] = useState([]);
+  const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // State to track current city for auto-refresh
-  const [currentCity, setCurrentCity] = useState(() => localStorage.getItem("selectedCity"));
+  // Use centralized city store
+  const selectedCity = useCityStore((state) => state.selectedCity);
 
-  // Listen for storage changes to auto-refresh schools when city changes
+  // Fetch schools whenever city or route changes
   useEffect(() => {
-    const handleStorageChange = () => {
-      setCurrentCity(localStorage.getItem("selectedCity"));
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  // Fetch schools by city when component mounts or on home page
-  useEffect(() => {
-    const fetchSchoolsByCity = async () => {
-      // Only fetch on homepage and not during search
-      if (isSearchActive || location.pathname !== "/") {
-        return;
-      }
+    const fetchSchools = async () => {
+      // Don't fetch if search is active (it provides its own results)
+      if (isSearchActive) return;
 
       try {
         setLoading(true);
-        let selectedCity = localStorage.getItem("selectedCity");
 
-        // Default to Kanpur if no city is selected
-        if (!selectedCity) {
-          selectedCity = "kanpur";
-        }
-
-        // Map city id to city name for API
+        // Map city id to display name if needed, or use as is
         const cityNameMap = {
-          gurgaon: "Gurgaon",
+          gurgaon: "Gurugram",
           kanpur: "Kanpur",
         };
-
         const cityName = cityNameMap[selectedCity] || selectedCity;
 
-        // Fetch schools by city
-        const response = await fetch(schoolRoutes.byCity(cityName));
+        // Determine limit and explicit sorting
+        const isHomePage = location.pathname === "/";
+        const limit = isHomePage ? 10 : 100; // Limit on home page, more on view all
+        
+        // Build URL with explicit sorting parameters for the database
+        const url = `${schoolRoutes.byCity(cityName)}?sortBy=sort_order&sortOrder=asc&limit=${limit}`;
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch schools: ${response.statusText}`);
@@ -59,7 +44,8 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
 
         const data = await response.json();
         const schoolsList = data.data?.schools || data.schools || data.data || data || [];
-        const schools = schoolsList.map((school) => ({
+        
+        const formattedSchools = schoolsList.map((school) => ({
           id: school.id,
           name: school.name,
           img:
@@ -67,82 +53,22 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
             school.img ||
             "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
           location: school.address?.line2 || school.address?.line1 || school.city || "Location not specified",
+          sortOrder: school.sortOrder || 999
         }));
 
-        // Show all fetched schools on homepage
-        setSchoolsByCity(schools);
+        setSchools(formattedSchools);
         setError(null);
       } catch (err) {
-        console.error("Error fetching schools by city:", err);
-        setSchoolsByCity([]);
+        console.error("Error fetching schools:", err);
+        setSchools([]);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSchoolsByCity();
-  }, [location.pathname, isSearchActive, currentCity]);
-
-  // Fetch schools by city when on /school page (same logic as home page now)
-  useEffect(() => {
-    const fetchAllSchools = async () => {
-      // Only fetch on school page and when not searching
-      if (location.pathname !== "/school" || isSearchActive) {
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        let selectedCity = localStorage.getItem("selectedCity");
-
-        // Default to Kanpur if no city is selected
-        if (!selectedCity) {
-          selectedCity = "kanpur";
-        }
-
-        // Map city id to city name for API
-        const cityNameMap = {
-          gurgaon: "Gurgaon",
-          kanpur: "Kanpur",
-        };
-
-        const cityName = cityNameMap[selectedCity] || selectedCity;
-
-        // Fetch schools by city even on /school route
-        const response = await fetch(schoolRoutes.byCity(cityName));
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch schools: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const schoolsList = data.data?.schools || data.schools || data.data || data || [];
-
-        const schools = schoolsList.map((school) => ({
-          id: school.id,
-          name: school.name,
-          img:
-            school.image ||
-            school.img ||
-            "https://media.gettyimages.com/id/171306436/photo/red-brick-high-school-building-exterior.jpg?s=612x612&w=gi&k=20&c=8to_zwGxxcI1iYcix7DhmWahoDTlaqxEMzumDwJtxeg=",
-          location: school.address?.line2 || school.address?.line1 || school.city || "Location not specified",
-        }));
-
-        setAllSchools(schools);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching all schools:", err);
-        setAllSchools([]);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllSchools();
-  }, [location.pathname, isSearchActive, currentCity]);
+    fetchSchools();
+  }, [selectedCity, location.pathname, isSearchActive]);
 
   let displayData = [];
   let showingSearchResults = false;
@@ -160,10 +86,8 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
       location: school.address.line2 || "Location not specified",
       id: school.id || school.name.toLowerCase().replace(/[^a-z0-9]/g, "-"),
     }));
-  } else if (location.pathname === "/school") {
-    displayData = allSchools; // Show fetched schools on /school route
   } else {
-    displayData = schoolsByCity; // Show city schools on home page
+    displayData = schools; 
   }
 
   const handleSchoolClick = (school) => {

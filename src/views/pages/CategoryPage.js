@@ -4,6 +4,8 @@ import useApiRoutesStore from "../../store/apiRoutesStore";
 import SearchBar from "../../components/Common/SearchBar";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 import { handleBackNavigation } from "../../utils/navigation";
+import HomeCarousel from "../../components/Sections/HomeCarousel";
+import useCityStore from "../../store/cityStore";
 
 const CategoryPage = () => {
     const navigate = useNavigate();
@@ -12,6 +14,7 @@ const CategoryPage = () => {
     const [error, setError] = useState("");
     const { categories: categoryRoutes } = useApiRoutesStore();
     const apiRoutes = useApiRoutesStore.getState();
+    const selectedCity = useCityStore((state) => state.selectedCity);
 
     useEffect(() => {
         fetchCategories();
@@ -64,6 +67,10 @@ const CategoryPage = () => {
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">All Categories</h1>
                             <p className="text-gray-600 mt-1">Explore our wide range of school essentials</p>
                         </div>
+                    </div>
+
+                    <div className="mb-6">
+                        <HomeCarousel city={selectedCity} page="category" />
                     </div>
 
                     {loading ? (

@@ -153,6 +153,10 @@ const useApiRoutesStore = create((set, get) => ({
     getProfile: `${BASE_URL}/retailer/data`,
   },
 
+  // ============ BANNER ROUTES ============
+  banners: {
+    public: (city, page) => `${BASE_URL}/banners/public?city=${encodeURIComponent(city)}&page=${encodeURIComponent(page)}`,
+  },
 
   // ============ ORDER ROUTES ============
   orders: {
@@ -458,4 +462,5 @@ export const {
   products: productRoutes,
   schools: schoolRoutes,
   orders: orderRoutes,
+  banners: bannerRoutes,
 } = useApiRoutesStore.getState();
