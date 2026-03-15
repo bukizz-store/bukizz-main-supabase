@@ -5,8 +5,10 @@ export const BookSetCard = ({ props }) => {
   const navigate = useNavigate();
 
   const getOrdinalSuffix = (number) => {
-    const num = parseInt(number);
-    if (isNaN(num)) return number || "";
+    const trimmed = (number || "").toString().trim();
+    if (!trimmed) return "";
+    const num = parseInt(trimmed);
+    if (isNaN(num)) return trimmed; // Letters like PG, Nursery, LKG, UKG — show as-is
     if (num >= 11 && num <= 13) return `${num}th`;
     switch (num % 10) {
       case 1:
@@ -61,7 +63,7 @@ export const BookSetCard = ({ props }) => {
           Class
         </div>
         <div className="font-lora font-bold text-2xl md:text-[32px] leading-tight text-center px-2">
-          {getOrdinalSuffix((props.class || "").replace("Class ", ""))}
+          {getOrdinalSuffix(props.class)}
         </div>
       </div>
 

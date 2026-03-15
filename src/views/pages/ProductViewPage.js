@@ -340,23 +340,32 @@ function ProductViewPage() {
       // Fetch similar products asynchronously (non-blocking)
       if (product.product_type) {
         const searchFilters = {
-          productType: product.product_type,
-          limit: 4,
+          limit: 10,
         };
 
         // Resolve school ID from product or navigation state
         const resolvedSchoolId = product.school_id || location.state?.school?.id;
 
-        // If it's a school-specific category and we know the school, only show similar products from that school
-        if (resolvedSchoolId && ["bookset", "uniform", "school"].includes(product.product_type)) {
+        const hasCategory = product.categories && product.categories.length > 0;
+
+        if (!hasCategory && resolvedSchoolId) {
+          // School bookset (no category): show remaining booksets from same school
+          searchFilters.productType = product.product_type;
           searchFilters.schoolId = resolvedSchoolId;
+        } else if (hasCategory) {
+          // General product (has category): show products from same category
+          const categorySlug = product.categories[0].slug || product.categories[0].name;
+          searchFilters.category = categorySlug;
+        } else {
+          // Fallback: same product type
+          searchFilters.productType = product.product_type;
         }
 
         searchProducts(searchFilters)
           .then((similarResult) => {
             const filtered =
               similarResult.products?.filter((p) => p.id !== product.id) || [];
-            setSimilarProducts(filtered.slice(0, 4));
+            setSimilarProducts(filtered);
           })
           .catch((err) => {
             console.error("Error fetching similar products:", err);
@@ -434,7 +443,7 @@ function ProductViewPage() {
       const basePrice = product.base_price || product.min_price || 0;
       const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
       return {
-        class: product.metadata?.grade || product.schoolInfo?.grade || "General",
+        class: product.schoolInfo?.grade || product.metadata?.grade || "General",
         originalPrice: comparePrice,
         discountedPrice: basePrice,
         rating: 4.5,
@@ -1148,8 +1157,8 @@ function ProductViewPage() {
                   // Always build bookset-format props here since we're rendering BookSetCard
                   const basePrice = product.basePrice || product.base_price || product.min_price || 0;
                   const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
-                  // Extract grade from multiple sources, fallback to parsing title
-                  let grade = product.metadata?.grade || product.schoolInfo?.grade;
+                  // Extract grade: prefer schoolInfo.grade from API
+                  let grade = product.schoolInfo?.grade || product.metadata?.grade;
                   if (!grade && product.title) {
                     const match = product.title.match(/(?:class|grade)\s*(\d+)/i);
                     if (match) grade = match[1];
