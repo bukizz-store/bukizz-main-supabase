@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
+import useCityStore from "../../store/cityStore";
 
 const MyCityPage = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const setCityInStore = useCityStore((state) => state.setSelectedCity);
   const [selectedCity, setSelectedCity] = useState(null);
 
   const cities = [
@@ -22,9 +24,7 @@ const MyCityPage = () => {
 
   const handleSelectCity = () => {
     if (selectedCity) {
-      // You can store the selected city in a store or localStorage
-      localStorage.setItem("selectedCity", selectedCity);
-      // Navigate back or to home
+      setCityInStore(selectedCity);
       navigate("/");
     }
   };

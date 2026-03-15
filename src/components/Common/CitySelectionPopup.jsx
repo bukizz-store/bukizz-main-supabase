@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Check } from 'lucide-react';
+import useCityStore from '../../store/cityStore';
 
 const CitySelectionPopup = ({ onClose }) => {
     const [selectedCity, setSelectedCity] = useState(null);
+    const setCityInStore = useCityStore((state) => state.setSelectedCity);
 
     const cities = [
         {
@@ -19,8 +21,7 @@ const CitySelectionPopup = ({ onClose }) => {
 
     const handleSelect = () => {
         if (selectedCity) {
-            localStorage.setItem('selectedCity', selectedCity);
-            window.dispatchEvent(new Event('storage'));
+            setCityInStore(selectedCity);
             if (onClose) onClose();
         }
     };

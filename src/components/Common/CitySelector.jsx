@@ -1,26 +1,10 @@
-import React, { useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom"; // navigate not needed if we open popup directly
+import React from "react";
 import useUIStore from "../../store/uiStore";
+import useCityStore from "../../store/cityStore";
 
 const CitySelector = () => {
-  const [selectedCity, setSelectedCity] = useState(null);
-  // const navigate = useNavigate();
+  const selectedCity = useCityStore((state) => state.selectedCity);
   const { openCityPopup } = useUIStore();
-
-  useEffect(() => {
-    // Get the selected city from localStorage
-    const city = localStorage.getItem("selectedCity");
-    setSelectedCity(city);
-
-    // Listen for storage changes (when city is selected in another part of the app)
-    const handleStorageChange = () => {
-      const updatedCity = localStorage.getItem("selectedCity");
-      setSelectedCity(updatedCity);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
 
   // Get city display name
   const getCityName = () => {

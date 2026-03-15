@@ -7,6 +7,7 @@ import Footer from "./components/Common/Footer";
 import NotificationContainer from "./components/Common/NotificationContainer";
 import ScrollToTop from "./components/Common/ScrollToTop";
 import useAuthStore from "./store/authStore";
+import useCityStore from "./store/cityStore";
 
 import CitySelectionPopup from "./components/Common/CitySelectionPopup";
 
@@ -42,6 +43,7 @@ function App() {
   const { initialize, loading, isHydrated } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const { isCityPopupOpen, openCityPopup, closeCityPopup } = useUIStore();
+  const setCityInStore = useCityStore((state) => state.setSelectedCity);
 
   // Check for mobile app mode
   const [isMobileApp, setIsMobileApp] = useState(false);
@@ -96,7 +98,7 @@ function App() {
       const cityParam = searchParams.get("city");
       if (cityParam) {
         // City passed via URL (e.g. mobile app flow) — use it directly
-        localStorage.setItem("selectedCity", cityParam);
+        setCityInStore(cityParam);
       } else {
         // Show city selection popup for first-time visitors
         const storedCity = localStorage.getItem("selectedCity");

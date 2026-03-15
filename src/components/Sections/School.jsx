@@ -30,8 +30,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
         const cityName = cityNameMap[selectedCity] || selectedCity;
 
         // Determine limit and explicit sorting
-        const isHomePage = location.pathname === "/";
-        const limit = isHomePage ? 10 : 100; // Limit on home page, more on view all
+        const limit = 100; // Show all schools for the city
         
         // Build URL with explicit sorting parameters for the database
         const url = `${schoolRoutes.byCity(cityName)}?sortBy=sort_order&sortOrder=asc&limit=${limit}`;
@@ -68,7 +67,7 @@ const School = ({ searchResults, isSearchActive, searchTerm }) => {
     };
 
     fetchSchools();
-  }, [selectedCity, location.pathname, isSearchActive]);
+  }, [selectedCity, isSearchActive]);
 
   let displayData = [];
   let showingSearchResults = false;

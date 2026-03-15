@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import useCityStore from "../../store/cityStore";
 
 const MyCitySection = () => {
+  const setCityInStore = useCityStore((state) => state.setSelectedCity);
   const [selectedCity, setSelectedCity] = useState(() => {
     return localStorage.getItem("selectedCity");
   });
@@ -22,9 +24,7 @@ const MyCitySection = () => {
 
   const handleSelectCity = () => {
     if (selectedCity) {
-      localStorage.setItem("selectedCity", selectedCity);
-      // Dispatch custom event to update other components
-      window.dispatchEvent(new Event("storage"));
+      setCityInStore(selectedCity);
       navigate("/");
     }
   };

@@ -570,6 +570,7 @@ function ProductViewPage() {
   const prices = getCurrentPrice();
 
   const isOutOfStock = (selectedVariant ? selectedVariant.stock <= 0 : ((productData?.stock || 0) <= 0));
+  const isProductUnavailable = prices.current <= 0;
 
   const schemaData = {
     "@context": "https://schema.org/",
@@ -624,6 +625,31 @@ function ProductViewPage() {
                 <div className="mt-1 text-sm text-red-700">
                   <p>
                     This product is currently unavailable. Please check back later or explore similar items.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Product Unavailable Banner (price <= 0) */}
+      {isProductUnavailable && !isOutOfStock && (
+        <div className="mx-4 md:mx-12 mt-4 mb-2">
+          <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-orange-800">
+                  Product Unavailable
+                </h3>
+                <div className="mt-1 text-sm text-orange-700">
+                  <p>
+                    This product is currently unavailable for purchase. Please check back later or explore similar items.
                   </p>
                 </div>
               </div>
@@ -699,6 +725,7 @@ function ProductViewPage() {
                 onClick={handleAddToCart}
                 disabled={
                   cartLoading ||
+                  isProductUnavailable ||
                   !selectedVariant ||
                   (selectedVariant && selectedVariant.stock < selectedQuantity)
                 }
@@ -706,7 +733,8 @@ function ProductViewPage() {
                   ? "bg-green-100 text-green-600 border-green-500"
                   : cartLoading
                     ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                    : !selectedVariant ||
+                    : isProductUnavailable ||
+                      !selectedVariant ||
                       (selectedVariant &&
                         selectedVariant.stock < selectedQuantity)
                       ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
@@ -743,10 +771,12 @@ function ProductViewPage() {
               <button
                 onClick={handleBuyNow}
                 disabled={
+                  isProductUnavailable ||
                   !selectedVariant ||
                   (selectedVariant && selectedVariant.stock < selectedQuantity)
                 }
-                className={`px-12 py-3 rounded-2xl transition-all ${!selectedVariant ||
+                className={`px-12 py-3 rounded-2xl transition-all ${isProductUnavailable ||
+                  !selectedVariant ||
                   (selectedVariant && selectedVariant.stock < selectedQuantity)
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-sky-500 text-white hover:bg-sky-600"
@@ -814,21 +844,27 @@ function ProductViewPage() {
             )}
           </h1>
 
-          {prices.basePrice > prices.current && (
+          {prices.basePrice > prices.current && !isProductUnavailable && (
             <span className="text-sm text-green-600 font-bold">Offer Price</span>
           )}
-          <div className="flex gap-2 font-semibold">
-            {prices.basePrice > prices.current && (
-              <h2 className="text-2xl text-green-600">
-                {Math.round(
-                  ((prices.basePrice - prices.current) / prices.basePrice) * 100
-                )}
-                %
-              </h2>
-            )}
-            <h2 className="text-3xl">₹ {prices.current}</h2>
-          </div>
-          {prices.basePrice > prices.current && (
+          {isProductUnavailable ? (
+            <span className="inline-block bg-orange-100 text-orange-800 text-sm font-semibold px-3 py-1 rounded-full border border-orange-300">
+              Product Unavailable
+            </span>
+          ) : (
+            <div className="flex gap-2 font-semibold">
+              {prices.basePrice > prices.current && (
+                <h2 className="text-2xl text-green-600">
+                  {Math.round(
+                    ((prices.basePrice - prices.current) / prices.basePrice) * 100
+                  )}
+                  %
+                </h2>
+              )}
+              <h2 className="text-3xl">₹ {prices.current}</h2>
+            </div>
+          )}
+          {prices.basePrice > prices.current && !isProductUnavailable && (
             <div className="text-sm">
               MRP ₹ <span className="line-through">{prices.basePrice}</span> (Inclusive of all taxes)
             </div>
@@ -1249,6 +1285,7 @@ function ProductViewPage() {
           onClick={handleAddToCart}
           disabled={
             cartLoading ||
+            isProductUnavailable ||
             !selectedVariant ||
             (selectedVariant && selectedVariant.stock < selectedQuantity)
           }
@@ -1256,7 +1293,8 @@ function ProductViewPage() {
             ? "bg-green-50 text-green-600 border-green-500"
             : cartLoading
               ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-              : !selectedVariant ||
+              : isProductUnavailable ||
+                !selectedVariant ||
                 (selectedVariant && selectedVariant.stock < selectedQuantity)
                 ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                 : "text-blue-600 border-blue-600 bg-white"
@@ -1273,10 +1311,12 @@ function ProductViewPage() {
         <button
           onClick={handleBuyNow}
           disabled={
+            isProductUnavailable ||
             !selectedVariant ||
             (selectedVariant && selectedVariant.stock < selectedQuantity)
           }
-          className={`flex-1 py-3 rounded-xl font-semibold shadow-lg transition-all ${!selectedVariant ||
+          className={`flex-1 py-3 rounded-xl font-semibold shadow-lg transition-all ${isProductUnavailable ||
+            !selectedVariant ||
             (selectedVariant && selectedVariant.stock < selectedQuantity)
             ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
             : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
