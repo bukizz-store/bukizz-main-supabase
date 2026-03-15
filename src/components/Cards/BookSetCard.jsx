@@ -52,13 +52,15 @@ export const BookSetCard = ({ props }) => {
     }
   };
 
+  const isUnavailable = !props.discountedPrice || props.discountedPrice <= 0;
+
   return (
     <div
-      className="flex flex-col w-[140px] md:w-[225px] h-full min-h-[160px] md:min-h-[225px] bg-white rounded-[13px] md:rounded-[19px] shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100"
+      className={`flex flex-col w-[140px] md:w-[225px] h-full min-h-[160px] md:min-h-[225px] bg-white rounded-[13px] md:rounded-[19px] shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border ${isUnavailable ? 'border-orange-200' : 'border-gray-100'}`}
       onClick={handleClick}
     >
       {/* Top Banner (Class Display) */}
-      <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-gradient-to-b from-[#39A7FF] to-[#0074D1] text-white flex-shrink-0">
+      <div className={`flex flex-col items-center justify-center p-4 md:p-6 text-white flex-shrink-0 ${isUnavailable ? 'bg-gradient-to-b from-gray-400 to-gray-500' : 'bg-gradient-to-b from-[#39A7FF] to-[#0074D1]'}`}>
         <div className="font-nunito font-semibold text-white/80 text-xs md:text-sm tracking-widest leading-none mb-1 md:mb-2 uppercase">
           Class
         </div>
@@ -68,22 +70,32 @@ export const BookSetCard = ({ props }) => {
       </div>
 
       <div className="flex flex-col flex-grow justify-between p-3 md:p-4 mt-auto">
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className={`[font-family:'Nunito-Bold',Helvetica] font-bold text-gray-900 leading-tight tracking-[0] whitespace-nowrap overflow-hidden text-ellipsis ${props.originalPrice >= props.discountedPrice ? 'text-lg md:text-xl' : 'text-sm md:text-lg'}`}>
-            {`₹${props.discountedPrice}`}
+        {isUnavailable ? (
+          <div className="flex items-center justify-center py-2">
+            <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 rounded-full border border-orange-300">
+              Unavailable
+            </span>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className={`[font-family:'Nunito-Bold',Helvetica] font-bold text-gray-900 leading-tight tracking-[0] whitespace-nowrap overflow-hidden text-ellipsis ${props.originalPrice >= props.discountedPrice ? 'text-lg md:text-xl' : 'text-sm md:text-lg'}`}>
+                {`₹${props.discountedPrice}`}
+              </div>
 
-          {props.originalPrice > props.discountedPrice && (
-            <div className="[font-family:'Nunito-Medium',Helvetica] font-medium text-gray-400 text-xs md:text-sm leading-tight tracking-[0] whitespace-nowrap overflow-hidden text-ellipsis line-through">
-              {`₹${props.originalPrice}`}
+              {props.originalPrice > props.discountedPrice && (
+                <div className="[font-family:'Nunito-Medium',Helvetica] font-medium text-gray-400 text-xs md:text-sm leading-tight tracking-[0] whitespace-nowrap overflow-hidden text-ellipsis line-through">
+                  {`₹${props.originalPrice}`}
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {props.originalPrice > props.discountedPrice && (
-          <div className="[font-family:'Nunito-Bold',Helvetica] font-bold text-primaryblue-700 text-xs md:text-sm tracking-[0] leading-tight whitespace-nowrap overflow-hidden text-ellipsis mt-1">
-            {Math.round(((props.originalPrice - props.discountedPrice) / props.originalPrice) * 100)}% off
-          </div>
+            {props.originalPrice > props.discountedPrice && (
+              <div className="[font-family:'Nunito-Bold',Helvetica] font-bold text-primaryblue-700 text-xs md:text-sm tracking-[0] leading-tight whitespace-nowrap overflow-hidden text-ellipsis mt-1">
+                {Math.round(((props.originalPrice - props.discountedPrice) / props.originalPrice) * 100)}% off
+              </div>
+            )}
+          </>
         )}
 
         <div className="flex items-center gap-1 mt-2">
