@@ -80,6 +80,7 @@ const getUniformsForSchool = (schoolCatalog, schoolData) => {
           id: product.product_id,
           discount: discountPct > 0 ? `${discountPct}% off` : "",
           school: schoolData,
+          brand: (product.brands && product.brands.length > 0 && product.brands[0]?.name) ? product.brands[0].name : "Uniform Brand",
         };
       });
   }
@@ -174,6 +175,7 @@ const getStationaryForSchool = (schoolCatalog, schoolData) => {
           id: product.product_id,
           discount: discountPct > 0 ? `${discountPct}% off` : "",
           school: schoolData,
+          brand: (product.brands && product.brands.length > 0 && product.brands[0]?.name) ? product.brands[0].name : "Stationery Brand",
         };
       });
   }
@@ -414,30 +416,33 @@ const SchoolScreen = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4 md:gap-12">
-            {selectedCategory === "School Uniform" ? (
-              uniforms.map((uniform, idx) => (
-                <UniformCard key={idx} props={uniform} />
-              ))
-            ) : selectedCategory === "BookSet" ? (
-              bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)
-            ) : selectedCategory === "Stationary" ? (
-              stationery.length > 0 ? (
-                stationery.map((item, idx) => <UniformCard key={idx} props={item} />)
+          {selectedCategory === "BookSet" ? (
+            <div className="flex flex-wrap justify-center gap-4 md:gap-12">
+              {bookSets.map((book, idx) => <BookSetCard key={idx} props={book} />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+              {selectedCategory === "School Uniform" ? (
+                uniforms.map((uniform, idx) => (
+                  <UniformCard key={idx} props={uniform} />
+                ))
+              ) : selectedCategory === "Stationary" ? (
+                stationery.length > 0 ? (
+                  stationery.map((item, idx) => <UniformCard key={idx} props={item} />)
+                ) : (
+                  <div className="col-span-4 text-center py-16">
+                    <p className="text-gray-500 text-lg">No stationery products available for this school yet.</p>
+                  </div>
+                )
               ) : (
                 <div className="col-span-4 text-center py-16">
-                  <p className="text-gray-500 text-lg">No stationery products available for this school yet.</p>
+                  <p className="text-gray-500 text-lg">
+                    {selectedCategory} products coming soon...
+                  </p>
                 </div>
-              )
-            ) : (
-              // Placeholder for other categories
-              <div className="col-span-4 text-center py-16">
-                <p className="text-gray-500 text-lg">
-                  {selectedCategory} products coming soon...
-                </p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

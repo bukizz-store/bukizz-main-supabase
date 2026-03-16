@@ -444,8 +444,31 @@ const useOrderStore = create((set, get) => ({
           }),
         },
         billingAddress: {
-          ...selectedAddress,
+          recipientName: selectedAddress.recipientName || "",
           studentName: selectedAddress.studentName || "",
+          phone: selectedAddress.phone || contactPhone || "",
+          line1: selectedAddress.line1,
+          line2: selectedAddress.line2 || "",
+          city: selectedAddress.city,
+          state: selectedAddress.state,
+          country: selectedAddress.country || "India",
+          postalCode: selectedAddress.postalCode,
+          ...(selectedAddress.lat &&
+            selectedAddress.lng && {
+            coordinates: {
+              lat: parseFloat(selectedAddress.lat),
+              lng: parseFloat(selectedAddress.lng),
+            },
+          }),
+          ...(selectedAddress.landmark && {
+            landmark: selectedAddress.landmark,
+          }),
+          ...(selectedAddress.neighborhood && {
+            neighborhood: selectedAddress.neighborhood,
+          }),
+          ...(selectedAddress.district && {
+            district: selectedAddress.district,
+          }),
         },
         contactPhone: contactPhone || selectedAddress.phone || "",
         contactEmail: contactEmail || "",

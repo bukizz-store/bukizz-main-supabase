@@ -343,34 +343,60 @@ function ProductViewPage() {
           limit: 10,
         };
 
-        // Resolve school ID from product or navigation state
-        const resolvedSchoolId = product.school_id || location.state?.school?.id;
+        // Resolve school ID from product's school associations, or navigation state
+        const resolvedSchoolId =
+          product.schools?.[0]?.school_id ||
+          product.school_id ||
+          location.state?.school?.id;
 
         const hasCategory = product.categories && product.categories.length > 0;
+        const isBookset = product.product_type === "bookset";
 
-        if (!hasCategory && resolvedSchoolId) {
+        if (isBookset && !resolvedSchoolId) {
+          // Bookset without school context: don't show similar products
+          setSimilarProducts([]);
+        } else if (!hasCategory && resolvedSchoolId) {
           // School bookset (no category): show remaining booksets from same school
           searchFilters.productType = product.product_type;
           searchFilters.schoolId = resolvedSchoolId;
+
+          searchProducts(searchFilters)
+            .then((similarResult) => {
+              const filtered =
+                similarResult.products?.filter((p) => p.id !== product.id) || [];
+              setSimilarProducts(filtered);
+            })
+            .catch((err) => {
+              console.error("Error fetching similar products:", err);
+            });
         } else if (hasCategory) {
           // General product (has category): show products from same category
           const categorySlug = product.categories[0].slug || product.categories[0].name;
           searchFilters.category = categorySlug;
+
+          searchProducts(searchFilters)
+            .then((similarResult) => {
+              const filtered =
+                similarResult.products?.filter((p) => p.id !== product.id) || [];
+              setSimilarProducts(filtered);
+            })
+            .catch((err) => {
+              console.error("Error fetching similar products:", err);
+            });
         } else {
           // Fallback: same product type
           searchFilters.productType = product.product_type;
-        }
 
-        searchProducts(searchFilters)
-          .then((similarResult) => {
-            const filtered =
-              similarResult.products?.filter((p) => p.id !== product.id) || [];
-            setSimilarProducts(filtered);
-          })
-          .catch((err) => {
-            console.error("Error fetching similar products:", err);
-            // Don't block main loading for similar products failure
-          });
+          searchProducts(searchFilters)
+            .then((similarResult) => {
+              const filtered =
+                similarResult.products?.filter((p) => p.id !== product.id) || [];
+              setSimilarProducts(filtered);
+            })
+            .catch((err) => {
+              console.error("Error fetching similar products:", err);
+            });
+        }
       }
 
       // Check if including school details from location state

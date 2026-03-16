@@ -73,7 +73,7 @@ export const BookSetCard = ({ props }) => {
         {isUnavailable ? (
           <div className="flex items-center justify-center py-2">
             <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 rounded-full border border-orange-300">
-              Unavailable
+              Coming Soon
             </span>
           </div>
         ) : (
