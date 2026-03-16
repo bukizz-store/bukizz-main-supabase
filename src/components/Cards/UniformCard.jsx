@@ -76,20 +76,22 @@ export const UniformCard = ({ props }) => {
         {/* Pricing Row */}
         <div className="mt-1 flex items-center flex-wrap gap-2">
           {/* Mobile Layout: Discount -> Original -> Current */}
-          <div className="flex md:hidden items-center gap-2 w-full">
+          <div className="flex md:hidden items-center gap-2 w-full wrap">
+            {/* {discount > 0 && (
+              <span className="text-xs font-bold text-green-600 flex items-center no-wrap">
+                ↓{discount}%
+              </span>
+            )} */}
+            {/* <div className="flex items-center gap-1"> */}
             {discount > 0 && (
-  <span className="text-[10px] font-semibold text-green-600 flex items-center">
-    ↓ {discount}%
-  </span>
-)}
-{discount > 0 && (
-  <span className="text-[10px] text-gray-400 line-through decoration-gray-400">
-    {formatPrice(originalPrice)}
-  </span>
-)}
+              <span className="text-xs text-gray-400 line-through decoration-gray-400">
+                {formatPrice(originalPrice)}
+              </span>
+            )}
             <span className="text-sm font-semibold text-gray-900">
               {formatPrice(basePrice)}
             </span>
+            {/* </div> */}
           </div>
 
           {/* Desktop Layout: Current -> Original -> Discount */}
@@ -102,11 +104,11 @@ export const UniformCard = ({ props }) => {
                 {formatPrice(originalPrice)}
               </span>
             )}
-            {discount > 0 && (
+            {/* {discount > 0 && (
               <span className="text-xs font-medium text-green-600">
                 {discount}% off
               </span>
-            )}
+            )} */}
           </div>
         </div>
       </div>
