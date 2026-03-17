@@ -60,7 +60,7 @@ export const BookSetCard = ({ props }) => {
       onClick={handleClick}
     >
       {/* Top Banner (Class Display) */}
-      <div className={`flex flex-col items-center justify-center p-4 md:p-6 text-white flex-shrink-0 ${isUnavailable ? 'bg-gradient-to-b from-green-500 to-green-400' : 'bg-gradient-to-b from-[#39A7FF] to-[#0074D1]'}`}>
+      <div className={`flex flex-col items-center justify-center p-4 md:p-6 text-white flex-shrink-0 ${isUnavailable ? 'bg-gradient-to-b from-gray-400 to-gray-500' : 'bg-gradient-to-b from-[#39A7FF] to-[#0074D1]'}`}>
         <div className="font-nunito font-semibold text-white/80 text-xs md:text-sm tracking-widest leading-none mb-1 md:mb-2 uppercase">
           Class
         </div>

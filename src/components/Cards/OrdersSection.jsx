@@ -193,14 +193,14 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
 
               {/* Main Actions */}
               <div className="flex gap-2">
-                {((item.status || order.status) === "initialized" || (item.status || order.status) === "processed") && (
+                {/* {((item.status || order.status) === "initialized" || (item.status || order.status) === "processed") && (
                   <button
                     onClick={(e) => onCancel(e)}
                     className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
                   >
                     Cancel Item
                   </button>
-                )}
+                )} */}
                 {((item.status || order.status) === "shipped" || (item.status || order.status) === "out_for_delivery" || (item.status || order.status) === "delivered") && (
                   <button
                     onClick={(e) => onRequest(e)}
@@ -1014,9 +1014,9 @@ const OrdersSection = () => {
       if (order.estimatedDeliveryDate) {
         return new Date(order.estimatedDeliveryDate);
       }
-      // Fallback: 7 days from order creation
+      // Fallback: 1 days from order creation
       const date = new Date(order.createdAt);
-      date.setDate(date.getDate() + 7);
+      date.setDate(date.getDate() + 1);
       return date;
     };
 

@@ -4,9 +4,10 @@ import SearchBar from "../../components/Common/SearchBar";
 import useCartStore from "../../store/cartStore";
 import useAuthStore from "../../store/authStore";
 import useNotificationStore from "../../store/notificationStore";
-import { handleBackNavigation } from "../../utils/navigation";
+import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 import HomeCarousel from "../../components/Sections/HomeCarousel";
 import useCityStore from "../../store/cityStore";
+import AppDownloadSlider from "../../components/Common/AppDownloadSlider";
 
 function CartPage() {
   const navigate = useNavigate();
@@ -290,6 +291,12 @@ function CartPage() {
           <h1 className="text-xl font-semibold text-gray-900">My Cart</h1>
         </div>
       </div>
+
+      {!isWebViewMode() && (
+        <div className="md:hidden">
+          <AppDownloadSlider />
+        </div>
+      )}
 
       {/* Empty Cart State */}
       {!cart?.items || cart.items.length === 0 ? (

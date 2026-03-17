@@ -69,9 +69,9 @@ const CategoryPage = () => {
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    {/* <div className="mb-6">
                         <HomeCarousel city={selectedCity} page="category" />
-                    </div>
+                    </div> */}
 
                     {loading ? (
                         <div className="text-center py-16">

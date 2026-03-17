@@ -80,7 +80,7 @@ const getUniformsForSchool = (schoolCatalog, schoolData) => {
           id: product.product_id,
           discount: discountPct > 0 ? `${discountPct}% off` : "",
           school: schoolData,
-          brand: (product.brands && product.brands.length > 0 && product.brands[0]?.name) ? product.brands[0].name : "Uniform Brand",
+          brand: (product.brands && product.brands.length > 0 && product.brands[0]?.name) ? product.brands[0].name : "School Uniform",
         };
       });
   }

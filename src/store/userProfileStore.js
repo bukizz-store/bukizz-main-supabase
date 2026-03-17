@@ -845,6 +845,28 @@ const useUserProfileStore = create((set, get) => ({
     }
   },
 
+  // Get similar products
+  getSimilarProducts: async (productId, limit = 10) => {
+    try {
+      const url = `${BASE_URL}/products/${productId}/similar?limit=${limit}`;
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch similar products");
+      }
+
+      const data = await response.json();
+      return data.data.products;
+    } catch (error) {
+      console.error("Error fetching similar products:", error);
+      return [];
+    }
+  },
+
   // Get product by ID with caching
   getProduct: async (productId) => {
     const get = useUserProfileStore.getState;

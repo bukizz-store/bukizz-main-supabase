@@ -754,9 +754,11 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     onChange={(e) => handleFormChange("phone", e.target.value)}
                                     placeholder="10-digit mobile number *"
                                     maxLength={10}
-                                    style={errors.phone ? { borderColor: '#ef4444' } : {}}
+                                    style={errors.phone && !/^[0-9]{10}$/.test(formData.phone) ? { borderColor: '#ef4444' } : {}}
                                 />
-                                {errors.phone && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.phone}</span>}
+                                {formData.phone && !/^[0-9]{10}$/.test(formData.phone) && (
+                                    <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>Invalid 10-digit phone number</span>
+                                )}  
                             </div>
 
                             <div className="form-group">
@@ -767,7 +769,11 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                     onChange={(e) => handleFormChange("alternatePhone", e.target.value)}
                                     placeholder="Alternate phone number (Optional)"
                                     maxLength={10}
+                                    style={formData.alternatePhone && !/^[0-9]{10}$/.test(formData.alternatePhone) ? { borderColor: '#ef4444' } : {}}
                                 />
+                                {formData.alternatePhone && !/^[0-9]{10}$/.test(formData.alternatePhone) && (
+                                    <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>Invalid 10-digit phone number</span>
+                                )}  
                             </div>
 
                             <div className="form-group grid-cols-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -778,9 +784,12 @@ const MobileMapAddressPicker = ({ onClose, onAddressSelect, isEditing = false })
                                         value={formData.postalCode}
                                         onChange={(e) => handleFormChange("postalCode", e.target.value)}
                                         placeholder="Pincode *"
-                                        style={errors.postalCode ? { borderColor: '#ef4444' } : {}}
+                                        maxLength={6}
+                                        style={errors.postalCode && !/^[0-9]{6}$/.test(formData.postalCode) ? { borderColor: '#ef4444' } : {}}
                                     />
-                                    {errors.postalCode && <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>{errors.postalCode}</span>}
+                                    {errors.postalCode && !/^[0-9]{6}$/.test(formData.postalCode) && (
+                                        <span style={{ color: '#ef4444', fontSize: '11px', marginTop: '4px', display: 'block' }}>Invalid 6-digit pincode</span>
+                                    )}
                                 </div>
                                 <div>
                                     <label>City *</label>

@@ -11,7 +11,6 @@ import useAuthStore from "../../store/authStore";
 import useOrderStore from "../../store/orderStore";
 import useNotificationStore from "../../store/notificationStore";
 import useApiRoutesStore from "../../store/apiRoutesStore";
-
 // CheckoutPage.js
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -1120,8 +1119,6 @@ function CheckoutPage() {
         />
       )}
 
-      {/* <SearchBar /> */}
-
       {/* Progress Steps */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-4">
@@ -1386,7 +1383,54 @@ function CheckoutPage() {
                   )}
                 </div>
 
-                <div className="p-5 pb-28">
+                <div className="p-5 pt-3 pb-16">
+
+                                    {/* Student Name for Order — shown right after address selection, before Continue */}
+                  {!showAddressForm && addresses.length > 0 && selectedAddressId && (
+                    <div ref={studentNameRef} className="mb-4">
+                      <div className="rounded-2xl border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-4 shadow-sm">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-bold text-gray-900 leading-tight">Student Name for this Order</h3>
+                              {!studentNameForOrder.trim() && (
+                                <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Required</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={studentNameForOrder}
+                            onChange={(e) => {
+                              setStudentNameForOrder(e.target.value);
+                              if (studentNameError) setStudentNameError("");
+                            }}
+                            placeholder="Enter student's full name *"
+                            className={`w-full px-4 py-3 bg-white border-2 text-sm font-medium ${studentNameError
+                              ? 'border-red-400 ring-1 ring-red-300 placeholder-red-300'
+                              : 'border-blue-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-300 placeholder-gray-400'
+                              } rounded-xl outline-none transition-all`}
+                          />
+                          {studentNameError && (
+                            <div className="mt-1.5 flex items-center gap-1.5 text-red-500 text-xs font-semibold">
+                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              {studentNameError}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Address Form */}
                   {showAddressForm && (
@@ -1465,55 +1509,7 @@ function CheckoutPage() {
                     )
                   )}
 
-                  {/* Student Name for Order — shown right after address selection, before Continue */}
-                  {!showAddressForm && addresses.length > 0 && selectedAddressId && (
-                    <div ref={studentNameRef} className="mt-5 mb-4">
-                      <div className="rounded-2xl border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-4 shadow-sm">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-bold text-gray-900 leading-tight">Student Name for this Order</h3>
-                              {!studentNameForOrder.trim() && (
-                                <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Required</span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-0.5 leading-snug">
-                              Needed before you can continue — helps us pack for the right student.
-                            </p>
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={studentNameForOrder}
-                            onChange={(e) => {
-                              setStudentNameForOrder(e.target.value);
-                              if (studentNameError) setStudentNameError("");
-                            }}
-                            placeholder="Enter student's full name *"
-                            className={`w-full px-4 py-3 bg-white border-2 text-sm font-medium ${studentNameError
-                              ? 'border-red-400 ring-1 ring-red-300 placeholder-red-300'
-                              : 'border-blue-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-300 placeholder-gray-400'
-                              } rounded-xl outline-none transition-all`}
-                          />
-                          {studentNameError && (
-                            <div className="mt-1.5 flex items-center gap-1.5 text-red-500 text-xs font-semibold">
-                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              {studentNameError}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Sticky Footer for Step 2 */}
                   {!showAddressForm && addresses.length > 0 && (

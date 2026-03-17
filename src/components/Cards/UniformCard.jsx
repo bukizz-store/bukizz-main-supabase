@@ -69,7 +69,7 @@ export const UniformCard = ({ props }) => {
         </p>
 
         {/* Product Title */}
-        <h3 className="text-xs md:text-[11px] font-bold md:font-medium text-black md:text-gray-500 uppercase tracking-wide truncate">
+        <h3 className="text-xs md:text-base font-bold text-black uppercase tracking-wide truncate">
           {props.name || "Product"}
         </h3>
 
@@ -96,14 +96,15 @@ export const UniformCard = ({ props }) => {
 
           {/* Desktop Layout: Current -> Original -> Discount */}
           <div className="hidden md:flex items-center gap-2 w-full">
-            <span className="text-base font-bold text-gray-900">
-              {formatPrice(basePrice)}
-            </span>
             {discount > 0 && (
-              <span className="text-xs text-gray-400 line-through decoration-gray-400">
+              <span className="text-md text-gray-400 line-through decoration-gray-400">
                 {formatPrice(originalPrice)}
               </span>
             )}
+            <span className="text-base font-bold text-gray-900">
+              {formatPrice(basePrice)}
+            </span>
+
             {/* {discount > 0 && (
               <span className="text-xs font-medium text-green-600">
                 {discount}% off

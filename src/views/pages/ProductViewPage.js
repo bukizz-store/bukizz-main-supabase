@@ -17,7 +17,7 @@ function ProductViewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { getProduct, searchProducts, loading, error } = useUserProfileStore();
+  const { getProduct, searchProducts, getSimilarProducts, loading, error } = useUserProfileStore();
 
   const { addToCart, loading: cartLoading, isInCart, initiateBuyNowFlow } = useCartStore();
   const { isAuthenticated, setModalOpen } = useAuthStore();
@@ -339,64 +339,14 @@ function ProductViewPage() {
 
       // Fetch similar products asynchronously (non-blocking)
       if (product.product_type) {
-        const searchFilters = {
-          limit: 10,
-        };
-
-        // Resolve school ID from product's school associations, or navigation state
-        const resolvedSchoolId =
-          product.schools?.[0]?.school_id ||
-          product.school_id ||
-          location.state?.school?.id;
-
-        const hasCategory = product.categories && product.categories.length > 0;
-        const isBookset = product.product_type === "bookset";
-
-        if (isBookset && !resolvedSchoolId) {
-          // Bookset without school context: don't show similar products
-          setSimilarProducts([]);
-        } else if (!hasCategory && resolvedSchoolId) {
-          // School bookset (no category): show remaining booksets from same school
-          searchFilters.productType = product.product_type;
-          searchFilters.schoolId = resolvedSchoolId;
-
-          searchProducts(searchFilters)
-            .then((similarResult) => {
-              const filtered =
-                similarResult.products?.filter((p) => p.id !== product.id) || [];
-              setSimilarProducts(filtered);
-            })
-            .catch((err) => {
-              console.error("Error fetching similar products:", err);
-            });
-        } else if (hasCategory) {
-          // General product (has category): show products from same category
-          const categorySlug = product.categories[0].slug || product.categories[0].name;
-          searchFilters.category = categorySlug;
-
-          searchProducts(searchFilters)
-            .then((similarResult) => {
-              const filtered =
-                similarResult.products?.filter((p) => p.id !== product.id) || [];
-              setSimilarProducts(filtered);
-            })
-            .catch((err) => {
-              console.error("Error fetching similar products:", err);
-            });
-        } else {
-          // Fallback: same product type
-          searchFilters.productType = product.product_type;
-
-          searchProducts(searchFilters)
-            .then((similarResult) => {
-              const filtered =
-                similarResult.products?.filter((p) => p.id !== product.id) || [];
-              setSimilarProducts(filtered);
-            })
-            .catch((err) => {
-              console.error("Error fetching similar products:", err);
-            });
-        }
+        getSimilarProducts(product.id)
+          .then((similarResult) => {
+            setSimilarProducts(similarResult || []);
+          })
+          .catch((err) => {
+            console.error("Error fetching similar products:", err);
+            setSimilarProducts([]);
+          });
       }
 
       // Check if including school details from location state
@@ -1183,12 +1133,31 @@ function ProductViewPage() {
                   // Always build bookset-format props here since we're rendering BookSetCard
                   const basePrice = product.basePrice || product.base_price || product.min_price || 0;
                   const comparePrice = product.metadata?.compare_price || product.metadata?.compare_at_price || basePrice;
-                  // Extract grade: prefer schoolInfo.grade from API
-                  let grade = product.schoolInfo?.grade || product.metadata?.grade;
-                  if (!grade && product.title) {
-                    const match = product.title.match(/(?:class|grade)\s*(\d+)/i);
-                    if (match) grade = match[1];
+                  
+                  // Extract grade:
+                  // 1. Try to match with current school context if available
+                  const currentSchoolId = location.state?.school?.id || productData?.schools?.[0]?.school_id;
+                  let grade = null;
+
+                  if (product.product_schools && Array.isArray(product.product_schools)) {
+                    const match = currentSchoolId 
+                      ? product.product_schools.find(ps => ps.school_id === currentSchoolId)
+                      : null;
+                    grade = match?.grade || product.product_schools[0]?.grade;
                   }
+
+                  // 2. Fallback to other sources
+                  if (!grade) {
+                    grade = product.schoolInfo?.grade || product.metadata?.grade;
+                  }
+                  
+                  // 3. Last resort: Regex title
+                  if (!grade && product.title) {
+                    // Match "Class KG", "Class 1", but also "Nursery", "LKG", "UKG" standalone
+                    const match = product.title.match(/(?:class|grade)\s+([a-zA-Z0-9]+)|(nursery|lkg|ukg|kg|pg)/i);
+                    if (match) grade = match[1] || match[2];
+                  }
+
                   const booksetProps = {
                     class: grade || "General",
                     originalPrice: comparePrice,
