@@ -320,8 +320,16 @@ const useOrderStore = create((set, get) => ({
       0
     );
 
-    // Calculate delivery fee (free delivery for orders above ₹500)
-    const deliveryFee = subtotal >= 500 ? 0 : 50;
+    // Calculate item specific delivery charges
+    const itemDeliveryCharges = cartItems.reduce(
+      (sum, item) => sum + ((item.deliveryCharge || 0) * (item.quantity || 0)),
+      0
+    );
+
+    // Calculate base delivery fee (free delivery for orders above ₹399)
+    const baseDeliveryFee = subtotal >= 399 ? 0 : 50;
+
+    const deliveryFee = itemDeliveryCharges + baseDeliveryFee;
 
     // Platform fee (₹10 if there are items)
     const platformFee = subtotal > 0 ? 10 : 0;

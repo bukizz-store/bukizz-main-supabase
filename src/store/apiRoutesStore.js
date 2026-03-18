@@ -47,6 +47,7 @@ const useApiRoutesStore = create((set, get) => ({
     getProfile: `${BASE_URL}/auth/me`,
     googleLogin: `${BASE_URL}/auth/google-login`,
     appleLogin: `${BASE_URL}/auth/apple-login`,
+    deleteAccount: `${BASE_URL}/auth/delete-account`,
   },
 
   // ============ USER ROUTES ============

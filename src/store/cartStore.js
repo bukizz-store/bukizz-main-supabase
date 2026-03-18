@@ -860,22 +860,17 @@ const calculateCartTotals = (items) => {
   // No default discount (coupon logic to be added later)
   const discount = 0;
 
-  // Calculate delivery charges based on product types
-  // Items with explicit delivery charges (bookset/uniform/stationary with deliveryCharge in metadata)
-  const itemsWithDeliveryCharge = items.filter(item => item.deliveryCharge > 0);
+  // 1. Calculate item-specific delivery charges
+  const itemDeliveryCharges = items.reduce(
+    (sum, item) => sum + ((item.deliveryCharge || 0) * (item.quantity || 1)),
+    0
+  );
 
-  let deliveryCharges = 0;
-  if (itemsWithDeliveryCharge.length > 0) {
-    // Sum delivery charges from all items that have them (per item × quantity)
-    deliveryCharges = itemsWithDeliveryCharge.reduce(
-      (sum, item) => sum + ((item.deliveryCharge || 0) * (item.quantity || 1)),
-      0
-    );
-    // Items without delivery charge get FREE delivery when items with charges are present
-  } else {
-    // Only general products: apply ₹50 if total < ₹399, else FREE
-    deliveryCharges = subtotal < 399 ? 50 : 0;
-  }
+  // 2. Calculate base delivery fee (standard shipping)
+  // Logic: If order < 399, add 50. This applies ON TOP of item specific charges.
+  const baseDeliveryFee = subtotal < 399 ? 50 : 0;
+
+  const deliveryCharges = itemDeliveryCharges + baseDeliveryFee;
 
   // Platform fees only if there are items
   const platformFees = subtotal > 0 ? 10 : 0;

@@ -1416,6 +1416,37 @@ const useUserProfileStore = create((set, get) => ({
       throw error;
     }
   },
+
+  // Delete User Account
+  deleteAccount: async () => {
+    set({ loading: true, error: null });
+    try {
+      const token = localStorage.getItem("custom_token");
+      if (!token) throw new Error("Authentication required");
+
+      const response = await fetch(
+        `${BASE_URL}/auth/delete-account`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete account");
+      }
+
+      set({ loading: false, profile: null, error: null });
+      return true;
+    } catch (error) {
+      set({ loading: false, error: error.message });
+      throw error;
+    }
+  },
 }));
 
 export default useUserProfileStore;

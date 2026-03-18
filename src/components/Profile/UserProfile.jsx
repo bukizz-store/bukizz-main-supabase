@@ -19,6 +19,7 @@ const UserProfile = () => {
     updateProfile,
     verifyEmail,
     clearError,
+    deleteAccount,
   } = useUserProfileStore();
 
   const [editMode, setEditMode] = useState(false);
@@ -89,6 +90,20 @@ const UserProfile = () => {
       alert(message);
     } catch (error) {
       alert("Error verifying email: " + error.message);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
+      try {
+        await deleteAccount();
+        alert("Your account has been deleted successfully.");
+        // Redirect or clear auth state via authStore if necessary, though deleting usually invalidates tokens
+        useAuthStore.getState().logout();
+        navigate("/");
+      } catch (error) {
+        alert("Error deleting account: " + error.message);
+      }
     }
   };
 
@@ -441,6 +456,22 @@ const UserProfile = () => {
             <span className="capitalize">{profile?.role || "Customer"}</span>
           </p>
         </div>
+      </div>
+
+      {/* Delete Account Section */}
+      <div className="bg-white rounded-lg shadow-lg p-6 border border-red-200">
+        <h2 className="text-xl font-bold text-red-600 mb-2">
+          Danger Zone
+        </h2>
+        <p className="text-gray-600 mb-4">
+          Once you delete your account, there is no going back. Please be certain.
+        </p>
+        <button
+          onClick={handleDeleteAccount}
+          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Delete Account
+        </button>
       </div>
     </div>
   );
