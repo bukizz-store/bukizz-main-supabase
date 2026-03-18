@@ -24,6 +24,7 @@ import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import useOrderStore from "../../store/orderStore";
+import PaymentSuccessPopup from "../Popups/PaymentSuccessPopup";
 
 const getVariantDescription = (item) => {
   // 1. If explicit string exists (legacy support)
@@ -252,6 +253,7 @@ const OrdersSection = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // To force re-fetch after action
+  const [showPaymentSuccessPopup, setShowPaymentSuccessPopup] = useState(false);
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
@@ -309,6 +311,22 @@ const OrdersSection = () => {
 
     fetchOrders();
   }, [refreshTrigger, page]);
+
+  // Sync selectedItem with updated orders
+  useEffect(() => {
+    if (selectedItem && orders.length > 0) {
+      const updatedOrder = orders.find(o => o.id === selectedItem.order.id);
+      if (updatedOrder) {
+        // Find the item within the updated order
+        const updatedItem = updatedOrder.items.find(i => i.id === selectedItem.id);
+        if (updatedItem) {
+          // Preserve any extra properties that were added to selectedItem (like 'order')
+          // But ensure we use the updated order object
+          setSelectedItem({ ...updatedItem, order: updatedOrder });
+        }
+      }
+    }
+  }, [orders]);
 
   const handleCancelOrder = async () => {
     if (!selectedOrderForAction) return;
@@ -768,9 +786,8 @@ const OrdersSection = () => {
                 razorpay_signature: response.razorpay_signature,
                 orderId: order.id
               });
-              alert("Payment successful! Your order is now paid.");
+              setShowPaymentSuccessPopup(true);
               setRefreshTrigger(prev => prev + 1);
-              onBack();
             } catch (err) {
               console.error("Native payment verification failed:", err);
               alert("Payment verification failed. Please contact support.");
@@ -825,9 +842,8 @@ const OrdersSection = () => {
                 razorpay_signature: response.razorpay_signature,
                 orderId: order.id
               });
-              alert("Payment successful! Your order is now paid.");
+              setShowPaymentSuccessPopup(true);
               setRefreshTrigger(prev => prev + 1);
-              onBack();
             } catch (err) {
               console.error("Payment verification failed:", err);
               alert("Payment verification failed. Please contact support.");
@@ -1604,6 +1620,15 @@ const OrdersSection = () => {
             itemStatus={itemStatus} // Pass status
           />
         )}
+
+        {/* Payment Success Popup */}
+        <PaymentSuccessPopup
+          isOpen={showPaymentSuccessPopup}
+          onClose={() => {
+            setShowPaymentSuccessPopup(false);
+            onBack();
+          }}
+        />
 
         {/* Queries Bottom Sheet */}
         {isQuerySheetOpen && (

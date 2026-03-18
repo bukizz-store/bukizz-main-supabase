@@ -996,22 +996,22 @@ function CheckoutPage() {
   // This mirrors the logic in CartPage.js to ensure consistency
   const checkoutSummary = activeBuyNowItem
     ? (() => {
-        const subtotal = activeBuyNowItem.price * activeBuyNowItem.quantity;
-        const itemDeliveryCharge = (activeBuyNowItem.deliveryCharge || 0) * (activeBuyNowItem.quantity || 1);
-        
-        // Base delivery fee: 50 if subtotal < 399, else 0
+        const quantity = activeBuyNowItem.quantity || 1;
+        const subtotal = (activeBuyNowItem.price || 0) * quantity;
+        const itemDeliveryCharge = (activeBuyNowItem.deliveryCharge || 0) * quantity;
+        // Logic: If order < 399, add 50. This applies ON TOP of item specific charges.
         const baseDeliveryFee = subtotal < 399 ? 50 : 0;
-        
-        // Total delivery charges = Item Specific + Base Fee
         const deliveryCharges = itemDeliveryCharge + baseDeliveryFee;
-        
+        const platformFees = subtotal > 0 ? 10 : 0;
+        const totalAmount = subtotal + platformFees + deliveryCharges;
+
         return {
           items: [activeBuyNowItem],
-          totalItems: activeBuyNowItem.quantity,
-          subtotal: subtotal,
-          platformFees: 10,
-          deliveryCharges: deliveryCharges,
-          totalAmount: subtotal + 10 + deliveryCharges
+          totalItems: quantity,
+          subtotal,
+          platformFees,
+          deliveryCharges,
+          totalAmount
         };
       })()
     : cart; // When in Cart mode, use the cart store state directly
