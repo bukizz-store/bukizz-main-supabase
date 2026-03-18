@@ -747,6 +747,7 @@ const OrdersSection = () => {
     const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false); // Address Sheet state
     const [payOnlineLoading, setPayOnlineLoading] = useState(false);
     const [showFees, setShowFees] = useState(false);
+    const [showPaymentSuccessPopup, setShowPaymentSuccessPopup] = useState(false);
 
     const { initiateRazorpayPayment, verifyRazorpayPayment, reportPaymentFailure } = useOrderStore();
 
