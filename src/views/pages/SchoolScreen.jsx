@@ -208,7 +208,7 @@ const SchoolScreen = () => {
       // Fetch school details and catalog in parallel
       const [school, catalog] = await Promise.all([
         getSchool(id),
-        getSchoolCatalog(id, { limit: 20 }).catch(() => ({ products: [] })), // Don't fail if catalog is empty
+        getSchoolCatalog(id, { limit: 50 }).catch(() => ({ products: [] })), // Don't fail if catalog is empty
       ]);
 
       console.log("Fetched school:", school);
