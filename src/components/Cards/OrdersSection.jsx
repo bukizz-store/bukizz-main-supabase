@@ -25,6 +25,7 @@ import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import useOrderStore from "../../store/orderStore";
 import PaymentSuccessPopup from "../Popups/PaymentSuccessPopup";
+import { getDeliveryEstimate } from "../../utils/deliveryEstimate";
 
 const getVariantDescription = (item) => {
   // 1. If explicit string exists (legacy support)
@@ -1031,15 +1032,16 @@ const OrdersSection = () => {
       if (order.estimatedDeliveryDate) {
         return new Date(order.estimatedDeliveryDate);
       }
-      // Fallback: 1 days from order creation
+      // Fallback: Use new delivery utility to compute date correctly if needed
+      // but we will primarily use the string output directly below
+      const deliveryHours = item.productSnapshot?.metadata?.deliveryHours || 24;
       const date = new Date(order.createdAt);
-      date.setDate(date.getDate() + 1);
+      date.setTime(date.getTime() + deliveryHours * 60 * 60 * 1000);
       return date;
     };
 
     const deliveryDate = getDeliveryDate();
-    const deliveryDateString = deliveryDate.toLocaleDateString('en-US', { start: 'short', month: 'short', day: 'numeric' }); // "Sat Jan 24"
-    const deliveryTimeString = "11 PM"; // Placeholder as per image
+    const dynamicDeliveryString = getDeliveryEstimate(item.productSnapshot?.delivery_hours || item.productSnapshot?.deliveryHours || item.productSnapshot?.metadata?.deliveryHours || 24, order.createdAt);
 
     // Date formatter
     const formatDate = (dateInput) => {
@@ -1107,7 +1109,7 @@ const OrdersSection = () => {
           // If delivered, show delivered date. If not, show estimated.
           subtext: itemStatus === 'delivered'
             ? formatDate(getEventDate('delivery'))
-            : `${deliveryDateString} by ${deliveryTimeString} `
+            : dynamicDeliveryString
         }
       ];
     }
