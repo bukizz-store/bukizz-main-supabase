@@ -1297,6 +1297,36 @@ const OrdersSection = () => {
               </button>
             </div>
 
+            {item?.deliveryOtp && (
+              <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-yellow-700 font-semibold">Delivery OTP</p>
+                  <p className="text-lg font-bold text-yellow-900">{item.deliveryOtp}</p>
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(item.deliveryOtp)}
+                  className="px-2 py-1 text-xs font-medium text-yellow-800 border border-yellow-300 rounded hover:bg-yellow-100"
+                >
+                  Copy OTP
+                </button>
+              </div>
+            )}
+
+            {item?.rtoOtp && (
+              <div className="mb-4 bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-rose-700 font-semibold">RTO Cancellation OTP</p>
+                  <p className="text-lg font-bold text-rose-900">{item.rtoOtp}</p>
+                </div>
+                <button
+                  onClick={() => navigator.clipboard.writeText(item.rtoOtp)}
+                  className="px-2 py-1 text-xs font-medium text-rose-800 border border-rose-300 rounded hover:bg-rose-100"
+                >
+                  Copy OTP
+                </button>
+              </div>
+            )}
+
             <div className={`border ${boxBorderColor} rounded-lg p-4`}>
               <div className="mb-6">
                 <div className="flex items-center justify-between">

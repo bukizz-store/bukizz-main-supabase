@@ -20,7 +20,7 @@ const ContactUsPage = () => {
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800 mb-2">Phone</h2>
                         <p className="text-gray-600">
-                            +91 95204 43591
+                            +919369467134
                         </p>
                     </div>
 
