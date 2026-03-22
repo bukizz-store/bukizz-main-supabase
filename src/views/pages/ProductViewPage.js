@@ -11,7 +11,6 @@ import NoProductPage from "../../components/Product/NoProductPage";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 import { handleBackNavigation } from "../../utils/navigation";
 import useAuthStore from "../../store/authStore";
-import { getDeliveryEstimate } from "../../utils/deliveryEstimate";
 
 // ProductViewPage.js
 function ProductViewPage() {
@@ -1051,7 +1050,7 @@ function ProductViewPage() {
                         className="w-5 h-5 text-gray-600 opacity-70"
                       />
                       <p className="text-sm font-semibold text-gray-800">
-                        {getDeliveryEstimate(productData?.delivery_hours || productData?.deliveryHours || productData?.metadata?.deliveryHours)}
+                        Delivery by Tomorrow, 11 AM - 1 PM
                       </p>
                     </>
                   ) : (
