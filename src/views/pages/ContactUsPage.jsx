@@ -20,10 +20,10 @@ const ContactUsPage = () => {
                     <div>
                         <h2 className="text-xl font-semibold text-gray-800 mb-2">Phone</h2>
                         <p className="text-gray-600">
-                            Kanpur - 7985978838
+                            Kanpur - +91 7985978838
                         </p>
                         <p className="text-gray-600">
-                            Gurgaon - 9369467134
+                            Gurgaon - +91 9369467134
                         </p>
                     </div>
 

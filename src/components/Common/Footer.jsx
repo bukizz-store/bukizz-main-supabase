@@ -18,8 +18,8 @@ const Footer = () => {
           <div>
             <img src="/logo.svg" alt="Bukizz Logo" className="h-12" />
             <p className="text-gray-600 mt-2">Wisdom Rd , Sco 142 Nirman Point</p>
-            <p className="text-gray-600 mt-2">Kanpur - 7985978838</p>
-            <p className="text-gray-600 mt-2">Gurgaon - 9369467134</p>
+            <p className="text-gray-600 mt-2">Kanpur - +91 7985978838</p>
+            <p className="text-gray-600 mt-2">Gurgaon - +91 9369467134</p>
           </div>
           <div className="flex flex-wrap gap-8 md:gap-16">
             <div className="gap-4 flex flex-col">
@@ -86,8 +86,8 @@ const Footer = () => {
           <div>
             <img src="/logo.svg" alt="Bukizz Logo" className="h-12" />
             <p className="text-gray-600 mt-2">Wisdom Rd , Sco 142 Nirman Point</p>
-            <p className="text-gray-600 mt-2">Kanpur - 7985978838</p>
-            <p className="text-gray-600 mt-2">Gurgaon - 9369467134</p>
+            <p className="text-gray-600 mt-2">Kanpur - +91 7985978838</p>
+            <p className="text-gray-600 mt-2">Gurgaon - +91 9369467134</p>
           </div>
           <div className="flex flex-wrap gap-12 md:gap-16">
             <div className="flex justify-between w-full">

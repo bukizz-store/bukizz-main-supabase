@@ -358,7 +358,7 @@ const TermsOfUsePage = () => {
                     <p>GEETA NAGAR</p>
                     <p>KANPUR, Uttar Pradesh 208025</p>
                     <p>India</p>
-                    <p>Phone: Kanpur - 7985978838, Gurgaon - 9369467134</p>
+                    <p>Phone: Kanpur - +91 7985978838, Gurgaon - +91 9369467134</p>
                     <p>bukizzstore@gmail.com</p>
                 </div>
             </div>
