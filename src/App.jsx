@@ -10,6 +10,7 @@ import useAuthStore from "./store/authStore";
 import useCityStore from "./store/cityStore";
 
 import CitySelectionPopup from "./components/Common/CitySelectionPopup";
+import FirstTimeUserPopup from "./components/Common/FirstTimeUserPopup";
 
 import useUIStore from "./store/uiStore";
 import { supabase } from "./store/supabaseClient";
@@ -155,6 +156,9 @@ function App() {
         <div className={`flex flex-col min-h-screen bg-[#F3F8FF] ${isMobileApp ? "mobile-app-view" : ""}`}>
           {/* City Selection Popup */}
           {isCityPopupOpen && <CitySelectionPopup onClose={closeCityPopup} />}
+
+          {/* First Time User Popup */}
+          {!isMobileApp && <FirstTimeUserPopup />}
 
           {/* Notification Container for error/success popups */}
           <NotificationContainer />

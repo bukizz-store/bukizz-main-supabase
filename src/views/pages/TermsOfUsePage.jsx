@@ -15,7 +15,7 @@ const TermsOfUsePage = () => {
                     We operate the website bukizz.com (the "Site"), the mobile application bukizz (the "App"), as well as any other related products and services that refer or link to these legal terms (the "Legal Terms") (collectively, the "Services").
                 </p>
                 <p className="mb-4 leading-relaxed">
-                    You can contact us by phone at 09369467134, email at bukizzstore@gmail.com, or by mail to MOHAN VILA APARTMENT, GEETA NAGAR, KANPUR, Uttar Pradesh 208025, India.
+                    You can contact us by phone at Kanpur - 7985978838, Gurgaon - 9369467134, email at bukizzstore@gmail.com, or by mail to MOHAN VILA APARTMENT, GEETA NAGAR, KANPUR, Uttar Pradesh 208025, India.
                 </p>
                 <p className="mb-4 leading-relaxed">
                     These Legal Terms constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you"), and bukizz, concerning your access to and use of the Services. You agree that by accessing the Services, you have read, understood, and agreed to be bound by all of these Legal Terms. <strong>IF YOU DO NOT AGREE WITH ALL OF THESE LEGAL TERMS, THEN YOU ARE EXPRESSLY PROHIBITED FROM USING THE SERVICES AND YOU MUST DISCONTINUE USE IMMEDIATELY.</strong>
@@ -358,7 +358,7 @@ const TermsOfUsePage = () => {
                     <p>GEETA NAGAR</p>
                     <p>KANPUR, Uttar Pradesh 208025</p>
                     <p>India</p>
-                    <p>Phone: 09369467134</p>
+                    <p>Phone: Kanpur - 7985978838, Gurgaon - 9369467134</p>
                     <p>bukizzstore@gmail.com</p>
                 </div>
             </div>
