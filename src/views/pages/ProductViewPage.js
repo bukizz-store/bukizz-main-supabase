@@ -9,7 +9,7 @@ import useCartStore from "../../store/cartStore";
 import useApiRoutesStore from "../../store/apiRoutesStore"; // Import apiRoutesStore
 import NoProductPage from "../../components/Product/NoProductPage";
 import Breadcrumb from "../../components/Common/Breadcrumb";
-import { handleBackNavigation } from "../../utils/navigation";
+import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 import useAuthStore from "../../store/authStore";
 
 // ProductViewPage.js
@@ -753,6 +753,7 @@ function ProductViewPage() {
                   </>
                 )}
               </button>
+              {!isWebViewMode() && (
               <button
                 onClick={handleBuyNow}
                 disabled={
@@ -769,6 +770,7 @@ function ProductViewPage() {
               >
                 ₹ Buy Now
               </button>
+              )}
             </div>
           </div>
 
@@ -1312,6 +1314,7 @@ function ProductViewPage() {
             "Add to Cart"
           )}
         </button>
+        {!isWebViewMode() && (
         <button
           onClick={handleBuyNow}
           disabled={
@@ -1328,6 +1331,7 @@ function ProductViewPage() {
         >
           Buy Now
         </button>
+        )}
       </div>
 
       {/* Add-on Presentation Modal */}
