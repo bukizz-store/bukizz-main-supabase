@@ -1155,10 +1155,15 @@ const OrdersSection = () => {
     let statusDesc = "Your Order has been placed.";
     let alertBox = null;
 
+    // Dynamic status messages based on order status
     if (itemStatus === "cancelled") {
       boxBorderColor = "border-red-500 bg-red-50";
       statusTitle = "Order Cancelled";
       statusDesc = "This order has been cancelled.";
+    } else if (itemStatus === "refunded") {
+      boxBorderColor = "border-red-500 bg-red-50";
+      statusTitle = "Order Refunded";
+      statusDesc = "Your order has been refunded.";
     } else if (isPaymentFailed) {
       boxBorderColor = "border-red-500 bg-red-50";
       statusTitle = "Payment Failed";
@@ -1176,25 +1181,26 @@ const OrdersSection = () => {
           </div>
         </div>
       );
-    }
-
-    if (itemStatus === 'cancelled') {
-      boxBorderColor = "border-red-500 bg-red-50";
-      statusTitle = "Order Cancelled";
-      statusDesc = "This order has been cancelled.";
-    } else if (isPaymentIncomplete) {
-      boxBorderColor = "border-orange-500 bg-orange-50";
-      statusTitle = "Payment Incomplete";
-      statusDesc = "Your order is pending because the payment was not completed.";
-      alertBox = (
-        <div className="mt-4 bg-orange-100/50 text-orange-800 text-sm p-3 rounded-lg flex items-start gap-2 border border-orange-200">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-          <div>
-            <p className="font-semibold mb-1">Payment Not Completed</p>
-            <p className="text-orange-700/90">If money was deducted from your account, it will automatically update here soon or be refunded by your bank within 3-5 days. If not, please place a new order.</p>
-          </div>
-        </div>
-      );
+    } else if (itemStatus === "delivered") {
+      boxBorderColor = "border-green-600 bg-green-50";
+      statusTitle = "Order Delivered";
+      statusDesc = "Your order has been delivered successfully.";
+    } else if (itemStatus === "out_for_delivery") {
+      boxBorderColor = "border-blue-600 bg-blue-50";
+      statusTitle = "Out for Delivery";
+      statusDesc = "Your order is out for delivery and will arrive soon.";
+    } else if (itemStatus === "shipped") {
+      boxBorderColor = "border-blue-600 bg-blue-50";
+      statusTitle = "Order Shipped";
+      statusDesc = "Your order has been shipped and is on the way.";
+    } else if (itemStatus === "processed") {
+      boxBorderColor = "border-yellow-600 bg-yellow-50";
+      statusTitle = "Order Processed";
+      statusDesc = "Your order has been processed and will be shipped soon.";
+    } else if (itemStatus === "initialized") {
+      boxBorderColor = "border-blue-600";
+      statusTitle = "Order Confirmed";
+      statusDesc = "Your order has been placed and is being processed.";
     }
 
     return (

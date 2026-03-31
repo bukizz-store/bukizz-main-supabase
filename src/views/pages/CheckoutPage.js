@@ -1395,7 +1395,7 @@ function CheckoutPage() {
 
                 <div className="p-5 pt-3 pb-16">
 
-                                    {/* Student Name for Order — shown right after address selection, before Continue */}
+                {/* Student Name for Order — shown right after address selection, before Continue */}
                   {!showAddressForm && addresses.length > 0 && selectedAddressId && (
                     <div ref={studentNameRef} className="mb-4">
                       <div className="rounded-2xl border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-4 shadow-sm">
