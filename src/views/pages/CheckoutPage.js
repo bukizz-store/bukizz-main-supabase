@@ -11,6 +11,7 @@ import useAuthStore from "../../store/authStore";
 import useOrderStore from "../../store/orderStore";
 import useNotificationStore from "../../store/notificationStore";
 import useApiRoutesStore from "../../store/apiRoutesStore";
+import { getDeliveryEstimate } from "../../utils/deliveryEstimate";
 // CheckoutPage.js
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -475,11 +476,24 @@ function CheckoutPage() {
     return "/no-product-image.svg";
   }, []);
 
-  const getDeliveryDate = () => {
-    const today = new Date();
-    const deliveryDate = new Date(today.setDate(today.getDate() + 4));
-    const options = { weekday: 'short', month: 'short', day: 'numeric' };
-    return deliveryDate.toLocaleDateString('en-IN', options);
+  const getDeliveryDate = (item) => {
+    if (item) {
+      const p = item.productDetails || item;
+      const packHours = p.packaging_hours ?? p.packagingHours ?? p.metadata?.packagingHours ?? 4;
+      const delHours = p.delivery_hours ?? p.deliveryHours ?? p.metadata?.deliveryHours ?? 24;
+      return getDeliveryEstimate(packHours, delHours);
+    }
+    const items = isBuyNowMode ? (activeBuyNowItem ? [activeBuyNowItem] : []) : (cart?.items || []);
+    let maxLeadHours = 28;
+    if (items.length > 0) {
+      maxLeadHours = Math.max(...items.map((it) => {
+        const p = it.productDetails || it;
+        const pack = p.packaging_hours ?? p.packagingHours ?? p.metadata?.packagingHours ?? 4;
+        const del = p.delivery_hours ?? p.deliveryHours ?? p.metadata?.deliveryHours ?? 24;
+        return (Number(pack) || 0) + (Number(del) || 0);
+      }));
+    }
+    return getDeliveryEstimate(maxLeadHours, 0);
   };
 
   const getDiscountPercentage = (originalPrice, price) => {
@@ -1310,8 +1324,8 @@ function CheckoutPage() {
 
                         {/* Delivery Info and Stock Status */}
                         <div className="flex items-center justify-between mt-3 text-sm">
-                          <span className="text-gray-600">
-                            Delivery in 1 Day
+                          <span className="text-gray-600 font-medium text-xs">
+                            {getDeliveryDate(item)}
                           </span>
                           {stockStatus && (
                             <span className={`font-medium ${stockStatus.color}`}>

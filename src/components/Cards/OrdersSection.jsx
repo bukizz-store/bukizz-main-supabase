@@ -25,7 +25,7 @@ import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import useOrderStore from "../../store/orderStore";
 import PaymentSuccessPopup from "../Popups/PaymentSuccessPopup";
-import { getDeliveryEstimate } from "../../utils/deliveryEstimate";
+import { getDeliveryEstimate, calculateEstimatedDeliveryDate } from "../../utils/deliveryEstimate";
 
 const getVariantDescription = (item) => {
   // 1. If explicit string exists (legacy support)
@@ -1029,19 +1029,22 @@ const OrdersSection = () => {
 
     // Calculate delivery date (Estimated)
     const getDeliveryDate = () => {
-      if (order.estimatedDeliveryDate) {
-        return new Date(order.estimatedDeliveryDate);
+      if (order.estimatedDeliveryDate || order.estimated_delivery_at) {
+        return new Date(order.estimatedDeliveryDate || order.estimated_delivery_at);
       }
-      // Fallback: Use new delivery utility to compute date correctly if needed
-      // but we will primarily use the string output directly below
-      const deliveryHours = item.productSnapshot?.metadata?.deliveryHours || 24;
-      const date = new Date(order.createdAt);
-      date.setTime(date.getTime() + deliveryHours * 60 * 60 * 1000);
-      return date;
+      const packHours = item.productSnapshot?.packaging_hours || item.productSnapshot?.packagingHours || item.productSnapshot?.metadata?.packagingHours || 4;
+      const delHours = item.productSnapshot?.delivery_hours || item.productSnapshot?.deliveryHours || item.productSnapshot?.metadata?.deliveryHours || 24;
+      return calculateEstimatedDeliveryDate(packHours, delHours, order.createdAt);
     };
 
     const deliveryDate = getDeliveryDate();
-    const dynamicDeliveryString = getDeliveryEstimate(item.productSnapshot?.delivery_hours || item.productSnapshot?.deliveryHours || item.productSnapshot?.metadata?.deliveryHours || 24, order.createdAt);
+    const dynamicDeliveryString = (order.estimatedDeliveryDate || order.estimated_delivery_at)
+      ? formatDate(deliveryDate)
+      : getDeliveryEstimate(
+          item.productSnapshot?.packaging_hours || item.productSnapshot?.packagingHours || item.productSnapshot?.metadata?.packagingHours || 4,
+          item.productSnapshot?.delivery_hours || item.productSnapshot?.deliveryHours || item.productSnapshot?.metadata?.deliveryHours || 24,
+          order.createdAt
+        );
 
     // Date formatter
     const formatDate = (dateInput) => {
