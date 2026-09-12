@@ -25,6 +25,7 @@ import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import useOrderStore from "../../store/orderStore";
 import PaymentSuccessPopup from "../Popups/PaymentSuccessPopup";
+import ReviewSubmissionModal from "../Modals/ReviewSubmissionModal";
 import { getDeliveryEstimate, calculateEstimatedDeliveryDate } from "../../utils/deliveryEstimate";
 
 const getVariantDescription = (item) => {
@@ -70,7 +71,7 @@ const getVariantDescription = (item) => {
   return legacyParts.length > 0 ? legacyParts.join(" • ") : null;
 };
 
-const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getStatusColor, getStatusText, formatDate }) => {
+const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getStatusColor, getStatusText, formatDate, onReview, userReview }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const status = item.status || order.status;
 
@@ -118,13 +119,36 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
 
           {/* Rating (Only for delivered) */}
           {status === 'delivered' && (
-            <div className="flex flex-col gap-1">
-              <div className="flex text-green-500">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <Star key={i} className="w-4 h-4 fill-current" />
-                ))}
-              </div>
-              <p className="text-blue-600 text-xs font-medium">Write a Review</p>
+            <div className="mt-2">
+              {userReview ? (
+                <div
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onReview) onReview(item, order, userReview);
+                  }}
+                >
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    Reviewed ({userReview.rating}★)
+                  </span>
+                  <span className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline">
+                    Edit Review
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onReview) onReview(item, order, null);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-300 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 transition-all shadow-2xs"
+                >
+                  <Star className="w-3.5 h-3.5 text-slate-400" />
+                  Rate & Review Product
+                </button>
+              )}
             </div>
           )}
 
@@ -194,15 +218,36 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
               </div>
 
               {/* Main Actions */}
-              <div className="flex gap-2">
-                {/* {((item.status || order.status) === "initialized" || (item.status || order.status) === "processed") && (
-                  <button
-                    onClick={(e) => onCancel(e)}
-                    className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
-                  >
-                    Cancel Item
-                  </button>
-                )} */}
+              <div className="flex items-center gap-2">
+                {/* Rate & Review Button (Only for delivered) */}
+                {((item.status || order.status) === "delivered") && (
+                  userReview ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onReview) onReview(item, order, userReview);
+                      }}
+                      className="px-3 py-1.5 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 flex items-center gap-1.5 transition-colors"
+                    >
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      Reviewed ★ • Edit
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onReview) onReview(item, order, null);
+                      }}
+                      className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 hover:text-teal-700 hover:border-teal-300 flex items-center gap-1.5 transition-colors shadow-2xs"
+                    >
+                      <Star className="w-3.5 h-3.5 text-slate-400" />
+                      Rate & Review Product
+                    </button>
+                  )
+                )}
+
                 {((item.status || order.status) === "shipped" || (item.status || order.status) === "out_for_delivery" || (item.status || order.status) === "delivered") && (
                   <button
                     onClick={(e) => onRequest(e)}
@@ -255,6 +300,13 @@ const OrdersSection = () => {
   const [actionError, setActionError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // To force re-fetch after action
   const [showPaymentSuccessPopup, setShowPaymentSuccessPopup] = useState(false);
+  const [reviewModalState, setReviewModalState] = useState({
+    isOpen: false,
+    item: null,
+    order: null,
+    existingReview: null,
+  });
+  const [userReviewsMap, setUserReviewsMap] = useState({});
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
@@ -533,6 +585,100 @@ const OrdersSection = () => {
     });
     return Array.from(years).sort((a, b) => b - a); // Descending order
   }, [orders]);
+
+  // Review helper functions
+  const openReviewModal = (item, order, existingReview = null) => {
+    const prodId =
+      item?.productId ||
+      item?.product_id ||
+      item?.productSnapshot?.id ||
+      item?.productSnapshot?._id;
+    setReviewModalState({
+      isOpen: true,
+      item,
+      order,
+      existingReview: existingReview || (prodId ? userReviewsMap[prodId] : null),
+    });
+  };
+
+  const closeReviewModal = () => {
+    setReviewModalState({
+      isOpen: false,
+      item: null,
+      order: null,
+      existingReview: null,
+    });
+  };
+
+  const handleReviewSubmitted = (reviewData) => {
+    if (!reviewData) return;
+    const prodId =
+      reviewData.product_id ||
+      reviewData.productId ||
+      (reviewModalState.item && (
+        reviewModalState.item.productId ||
+        reviewModalState.item.product_id ||
+        reviewModalState.item.productSnapshot?.id ||
+        reviewModalState.item.productSnapshot?._id
+      ));
+    if (prodId) {
+      setUserReviewsMap((prev) => ({
+        ...prev,
+        [prodId]: reviewData,
+      }));
+    }
+  };
+
+  // Fetch user reviews for delivered products
+  useEffect(() => {
+    const fetchUserReviewsForDeliveredItems = async () => {
+      const token =
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("custom_token");
+      if (!token || !allItems || allItems.length === 0) return;
+
+      const deliveredProductIds = new Set();
+      allItems.forEach((item) => {
+        const effectiveStatus = item.status || item.order?.status;
+        if (effectiveStatus === "delivered") {
+          const prodId =
+            item.productId ||
+            item.product_id ||
+            item.productSnapshot?.id ||
+            item.productSnapshot?._id;
+          if (prodId) deliveredProductIds.add(prodId);
+        }
+      });
+
+      if (deliveredProductIds.size === 0) return;
+
+      const newReviews = {};
+      await Promise.all(
+        Array.from(deliveredProductIds).map(async (prodId) => {
+          try {
+            const url = useApiRoutesStore.getState().reviews.myReview(prodId);
+            const res = await fetch(url, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.data) {
+                newReviews[prodId] = data.data;
+              }
+            }
+          } catch {
+            // Ignore background review fetch failures
+          }
+        })
+      );
+
+      if (Object.keys(newReviews).length > 0) {
+        setUserReviewsMap((prev) => ({ ...prev, ...newReviews }));
+      }
+    };
+
+    fetchUserReviewsForDeliveredItems();
+  }, [allItems]);
 
   const filteredItems = allItems.filter((item) => {
     // 1. Status Filter
@@ -1241,7 +1387,34 @@ const OrdersSection = () => {
                 <p className="text-xs text-gray-500 mb-1">{variantDescription}</p>
               )}
               <div className="flex items-center gap-2">
-                {/* Rating or functionality placeholder */}
+                {itemStatus === 'delivered' && (
+                  <div className="mt-2">
+                    {userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id] ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          Reviewed ({userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id]?.rating}★)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => openReviewModal(item, order, userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id])}
+                          className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline"
+                        >
+                          Edit Review
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openReviewModal(item, order, null)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 transition-colors shadow-2xs"
+                      >
+                        <Star className="w-3.5 h-3.5 text-slate-400" />
+                        Rate & Review Product
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1341,6 +1514,15 @@ const OrdersSection = () => {
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-900 mb-1">{statusTitle}</h3>
                   <div className="flex items-center gap-3">
+                    {itemStatus === 'delivered' && (
+                      <button
+                        onClick={() => openReviewModal(item, order, userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id])}
+                        className="px-3.5 py-1.5 text-sm font-medium text-teal-700 bg-teal-50 border border-teal-200 rounded hover:bg-teal-100 transition-colors flex items-center gap-1.5"
+                      >
+                        <Star className={`w-4 h-4 ${userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id] ? 'fill-amber-400 text-amber-400' : 'text-teal-600'}`} />
+                        {userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id] ? "Edit Review" : "Rate & Review"}
+                      </button>
+                    )}
                     <button
                       onClick={() => setIsQueryModalOpen(true)}
                       className="px-4 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-white transition-colors"
@@ -2015,6 +2197,8 @@ const OrdersSection = () => {
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   formatDate={formatDate}
+                  onReview={openReviewModal}
+                  userReview={userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id]}
                 />
               ))}
 
@@ -2273,6 +2457,17 @@ const OrdersSection = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* Review Submission Modal */}
+      {reviewModalState.isOpen && (
+        <ReviewSubmissionModal
+          isOpen={reviewModalState.isOpen}
+          onClose={closeReviewModal}
+          item={reviewModalState.item}
+          order={reviewModalState.order}
+          existingReview={reviewModalState.existingReview}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
       )}
     </div>
   );

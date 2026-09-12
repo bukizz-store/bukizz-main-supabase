@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { simplifyErrorMessage } from "../utils/errorHandler";
 
 /**
  * API Routes Store
@@ -8,6 +9,9 @@ import { create } from "zustand";
 
 // Base configuration
 const getBaseUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL.replace(/\/$/, "");
+  }
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     if (hostname === "localhost" || hostname === "127.0.0.1") {
@@ -108,8 +112,15 @@ const useApiRoutesStore = create((set, get) => ({
     // Product variants
     variantSearch: `${BASE_URL}/products/variants/search`,
     getVariant: (variantId) => `${BASE_URL}/products/variants/${variantId}`,
+  },
 
-
+  // ============ REVIEW ROUTES ============
+  reviews: {
+    create: (productId) => `${BASE_URL}/reviews/products/${productId}`,
+    byProduct: (productId) => `${BASE_URL}/reviews/products/${productId}`,
+    myReview: (productId) => `${BASE_URL}/reviews/products/${productId}/my-review`,
+    update: (reviewId) => `${BASE_URL}/reviews/${reviewId}`,
+    delete: (reviewId) => `${BASE_URL}/reviews/${reviewId}`,
   },
 
   // ============ SCHOOL ROUTES ============
@@ -277,15 +288,20 @@ const useApiRoutesStore = create((set, get) => ({
           }
 
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Please refresh your token");
+          const userFriendlyMsg = simplifyErrorMessage(
+            errorData.message || "Your session has expired. Please sign in again to continue."
+          );
+          throw new Error(userFriendlyMsg);
         }
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `HTTP ${response.status}: ${response.statusText}`
-        );
+        const rawMessage =
+          errorData.message ||
+          errorData.error ||
+          `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(simplifyErrorMessage(rawMessage));
       }
 
       return await response.json();
@@ -464,4 +480,5 @@ export const {
   schools: schoolRoutes,
   orders: orderRoutes,
   banners: bannerRoutes,
+  reviews: reviewRoutes,
 } = useApiRoutesStore.getState();

@@ -8,8 +8,11 @@ const ErrorPopup = ({
   type = "error", // error, success, warning, info
   autoClose = true,
   duration = 5000,
+  actionLabel,
+  onAction,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const effectiveDuration = actionLabel ? Math.max(duration, 6000) : duration;
 
   useEffect(() => {
     if (isOpen) {
@@ -21,10 +24,10 @@ const ErrorPopup = ({
     if (isOpen && autoClose) {
       const timer = setTimeout(() => {
         handleClose();
-      }, duration);
+      }, effectiveDuration);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, autoClose, duration]);
+  }, [isOpen, autoClose, effectiveDuration]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -165,6 +168,42 @@ const ErrorPopup = ({
               {message && (
                 <div className="mt-1 text-sm opacity-90">{message}</div>
               )}
+              {actionLabel && (
+                <div className="mt-2.5">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onAction) onAction();
+                      handleClose();
+                    }}
+                    className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold shadow-xs transition-all duration-150 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                      type === "error"
+                        ? "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-red-200"
+                        : type === "warning"
+                        ? "bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500 shadow-amber-200"
+                        : type === "info"
+                        ? "bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 shadow-blue-200"
+                        : "bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 shadow-green-200"
+                    }`}
+                  >
+                    <span>{actionLabel}</span>
+                    <svg
+                      className="w-3.5 h-3.5 ml-1.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Close Button */}
@@ -205,7 +244,7 @@ const ErrorPopup = ({
                   }
                 `}
                 style={{
-                  animation: `shrink ${duration}ms linear forwards`,
+                  animation: `shrink ${effectiveDuration}ms linear forwards`,
                 }}
               />
             </div>
