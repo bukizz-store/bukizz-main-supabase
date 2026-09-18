@@ -13,7 +13,6 @@ import {
   ShoppingBag,
   TrendingUp,
   Boxes,
-  Sparkles,
 } from "lucide-react";
 import { handleBackNavigation } from "../../utils/navigation";
 import useApiRoutesStore from "../../store/apiRoutesStore";
@@ -173,10 +172,10 @@ const ConnectSchoolPage = () => {
 
         {/* Header Title Section */}
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-blue-700 text-xs md:text-sm font-bold mb-3 shadow-xs">
+          {/* <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-blue-700 text-xs md:text-sm font-bold mb-3 shadow-xs">
             <Sparkles className="w-4 h-4 text-blue-600" />
             <span>School Partnerships</span>
-          </div>
+          </div> */}
           <h1 className="text-3xl md:text-5xl font-extrabold text-[#1a202c] tracking-tight">
             Connect Your School With{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-sky-500">
@@ -192,70 +191,93 @@ const ConnectSchoolPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Why Choose Us (Hidden on mobile) */}
           <div className="hidden lg:block lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                Why Choose Us?
-              </h2>
+            <div className="relative overflow-hidden bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
+              {/* Top Subtle Gradient Accent Line */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500"></div>
 
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-blue-600">
+              {/* Section Header with Accent Bar & Benefit Tag */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2.5">
+                  <span className="w-1.5 h-5 bg-blue-600 rounded-full inline-block"></span>
+                  Why Choose Us?
+                </h2>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                  Partner Benefits
+                </span>
+              </div>
+
+              {/* Informative Value Cards */}
+              <div className="space-y-4">
+                {/* Item 1: Amazon For Schools */}
+                <div className="group p-3.5 -mx-3.5 rounded-xl transition-all duration-200 hover:bg-blue-50/40 border border-transparent hover:border-blue-100/60 flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200/70 shadow-xs ring-4 ring-blue-50/50 flex items-center justify-center shrink-0 text-blue-600 group-hover:scale-105 transition-transform">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-base">
+                    <h3 className="font-bold text-gray-900 text-base group-hover:text-blue-600 transition-colors">
                       Amazon For Schools
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      A Comprehensive Digital Marketplace Tailored For Schools, Streamlining The Purchase And Distribution Of Educational Supplies.
+                      A <span className="font-semibold text-gray-700">comprehensive digital marketplace</span> tailored for schools, streamlining the purchase and distribution of educational supplies.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+                {/* Item 2: Empower Existing Retailers */}
+                <div className="group p-3.5 -mx-3.5 rounded-xl transition-all duration-200 hover:bg-emerald-50/40 border border-transparent hover:border-emerald-100/60 flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200/70 shadow-xs ring-4 ring-emerald-50/50 flex items-center justify-center shrink-0 text-emerald-600 group-hover:scale-105 transition-transform">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-base">
+                    <h3 className="font-bold text-gray-900 text-base group-hover:text-emerald-600 transition-colors">
                       Empower Existing Retailers
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      Connect Your Existing Book And Uniform Retailers With Bukizz For Seamless Doorstep Delivery Services.
+                      Connect your <span className="font-semibold text-gray-700">existing book and uniform retailers</span> with Bukizz for seamless doorstep delivery services.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 text-purple-600">
+                {/* Item 3: All-In-One Platform */}
+                <div className="group p-3.5 -mx-3.5 rounded-xl transition-all duration-200 hover:bg-purple-50/40 border border-transparent hover:border-purple-100/60 flex items-start gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-200/70 shadow-xs ring-4 ring-purple-50/50 flex items-center justify-center shrink-0 text-purple-600 group-hover:scale-105 transition-transform">
                     <Boxes className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-800 text-base">
+                    <h3 className="font-bold text-gray-900 text-base group-hover:text-purple-600 transition-colors">
                       All-In-One Platform
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      A Single Platform Solution For Admissions, School Inquiries, And Parent-School Communication, Simplifying Educational Administration.
+                      A <span className="font-semibold text-gray-700">single platform solution</span> for admissions, school inquiries, and parent-school communication, simplifying educational administration.
                     </p>
                   </div>
                 </div>
               </div>
 
               {/* Direct Helpdesk Box */}
-              <div className="mt-8 pt-6 border-t border-gray-100 bg-[#F9FBFF] rounded-xl p-4">
-                <p className="text-xs uppercase font-bold text-gray-500 tracking-wider mb-2">
-                  Need Immediate Assistance?
-                </p>
-                <div className="space-y-1 text-sm text-gray-700">
-                  <p>
-                    <span className="font-semibold text-gray-900">Gurgaon:</span>{" "}
-                    <a href="tel:+919369467134" className="text-blue-600 hover:underline">
+              <div className="mt-8 pt-5 border-t border-gray-100 bg-gradient-to-br from-[#F8FAFF] to-blue-50/30 rounded-xl p-4 border border-blue-50">
+                <div className="flex items-center justify-between mb-2.5">
+                  <p className="text-xs uppercase font-bold text-gray-500 tracking-wider">
+                    Need Immediate Assistance?
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                    </span>
+                    Support Online
+                  </span>
+                </div>
+                <div className="space-y-1.5 text-sm text-gray-700">
+                  <p className="flex items-center justify-between">
+                    <span className="font-semibold text-gray-800">Gurgaon:</span>
+                    <a href="tel:+919369467134" className="text-blue-600 font-semibold hover:underline">
                       +91 9369467134
                     </a>
                   </p>
-                  <p>
-                    <span className="font-semibold text-gray-900">Email:</span>{" "}
-                    <a href="mailto:admin@bukizz.com" className="text-blue-600 hover:underline">
+                  <p className="flex items-center justify-between">
+                    <span className="font-semibold text-gray-800">Email:</span>
+                    <a href="mailto:admin@bukizz.com" className="text-blue-600 font-semibold hover:underline">
                       admin@bukizz.com
                     </a>
                   </p>
