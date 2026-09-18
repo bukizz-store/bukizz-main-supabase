@@ -17,9 +17,9 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between mb-4 mx-8 font-nunito gap-4">
           <div>
             <img src="/logo.svg" alt="Bukizz Logo" className="h-12" />
-            <p className="text-gray-600 mt-2">Wisdom Rd , Sco 142 Nirman Point</p>
-            <p className="text-gray-600 mt-2">Kanpur - +91 7985978838</p>
-            <p className="text-gray-600 mt-2">Gurgaon - +91 9369467134</p>
+            {/* <p className="text-gray-600 mt-2">Wisdom Rd , Sco 142 Nirman Point</p> */}
+            {/* <p className="text-gray-600 mt-2">Kanpur - +91 7985978838</p> */}
+            <p className="text-gray-600 mt-2">Contact Us - +91 9369467134</p>
           </div>
           <div className="flex flex-wrap gap-8 md:gap-16">
             <div className="gap-4 flex flex-col">
@@ -50,7 +50,7 @@ const Footer = () => {
             <div className="gap-4 flex flex-col">
               <h4 className="font-bold">Mail Us</h4>
               <ul className="gap-4 flex flex-col">
-                <a href="mailto:bukizzstore@gmail.com"><li>Email Us</li></a>
+                <a href="mailto:admin@bukizz.com"><li>Email Us</li></a>
                 <li>            <div className="flex space-x-4">
                   {/* <a href="#" className="border border-gray-600 rounded-full p-2">
                     <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
@@ -121,7 +121,7 @@ const Footer = () => {
               <div className="gap-4 flex flex-col">
                 <h4 className="font-bold">Mail Us</h4>
                 <ul className="gap-4 flex flex-col">
-                  <a href="mailto:bukizzstore@gmail.com"><li>Email Us</li></a>
+                  <a href="mailto:admin@bukizz.com"><li>Email Us</li></a>
                   <li>            <div className="flex space-x-4">
                     {/* <a href="#" className="border border-gray-600 rounded-full p-2">
                       <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
