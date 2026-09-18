@@ -9,20 +9,41 @@ import { simplifyErrorMessage } from "../utils/errorHandler";
 
 // Base configuration
 const getBaseUrl = () => {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL.replace(/\/$/, "");
-  }
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
+
+    // 1. If running locally in browser
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:5001";
+      return process.env.REACT_APP_API_URL || "http://localhost:5001";
     }
-    // Check for local network IP
+
+    // 2. Check for local network IP (e.g. mobile device testing on LAN)
     if (hostname.startsWith("192.168.") || hostname.startsWith("10.")) {
       return `http://${hostname}:5001`;
     }
+
+    // 3. If a remote production API URL is explicitly configured (and NOT localhost)
+    if (
+      process.env.REACT_APP_API_URL &&
+      !process.env.REACT_APP_API_URL.includes("localhost") &&
+      !process.env.REACT_APP_API_URL.includes("127.0.0.1")
+    ) {
+      return process.env.REACT_APP_API_URL.replace(/\/$/, "");
+    }
+
+    // 4. Default to current domain origin (e.g. https://bukizz.in)
     return `${window.location.origin}`;
   }
+
+  // Fallback if window is undefined (e.g. build-time or SSR)
+  if (
+    process.env.REACT_APP_API_URL &&
+    !process.env.REACT_APP_API_URL.includes("localhost") &&
+    !process.env.REACT_APP_API_URL.includes("127.0.0.1")
+  ) {
+    return process.env.REACT_APP_API_URL.replace(/\/$/, "");
+  }
+
   return "https://bukizz.in";
 };
 
