@@ -174,7 +174,12 @@ const Footer = () => {
             </svg>
             <span className="font-semibold text-sm md:text-base">Connect School</span>
           </Link>
-          <div className="flex items-center gap-2 text-black cursor-pointer hover:underline">
+          <a
+            href="https://seller.bukizz.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-black cursor-pointer hover:underline hover:text-blue-600 transition-colors"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -190,9 +195,9 @@ const Footer = () => {
               <path d="M3 9h18" />
               <path d="M9 21V9" />
             </svg>
-            <span className="font-semibold text-sm md:text-base">Become Supplier</span>
-          </div>
-          <div className="flex items-center gap-2 text-black cursor-pointer hover:underline hidden md:flex">
+            <span className="font-semibold text-sm md:text-base">Become Seller</span>
+          </a>
+          {/* <div className="flex items-center gap-2 text-black cursor-pointer hover:underline hidden md:flex">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -207,7 +212,7 @@ const Footer = () => {
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
             </svg>
             <span className="font-semibold text-sm md:text-base">Get a Call</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Center Aligned: Get a Call */}

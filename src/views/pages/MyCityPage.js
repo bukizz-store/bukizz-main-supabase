@@ -14,11 +14,19 @@ const MyCityPage = () => {
       id: "kanpur",
       name: "Kanpur",
       image: "/city/kanpur.jpg",
+      isComingSoon: false,
     },
     {
       id: "gurgaon",
       name: "Gurgaon",
       image: "/city/gurugram.jpg",
+      isComingSoon: false,
+    },
+    {
+      id: "noida",
+      name: "Noida",
+      image: "/city/noida.jpg",
+      isComingSoon: true,
     },
   ];
 
@@ -81,29 +89,50 @@ const MyCityPage = () => {
         </p>
 
         {/* City cards grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-12">
           {cities.map((city) => (
             <div
               key={city.id}
-              onClick={() => setSelectedCity(city.id)}
-              className={`relative rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 ${
-                selectedCity === city.id ? "ring-4 ring-blue-500 shadow-xl" : "shadow-lg hover:shadow-xl"
+              onClick={() => {
+                if (!city.isComingSoon) {
+                  setSelectedCity(city.id);
+                }
+              }}
+              className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
+                city.isComingSoon
+                  ? "cursor-not-allowed opacity-90 ring-1 ring-gray-200"
+                  : `cursor-pointer transform hover:scale-105 ${
+                      selectedCity === city.id ? "ring-4 ring-blue-500 shadow-xl" : "shadow-lg hover:shadow-xl"
+                    }`
               }`}
             >
               {/* City image */}
               <img
                 src={city.image}
                 alt={city.name}
-                className="w-full h-64 object-cover"
+                className={`w-full h-64 object-cover ${city.isComingSoon ? "grayscale-[20%]" : ""}`}
               />
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+
+              {/* Coming Soon Badge */}
+              {city.isComingSoon && (
+                <div className="absolute top-4 right-4 bg-amber-500 text-white text-xs font-extrabold uppercase px-3 py-1 rounded-full shadow-md">
+                  Coming Soon
+                </div>
+              )}
+
               {/* City name */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
                 <h2 className="text-3xl font-bold text-white">{city.name}</h2>
+                {city.isComingSoon && (
+                  <span className="text-sm font-semibold text-amber-300 block mt-1">
+                    Launching Soon
+                  </span>
+                )}
               </div>
               {/* Selection checkbox */}
-              {selectedCity === city.id && (
+              {!city.isComingSoon && selectedCity === city.id && (
                 <div className="absolute top-4 right-4 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path

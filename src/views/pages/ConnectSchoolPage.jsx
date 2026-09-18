@@ -201,20 +201,20 @@ const ConnectSchoolPage = () => {
                   <span className="w-1.5 h-5 bg-blue-600 rounded-full inline-block"></span>
                   Why Choose Us?
                 </h2>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
+                {/* <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100">
                   Partner Benefits
-                </span>
+                </span> */}
               </div>
 
-              {/* Informative Value Cards */}
+              {/* Informative Value Cards with Persistent Highlight */}
               <div className="space-y-4">
                 {/* Item 1: Amazon For Schools */}
-                <div className="group p-3.5 -mx-3.5 rounded-xl transition-all duration-200 hover:bg-blue-50/40 border border-transparent hover:border-blue-100/60 flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200/70 shadow-xs ring-4 ring-blue-50/50 flex items-center justify-center shrink-0 text-blue-600 group-hover:scale-105 transition-transform">
+                <div className="p-3.5 rounded-xl bg-blue-50/40 border border-blue-100/70 flex items-start gap-4 transition-all">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200/70 shadow-xs ring-4 ring-blue-50/50 flex items-center justify-center shrink-0 text-blue-600">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base group-hover:text-blue-600 transition-colors">
+                    <h3 className="font-bold text-blue-600 text-base">
                       Amazon For Schools
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
@@ -224,12 +224,12 @@ const ConnectSchoolPage = () => {
                 </div>
 
                 {/* Item 2: Empower Existing Retailers */}
-                <div className="group p-3.5 -mx-3.5 rounded-xl transition-all duration-200 hover:bg-emerald-50/40 border border-transparent hover:border-emerald-100/60 flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200/70 shadow-xs ring-4 ring-emerald-50/50 flex items-center justify-center shrink-0 text-emerald-600 group-hover:scale-105 transition-transform">
+                <div className="p-3.5 rounded-xl bg-emerald-50/40 border border-emerald-100/70 flex items-start gap-4 transition-all">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-200/70 shadow-xs ring-4 ring-emerald-50/50 flex items-center justify-center shrink-0 text-emerald-600">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base group-hover:text-emerald-600 transition-colors">
+                    <h3 className="font-bold text-emerald-600 text-base">
                       Empower Existing Retailers
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
@@ -239,12 +239,12 @@ const ConnectSchoolPage = () => {
                 </div>
 
                 {/* Item 3: All-In-One Platform */}
-                <div className="group p-3.5 -mx-3.5 rounded-xl transition-all duration-200 hover:bg-purple-50/40 border border-transparent hover:border-purple-100/60 flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-200/70 shadow-xs ring-4 ring-purple-50/50 flex items-center justify-center shrink-0 text-purple-600 group-hover:scale-105 transition-transform">
+                <div className="p-3.5 rounded-xl bg-purple-50/40 border border-purple-100/70 flex items-start gap-4 transition-all">
+                  <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-200/70 shadow-xs ring-4 ring-purple-50/50 flex items-center justify-center shrink-0 text-purple-600">
                     <Boxes className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base group-hover:text-purple-600 transition-colors">
+                    <h3 className="font-bold text-purple-600 text-base">
                       All-In-One Platform
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
@@ -353,7 +353,7 @@ const ConnectSchoolPage = () => {
                 <div>
                   <div className="border-b border-gray-100 pb-4 mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">
-                      School Information
+                      Let's Connect
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
                       Fill out this quick form and our team will get in touch with you.
@@ -462,9 +462,10 @@ const ConnectSchoolPage = () => {
                         <label className="block text-sm font-bold text-gray-700 mb-1.5">
                           Contact Number <span className="text-rose-500">*</span>
                         </label>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500 font-bold text-sm">
-                            +91
+                        <div className="relative flex items-center">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none select-none">
+                            <span className="text-gray-500 font-semibold text-sm">+91</span>
+                            <span className="mx-2.5 h-4 w-px bg-gray-300"></span>
                           </div>
                           <input
                             type="tel"
@@ -473,7 +474,7 @@ const ConnectSchoolPage = () => {
                             onChange={handleChange}
                             placeholder="10-digit mobile number"
                             maxLength={10}
-                            className={`w-full pl-13 pr-4 py-3 rounded-xl border ${
+                            className={`w-full pl-16 pr-4 py-3 rounded-xl border ${
                               fieldErrors.contactNumber
                                 ? "border-rose-400 focus:ring-rose-200"
                                 : "border-gray-200 focus:border-blue-500 focus:ring-blue-100"
