@@ -10,9 +10,9 @@ import {
   AlertCircle,
   Loader2,
   ArrowLeft,
-  BookOpen,
-  Truck,
-  Headphones,
+  ShoppingBag,
+  TrendingUp,
+  Boxes,
   Sparkles,
 } from "lucide-react";
 import { handleBackNavigation } from "../../utils/navigation";
@@ -183,95 +183,63 @@ const ConnectSchoolPage = () => {
               Bukizz
             </span>
           </h1>
-          <p className="mt-2 text-gray-600 text-base md:text-lg max-w-2xl">
+          {/* <p className="mt-2 text-gray-600 text-base md:text-lg max-w-2xl">
             Streamline your school's textbooks, stationery, and uniform distribution. Get verified book kits delivered directly to parents with zero administrative burden.
-          </p>
+          </p> */}
         </div>
 
         {/* Content Layout: 2 Columns on Desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* Left Column: Why Partner With Bukizz */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                Why Partner With Bukizz?
-              </h2>
+          {/* Left Column: Why Choose Us (Hidden on mobile) */}
+          <div className="hidden lg:block lg:col-span-5 space-y-6">
+            <h2 className="text-3xl font-extrabold text-[#2563EB] tracking-tight mb-6">
+              Why Choose Us?
+            </h2>
 
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 text-blue-600">
-                    <BookOpen className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-800 text-base">
-                      Exact Prescribed Booklists
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      We configure student kits strictly according to your school's prescribed syllabus and authorized publishers.
-                    </p>
-                  </div>
+            <div className="space-y-6">
+              {/* Card 1: Amazon For Schools */}
+              <div className="rounded-3xl p-7 bg-white border border-[#FDE68A] shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 rounded-full bg-[#3B82F6] text-white flex items-center justify-center mx-auto mb-4 shadow-md shadow-blue-500/20">
+                  <ShoppingBag className="w-7 h-7" />
                 </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
-                    <Truck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-800 text-base">
-                      Direct Doorstep Delivery
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      Parents order conveniently online. Avoid school campus crowds, cash handling, and inventory storage headaches.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0 text-purple-600">
-                    <Headphones className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-800 text-base">
-                      Dedicated Account Manager
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      A dedicated Bukizz coordinator ensures publisher fulfillment, timely replenishment, and prompt parent support.
-                    </p>
-                  </div>
-                </div>
+                <h3 className="font-bold text-gray-900 text-xl text-center mb-2">
+                  Amazon For Schools
+                </h3>
+                <p className="text-xs md:text-sm text-gray-600 text-center leading-relaxed">
+                  A Comprehensive Digital Marketplace Tailored For Schools, Streamlining The Purchase And Distribution Of Educational Supplies.
+                </p>
               </div>
 
-              {/* Direct Helpdesk Box */}
-              <div className="mt-8 pt-6 border-t border-gray-100 bg-[#F9FBFF] rounded-xl p-4">
-                <p className="text-xs uppercase font-bold text-gray-500 tracking-wider mb-2">
-                  Need Immediate Assistance?
-                </p>
-                <div className="space-y-1 text-sm text-gray-700">
-                  <p>
-                    <span className="font-semibold text-gray-900">Kanpur:</span>{" "}
-                    <a href="tel:+917985978838" className="text-blue-600 hover:underline">
-                      +91 7985978838
-                    </a>
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-900">Gurgaon:</span>{" "}
-                    <a href="tel:+919369467134" className="text-blue-600 hover:underline">
-                      +91 9369467134
-                    </a>
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-900">Email:</span>{" "}
-                    <a href="mailto:support@bukizz.com" className="text-blue-600 hover:underline">
-                      support@bukizz.com
-                    </a>
-                  </p>
+              {/* Card 2: Empower Existing Retailers */}
+              <div className="rounded-3xl p-7 bg-white border border-[#A7F3D0] shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 rounded-full bg-[#3B82F6] text-white flex items-center justify-center mx-auto mb-4 shadow-md shadow-blue-500/20">
+                  <TrendingUp className="w-7 h-7" />
                 </div>
+                <h3 className="font-bold text-gray-900 text-xl text-center mb-2">
+                  Empower Existing Retailers
+                </h3>
+                <p className="text-xs md:text-sm text-gray-600 text-center leading-relaxed">
+                  Connect Your Existing Book And Uniform Retailers With Bukizz For Seamless Doorstep Delivery Services.
+                </p>
+              </div>
+
+              {/* Card 3: All-In-One Platform */}
+              <div className="rounded-3xl p-7 bg-white border border-[#FBCFE8] shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-14 h-14 rounded-full bg-[#3B82F6] text-white flex items-center justify-center mx-auto mb-4 shadow-md shadow-blue-500/20">
+                  <Boxes className="w-7 h-7" />
+                </div>
+                <h3 className="font-bold text-gray-900 text-xl text-center mb-2">
+                  All-In-One Platform
+                </h3>
+                <p className="text-xs md:text-sm text-gray-600 text-center leading-relaxed">
+                  A Single Platform Solution For Admissions, School Inquiries, And Parent-School Communication, Simplifying Educational Administration.
+                </p>
               </div>
             </div>
           </div>
 
           {/* Right Column: Connect Form Card */}
-          <div className="lg:col-span-7">
+          <div className="w-full lg:col-span-7 max-w-2xl mx-auto lg:max-w-none">
             <div className="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-gray-100">
               {isSubmitted ? (
                 /* Success View */
