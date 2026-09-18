@@ -24,6 +24,8 @@ const NotificationContainer = () => {
             type={notification.type}
             autoClose={notification.autoClose}
             duration={notification.duration}
+            actionLabel={notification.actionLabel}
+            onAction={notification.onAction}
           />
         </div>
       ))}

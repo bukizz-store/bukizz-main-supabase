@@ -92,6 +92,8 @@ function ProfilePage() {
         const errorMsg = error.message?.toLowerCase() || "";
         if (
           errorMsg.includes("refresh your token") ||
+          errorMsg.includes("session has expired") ||
+          errorMsg.includes("session expired") ||
           errorMsg.includes("token expired") ||
           errorMsg.includes("unauthorized") ||
           errorMsg.includes("invalid token") ||

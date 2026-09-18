@@ -38,6 +38,7 @@ const TermsOfUsePage = lazy(() => import("./views/pages/TermsOfUsePage"));
 const PrivacyPolicyPage = lazy(() => import("./views/pages/PrivacyPolicyPage"));
 const SchoolScreen = lazy(() => import("./views/pages/SchoolScreen"));
 const DownloadAppPage = lazy(() => import("./views/pages/DownloadAppPage"));
+const ConnectSchoolPage = lazy(() => import("./views/pages/ConnectSchoolPage"));
 
 // Main App Component
 function App() {
@@ -194,6 +195,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/category" element={<CategoryPage />} />
               <Route path="/download-app" element={<DownloadAppPage />} />
+              <Route path="/connect-school" element={<ConnectSchoolPage />} />
 
 
               <Route path="/contact-us" element={<ContactUsPage />} />

@@ -12,6 +12,10 @@ import Breadcrumb from "../../components/Common/Breadcrumb";
 import { handleBackNavigation, isWebViewMode } from "../../utils/navigation";
 import useAuthStore from "../../store/authStore";
 import { getDeliveryEstimate } from "../../utils/deliveryEstimate";
+import { Star } from "lucide-react";
+import SmartReviewPromptBanner from "../../components/Product/SmartReviewPromptBanner";
+import ProductReviewsSection from "../../components/Product/ProductReviewsSection";
+import ReviewSubmissionModal from "../../components/Modals/ReviewSubmissionModal";
 
 // ProductViewPage.js
 function ProductViewPage() {
@@ -44,6 +48,52 @@ function ProductViewPage() {
   const [pincodeMessage, setPincodeMessage] = useState("");
   const [productOptions, setProductOptions] = useState([]);
   const [showCartDialog, setShowCartDialog] = useState(false);
+
+  // Reviews & Smart Prompt States
+  const [userReview, setUserReview] = useState(null);
+  const [isDeliveredBuyer, setIsDeliveredBuyer] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewModalInitialRating, setReviewModalInitialRating] = useState(5);
+  const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
+
+  // Smooth scroll to customer reviews
+  const scrollToReviews = () => {
+    const element = document.getElementById("customer-reviews");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // Check user review & delivered purchase status
+  useEffect(() => {
+    const checkUserReviewStatus = async () => {
+      const token =
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("custom_token");
+      const prodId = productData?.id || id;
+      if (!token || !prodId) {
+        setUserReview(null);
+        setIsDeliveredBuyer(false);
+        return;
+      }
+
+      try {
+        const url = useApiRoutesStore.getState().reviews.myReview(prodId);
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const resData = await response.json();
+          setUserReview(resData.data || null);
+          setIsDeliveredBuyer(Boolean(resData.isDeliveredBuyer));
+        }
+      } catch {
+        // Silently ignore background review check errors
+      }
+    };
+
+    checkUserReviewStatus();
+  }, [productData?.id, id, isAuthenticated, reviewsRefreshKey]);
   
   // Add-on modal states
   const [showAddonModal, setShowAddonModal] = useState(false);
@@ -832,6 +882,26 @@ function ProductViewPage() {
             )}
           </h1>
 
+          {/* Average Rating Widget & Total Reviews Anchor Link */}
+          <div className="flex items-center gap-2 my-2">
+            <button
+              type="button"
+              onClick={scrollToReviews}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition-colors cursor-pointer"
+              title="View all customer reviews"
+            >
+              <span>{productData?.average_rating ? Number(productData.average_rating).toFixed(1) : "4.8"}</span>
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            </button>
+            <button
+              type="button"
+              onClick={scrollToReviews}
+              className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+            >
+              ({productData?.total_reviews || 0} reviews)
+            </button>
+          </div>
+
           {prices.basePrice > prices.current && !isProductUnavailable && (
             <span className="text-sm text-green-600 font-bold">Offer Price</span>
           )}
@@ -1289,6 +1359,38 @@ function ProductViewPage() {
           }}
         />
       </div>
+
+      {/* Smart Review Prompt Banner for Verified Delivered Buyers */}
+      {isAuthenticated && isDeliveredBuyer && !userReview && (
+        <div className="mx-4 md:mx-12 mt-6">
+          <SmartReviewPromptBanner
+            productTitle={productData.title}
+            onRate={(star) => {
+              setReviewModalInitialRating(star || 5);
+              setReviewModalOpen(true);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Customer Reviews & Ratings Section */}
+      <div className="mx-4 md:mx-12 my-8">
+        <ProductReviewsSection
+          key={reviewsRefreshKey}
+          productId={productData.id || id}
+          product={productData}
+          userReview={userReview}
+          onWriteReview={(initialRating = 5) => {
+            setReviewModalInitialRating(initialRating);
+            setReviewModalOpen(true);
+          }}
+          onEditReview={(existingRev) => {
+            setUserReview(existingRev);
+            setReviewModalInitialRating(existingRev.rating || 5);
+            setReviewModalOpen(true);
+          }}
+        />
+      </div>
       {/* Mobile Sticky Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex gap-4 z-50 md:hidden items-center justify-between border-t border-gray-100">
         <button
@@ -1495,6 +1597,32 @@ function ProductViewPage() {
           </div>
         )
       }
+
+      {/* Review Submission Modal */}
+      {reviewModalOpen && (
+        <ReviewSubmissionModal
+          isOpen={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          item={{
+            productId: productData.id || id,
+            title: productData.title,
+            productSnapshot: {
+              image_url: currentImages[0]?.url || productData.mainImage,
+              attributes: {
+                school_name: schoolName,
+                grade: productData.metadata?.grade,
+              },
+            },
+          }}
+          order={{ id: "Delivered" }}
+          existingReview={userReview}
+          onReviewSubmitted={(savedReview) => {
+            setUserReview(savedReview);
+            setReviewsRefreshKey((prev) => prev + 1);
+            setReviewModalOpen(false);
+          }}
+        />
+      )}
     </div >
   );
 }
