@@ -141,8 +141,7 @@ const useApiRoutesStore = create((set, get) => ({
 
     // Utility endpoints
     validate: `${BASE_URL}/schools/validate`,
-
-
+    connect: `${BASE_URL}/schools/connect`,
   },
 
   // ============ CATEGORY ROUTES ============
