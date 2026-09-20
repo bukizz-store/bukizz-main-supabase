@@ -1,5 +1,16 @@
 import { create } from "zustand";
 import useApiRoutesStore from "./apiRoutesStore";
+import {
+  OrderError,
+  ORDER_ERROR_CODES,
+  ORDER_ERROR_CATEGORIES,
+  createProductInactiveError,
+  createOutOfStockError,
+  createInsufficientStockError,
+  createPriceChangedError,
+  createAddressIncompleteError,
+  logOrderErrorsForDeveloper,
+} from "../utils/orderErrors";
 
 const API_BASE_URL = useApiRoutesStore.getState().baseUrl;
 
@@ -43,29 +54,43 @@ const useOrderStore = create((set, get) => ({
         stockValid: false,
         priceValid: false,
         errors: [],
+        structuredErrors: [],
       };
 
       // 1. Validate cart items
       if (!cartItems || cartItems.length === 0) {
-        validation.errors.push(
-          "Cart is empty. Please add items to place an order."
-        );
+        const err = new OrderError({
+          code: ORDER_ERROR_CODES.UNKNOWN_ERROR,
+          category: ORDER_ERROR_CATEGORIES.AVAILABILITY,
+          title: "Cart Empty",
+          message: "Cart is empty. Please add items to place an order.",
+        });
+        validation.structuredErrors.push(err);
+        validation.errors.push(err.message);
       } else {
         validation.cartValid = true;
       }
 
       // 2. Validate delivery address
       if (!selectedAddress) {
-        validation.errors.push("Please select a delivery address.");
+        const err = new OrderError({
+          code: ORDER_ERROR_CODES.ADDRESS_MISSING,
+          category: ORDER_ERROR_CATEGORIES.SHIPPING,
+          title: "Delivery Address Required",
+          message: "Please select a delivery address.",
+          actions: [{ type: "CHANGE_ADDRESS", label: "Select Address", primary: true }],
+        });
+        validation.structuredErrors.push(err);
+        validation.errors.push(err.message);
       } else if (
         !selectedAddress.line1 ||
         !selectedAddress.city ||
         !selectedAddress.state ||
         !selectedAddress.postalCode
       ) {
-        validation.errors.push(
-          "Incomplete delivery address. Please provide complete address details."
-        );
+        const err = createAddressIncompleteError();
+        validation.structuredErrors.push(err);
+        validation.errors.push(err.message);
       } else {
         validation.addressValid = true;
       }
@@ -83,6 +108,9 @@ const useOrderStore = create((set, get) => ({
         validation.stockValid = stockValidation.allInStock;
         if (!stockValidation.allInStock) {
           validation.errors.push(...stockValidation.errors);
+          if (stockValidation.structuredErrors) {
+            validation.structuredErrors.push(...stockValidation.structuredErrors);
+          }
         }
       }
 
@@ -92,7 +120,19 @@ const useOrderStore = create((set, get) => ({
         validation.priceValid = priceValidation.allValid;
         if (!priceValidation.allValid) {
           validation.errors.push(...priceValidation.errors);
+          if (priceValidation.structuredErrors) {
+            validation.structuredErrors.push(...priceValidation.structuredErrors);
+          }
         }
+      }
+
+      // Log developer diagnostics
+      if (validation.structuredErrors.length > 0) {
+        logOrderErrorsForDeveloper(validation.structuredErrors, {
+          cartItemsCount: cartItems?.length,
+          selectedAddress: selectedAddress?.postalCode,
+          paymentMethod,
+        });
       }
 
       set({
@@ -103,6 +143,14 @@ const useOrderStore = create((set, get) => ({
       return validation;
     } catch (error) {
       console.error("Error validating order prerequisites:", error);
+      const fallbackErr = new OrderError({
+        code: ORDER_ERROR_CODES.UNKNOWN_ERROR,
+        category: ORDER_ERROR_CATEGORIES.SYSTEM,
+        title: "Validation Error",
+        message: error.message || "Something went wrong validating your order.",
+        rawError: error,
+      });
+
       set({
         loading: false,
         error: error.message,
@@ -112,6 +160,7 @@ const useOrderStore = create((set, get) => ({
           stockValid: false,
           priceValid: false,
           errors: [error.message],
+          structuredErrors: [fallbackErr],
         },
       });
 
@@ -121,6 +170,7 @@ const useOrderStore = create((set, get) => ({
         stockValid: false,
         priceValid: false,
         errors: [error.message],
+        structuredErrors: [fallbackErr],
       };
     }
   },
@@ -167,37 +217,71 @@ const useOrderStore = create((set, get) => ({
           return {
             item,
             available: availabilityData.available,
+            reason: availabilityData.reason,
             stock:
-              availabilityData.availableQuantity || availabilityData.stock || 0,
+              availabilityData.availableQuantity !== undefined
+                ? availabilityData.availableQuantity
+                : availabilityData.stock || 0,
             requested: item.quantity,
           };
         })
       );
 
       const errors = [];
+      const structuredErrors = [];
       let allInStock = true;
 
       stockChecks.forEach((result, index) => {
         if (result.status === "rejected") {
-          errors.push(
-            `Stock check failed for item ${index + 1}: ${result.reason}`
-          );
+          const err = new OrderError({
+            code: ORDER_ERROR_CODES.UNKNOWN_ERROR,
+            category: ORDER_ERROR_CATEGORIES.AVAILABILITY,
+            title: "Stock Check Failed",
+            message: `Could not verify availability for item ${index + 1}: ${result.reason}`,
+            technicalDetails: result.reason,
+          });
+          structuredErrors.push(err);
+          errors.push(err.message);
           allInStock = false;
         } else if (!result.value.available) {
-          const { item, stock, requested } = result.value;
-          errors.push(
-            `${item.title} - Only ${stock || 0
-            } available, but ${requested} requested`
-          );
+          const { item, stock, requested, reason } = result.value;
           allInStock = false;
+
+          const isInactive =
+            reason === "Product is not active" ||
+            reason?.toLowerCase().includes("inactive") ||
+            reason?.toLowerCase().includes("not active");
+
+          if (isInactive) {
+            const err = createProductInactiveError(item, reason);
+            structuredErrors.push(err);
+            errors.push(err.message);
+          } else if (stock === 0) {
+            const err = createOutOfStockError(item);
+            structuredErrors.push(err);
+            errors.push(err.message);
+          } else {
+            const err = createInsufficientStockError(item, stock, requested);
+            structuredErrors.push(err);
+            errors.push(err.message);
+          }
         }
       });
 
-      return { allInStock, errors };
+      return { allInStock, errors, structuredErrors };
     } catch (error) {
+      const fallbackErr = new OrderError({
+        code: ORDER_ERROR_CODES.UNKNOWN_ERROR,
+        category: ORDER_ERROR_CATEGORIES.AVAILABILITY,
+        title: "Stock Validation Error",
+        message: `Stock validation failed: ${error.message}`,
+        rawError: error,
+      });
+
       return {
         allInStock: false,
         errors: [`Stock validation failed: ${error.message}`],
+        structuredErrors: [fallbackErr],
       };
     }
   },
@@ -253,6 +337,7 @@ const useOrderStore = create((set, get) => ({
       );
 
       const errors = [];
+      const structuredErrors = [];
       let allValid = true;
 
       priceChecks.forEach((result, index) => {
@@ -263,14 +348,14 @@ const useOrderStore = create((set, get) => ({
           allValid = false;
         } else if (result.value.priceChanged) {
           const { item, currentPrice, cartPrice } = result.value;
-          errors.push(
-            `${item.title} - Price changed from ₹${cartPrice} to ₹${currentPrice}. Please refresh your cart.`
-          );
+          const err = createPriceChangedError(item, cartPrice, currentPrice);
+          structuredErrors.push(err);
+          errors.push(err.message);
           allValid = false;
         }
       });
 
-      return { allValid, errors };
+      return { allValid, errors, structuredErrors };
     } catch (error) {
       return {
         allValid: false,
@@ -389,9 +474,11 @@ const useOrderStore = create((set, get) => ({
         !validation.stockValid ||
         !validation.priceValid
       ) {
-        throw new Error(
+        const valError = new Error(
           `Order validation failed: ${validation.errors.join(", ")}`
         );
+        valError.structuredErrors = validation.structuredErrors;
+        throw valError;
       }
 
       // Step 2: Calculate final order summary

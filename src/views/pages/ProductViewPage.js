@@ -511,6 +511,11 @@ function ProductViewPage() {
   const handleAddToCart = async () => {
     if (!productData) return;
 
+    if (productData.is_active === false || productData.isActive === false) {
+      alert("This product is currently inactive and cannot be added to cart.");
+      return;
+    }
+
     if (selectedVariant?.available_addons?.length > 0) {
       setShowAddonModal(true);
       fetchAddonDetails(selectedVariant.available_addons);
@@ -538,6 +543,11 @@ function ProductViewPage() {
   // Handle Buy Now - sets item and goes directly to checkout
   const handleBuyNow = () => {
     if (!productData) return;
+
+    if (productData.is_active === false || productData.isActive === false) {
+      alert("This product is currently inactive and cannot be ordered.");
+      return;
+    }
 
     if (!isAuthenticated) {
       useAuthStore.getState().setRedirectPath("/checkout?mode=buy_now");
@@ -605,8 +615,9 @@ function ProductViewPage() {
 
   const prices = getCurrentPrice();
 
+  const isInactive = productData?.is_active === false || productData?.isActive === false;
   const isOutOfStock = (selectedVariant ? selectedVariant.stock <= 0 : ((productData?.stock || 0) <= 0));
-  const isProductUnavailable = prices.current <= 0;
+  const isProductUnavailable = prices.current <= 0 || isInactive;
 
   const schemaData = {
     "@context": "https://schema.org/",
@@ -669,7 +680,7 @@ function ProductViewPage() {
         </div>
       )}
 
-      {/* Product Unavailable Banner (price <= 0) */}
+      {/* Product Unavailable Banner (price <= 0 or isInactive) */}
       {isProductUnavailable && !isOutOfStock && (
         <div className="mx-4 md:mx-12 mt-4 mb-2">
           <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
@@ -681,11 +692,13 @@ function ProductViewPage() {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-orange-800">
-                  Product Unavailable
+                  {isInactive ? "Product Currently Unavailable" : "Product Unavailable"}
                 </h3>
                 <div className="mt-1 text-sm text-orange-700">
                   <p>
-                    This product is currently unavailable for purchase. Please check back later or explore similar items.
+                    {isInactive
+                      ? "This product is currently disabled by the retailer and cannot be ordered at this time."
+                      : "This product is currently unavailable for purchase. Please check back later or explore similar items."}
                   </p>
                 </div>
               </div>
@@ -797,6 +810,8 @@ function ProductViewPage() {
                     </svg>
                     Added to Cart
                   </>
+                ) : isInactive ? (
+                  "Currently Unavailable"
                 ) : (
                   <>
                     Add to Cart
@@ -819,7 +834,7 @@ function ProductViewPage() {
                   : "bg-sky-500 text-white hover:bg-sky-600"
                   }`}
               >
-                ₹ Buy Now
+                {isInactive ? "Unavailable" : "₹ Buy Now"}
               </button>
               )}
             </div>
@@ -1416,6 +1431,8 @@ function ProductViewPage() {
             "Adding..."
           ) : itemInCart ? (
             "Added"
+          ) : isInactive ? (
+            "Unavailable"
           ) : (
             "Add to Cart"
           )}
@@ -1435,7 +1452,7 @@ function ProductViewPage() {
             : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
             }`}
         >
-          Buy Now
+          {isInactive ? "Unavailable" : "Buy Now"}
         </button>
         )}
       </div>

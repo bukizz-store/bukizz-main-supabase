@@ -12,6 +12,8 @@ import useOrderStore from "../../store/orderStore";
 import useNotificationStore from "../../store/notificationStore";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import { getDeliveryEstimate } from "../../utils/deliveryEstimate";
+import OrderErrorModal from "../../components/Modals/OrderErrorModal";
+import { parseOrderErrors } from "../../utils/orderErrors";
 // CheckoutPage.js
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -81,10 +83,22 @@ function CheckoutPage() {
   const [orderNotes, setOrderNotes] = useState("");
   const [studentNameForOrder, setStudentNameForOrder] = useState("");
 
+  // Dynamic student name requirement check:
+  // Requires student name only if at least one product in checkout explicitly sets requireStudentName: true.
+  // Older products without this attribute (undefined) or false will NOT require student name.
+  const isStudentNameRequired = useMemo(() => {
+    const checkoutItems = getCheckoutItems();
+    if (!checkoutItems || checkoutItems.length === 0) return false;
+    return checkoutItems.some((item) => {
+      const meta = item.productDetails?.metadata || item.metadata || {};
+      return meta.requireStudentName === true;
+    });
+  }, [cart, buyNowItem, isBuyNowMode, getCheckoutItems]);
 
   // Validation states
   const [studentNameError, setStudentNameError] = useState("");
   const [validationErrors, setValidationErrors] = useState([]);
+  const [structuredValidationErrors, setStructuredValidationErrors] = useState([]);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
@@ -623,18 +637,20 @@ function CheckoutPage() {
         return;
       }
 
-      // Validate Student Name for Order
-      if (!studentNameForOrder?.trim()) {
-        setStudentNameError("Student Name is required for this order");
-        setTimeout(() => studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        return;
-      } else if (studentNameForOrder.trim().length < 2) {
-        setStudentNameError("Student Name is too short");
-        setTimeout(() => studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        return;
+      // Validate Student Name for Order if required
+      if (isStudentNameRequired) {
+        if (!studentNameForOrder?.trim()) {
+          setStudentNameError("Student Name is required for this order");
+          setTimeout(() => studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+          return;
+        } else if (studentNameForOrder.trim().length < 2) {
+          setStudentNameError("Student Name is too short");
+          setTimeout(() => studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+          return;
+        }
       }
 
-      setStudentNameError(""); // Clear error on valid input
+      setStudentNameError(""); // Clear error on valid input or when not required
 
       // Backend Pincode Serviceability Check
       if (selectedAddr.postalCode) {
@@ -702,15 +718,19 @@ function CheckoutPage() {
       }
     }
 
-    // Validate Student Name for Order
-    if (!studentNameForOrder?.trim()) {
-      errors.push("Student Name is required");
-      if (processState > 2) setProcessState(2);
-      setStudentNameError("Student Name is required for this order");
-    } else if (studentNameForOrder.trim().length < 2) {
-      errors.push("Student Name is too short");
-      if (processState > 2) setProcessState(2);
-      setStudentNameError("Student Name is too short");
+    // Validate Student Name for Order if required
+    if (isStudentNameRequired) {
+      if (!studentNameForOrder?.trim()) {
+        errors.push("Student Name is required");
+        if (processState > 2) setProcessState(2);
+        setStudentNameError("Student Name is required for this order");
+      } else if (studentNameForOrder.trim().length < 2) {
+        errors.push("Student Name is too short");
+        if (processState > 2) setProcessState(2);
+        setStudentNameError("Student Name is too short");
+      } else {
+        setStudentNameError("");
+      }
     } else {
       setStudentNameError("");
     }
@@ -729,9 +749,19 @@ function CheckoutPage() {
       // Reset retry count for new attempt
       setRetryCount(0);
 
+      const selectedAddress = getSelectedAddress();
+      const checkoutItems = getCheckoutItems();
+
       // Final validation
       const errors = validateFinalOrder();
       if (errors.length > 0) {
+        const parsed = parseOrderErrors(errors, {
+          stage: "validateFinalOrder",
+          selectedAddressId,
+          paymentMethod,
+          items: checkoutItems,
+        });
+        setStructuredValidationErrors(parsed);
         setValidationErrors(errors);
         setShowValidationModal(true);
         return;
@@ -739,9 +769,7 @@ function CheckoutPage() {
 
       // Clear any previous validation errors
       setValidationErrors([]);
-
-      const selectedAddress = getSelectedAddress();
-      const checkoutItems = getCheckoutItems();
+      setStructuredValidationErrors([]);
 
       const orderData = {
         cartItems: checkoutItems,
@@ -935,36 +963,21 @@ function CheckoutPage() {
       }
     } catch (error) {
       console.error("Order placement failed:", error);
-      // ... (rest of error handling)
-      if (
-        error.message.includes("stock") ||
-        error.message.includes("availability")
-      ) {
-        showNotification({
-          message: "Some items are out of stock. Please update your cart.",
-          type: "error",
-        });
-        setProcessState(1); // Go back to cart review
-      } else if (error.message.includes("price")) {
-        showNotification({
-          message: "Product prices have changed. Please review your order.",
-          type: "error",
-        });
-        handleCalculateOrderSummary(); // Refresh pricing
-      } else if (
-        error.message.includes("authentication") ||
-        error.message.includes("session")
-      ) {
-        showNotification({
-          message: "Session expired. Please log in again.",
-          type: "error"
-        });
-        navigate("/");
-      } else {
-        // No automatic retry for other errors, just show validation modal or error
-        setValidationErrors([error.message || "Something went wrong. Please try again."]);
-        setShowValidationModal(true);
-      }
+
+      const parsedErrors = parseOrderErrors(
+        error.structuredErrors || error,
+        {
+          checkoutMode: isBuyNow ? "buy_now" : "cart",
+          items: checkoutItems,
+          itemCount: checkoutItems?.length,
+          paymentMethod,
+          addressPostalCode: selectedAddress?.postalCode,
+        }
+      );
+
+      setStructuredValidationErrors(parsedErrors);
+      setValidationErrors(parsedErrors.map((e) => e.message));
+      setShowValidationModal(true);
     }
   };
 
@@ -972,7 +985,205 @@ function CheckoutPage() {
   const handleRetryOrder = () => {
     setShowValidationModal(false);
     setValidationErrors([]);
+    setStructuredValidationErrors([]);
     handlePlaceOrder();
+  };
+
+  // Helper to resolve cart item from modal error payload or cart store
+  const resolveCartItem = (errorItem) => {
+    const currentCartItems = isBuyNow && buyNowItem ? [buyNowItem] : (cart?.items || []);
+    if (!currentCartItems || currentCartItems.length === 0) return null;
+
+    if (errorItem) {
+      // 1. Direct ID / Product ID match
+      const matchedById = currentCartItems.find((i) => {
+        if (errorItem.id && (i.id === errorItem.id || i.productId === errorItem.id)) return true;
+        if (errorItem.productId && (i.productId === errorItem.productId || i.id === errorItem.productId)) return true;
+        return false;
+      });
+      if (matchedById) return matchedById;
+
+      // 2. Title match (case-insensitive substring)
+      if (errorItem.title) {
+        const query = errorItem.title.toLowerCase().trim();
+        const matchedByTitle = currentCartItems.find((i) => {
+          if (!i?.title) return false;
+          const t = i.title.toLowerCase().trim();
+          return t.includes(query) || query.includes(t);
+        });
+        if (matchedByTitle) return matchedByTitle;
+      }
+
+      // 3. Match against error message or technical details
+      const rawText = (errorItem.message || errorItem.technicalDetails || "").toLowerCase();
+      if (rawText) {
+        const matchedByMsg = currentCartItems.find((i) => {
+          if (!i?.title) return false;
+          const t = i.title.toLowerCase().trim();
+          return rawText.includes(t) || t.includes(rawText.split(" - ")[0].trim());
+        });
+        if (matchedByMsg) return matchedByMsg;
+      }
+    }
+
+    // 4. Fallback: if only 1 item in checkout items, it must be that item
+    if (currentCartItems.length === 1) {
+      return currentCartItems[0];
+    }
+
+    return null;
+  };
+
+  // Handle 1-click remove item from error modal: removes item and sends user back to cart
+  const handleModalRemoveItem = async (item) => {
+    try {
+      if (isBuyNow) {
+        clearBuyNowItem();
+        setShowValidationModal(false);
+        showNotification({
+          message: "Buy-Now item removed. Redirecting to cart...",
+          type: "info",
+        });
+        navigate("/cart");
+        return;
+      }
+
+      const target = resolveCartItem(item);
+
+      if (target) {
+        const itemId = target.productId || target.id;
+        removeFromCart(itemId, target.variantId);
+        showNotification({
+          message: `"${target.title || "Item"}" removed from cart. Please review your cart.`,
+          type: "info",
+        });
+      } else {
+        showNotification({
+          message: "Redirecting to your cart to review and manage items.",
+          type: "info",
+        });
+      }
+
+      setShowValidationModal(false);
+      navigate("/cart");
+    } catch (e) {
+      console.error("Failed to remove item from modal:", e);
+      setShowValidationModal(false);
+      navigate("/cart");
+    }
+  };
+
+  // Handle 1-click update quantity from error modal: updates quantity and sends user back to cart
+  const handleModalUpdateQuantity = async (item, targetQty) => {
+    try {
+      if (targetQty === undefined || targetQty <= 0) {
+        await handleModalRemoveItem(item);
+        return;
+      }
+
+      if (isBuyNow) {
+        updateBuyNowItemQuantity(targetQty);
+        setShowValidationModal(false);
+        showNotification({
+          message: `Quantity updated to ${targetQty}. Please review your order.`,
+          type: "info",
+        });
+        setProcessState(1);
+        return;
+      }
+
+      const target = resolveCartItem(item);
+
+      if (target) {
+        const itemId = target.productId || target.id;
+        await updateQuantity(itemId, target.variantId, targetQty);
+        showNotification({
+          message: `Updated "${target.title || "Item"}" quantity to ${targetQty}. Please review your cart.`,
+          type: "info",
+        });
+      }
+
+      setShowValidationModal(false);
+      navigate("/cart");
+    } catch (e) {
+      console.error("Failed to update quantity from modal:", e);
+      setShowValidationModal(false);
+      navigate("/cart");
+    }
+  };
+
+  // Handle student name focus from error modal: jumps to Step 2 and focuses input
+  const handleModalEnterStudentName = () => {
+    setShowValidationModal(false);
+    setProcessState(2);
+    setTimeout(() => {
+      if (studentNameRef.current) {
+        studentNameRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        const inputEl = studentNameRef.current.querySelector("input");
+        if (inputEl) {
+          inputEl.focus();
+          inputEl.classList.add("ring-2", "ring-purple-500");
+          setTimeout(() => inputEl.classList.remove("ring-2", "ring-purple-500"), 2500);
+        }
+      }
+    }, 300);
+  };
+
+  // Handle change address from error modal: jumps to Step 2 and scrolls to top
+  const handleModalChangeAddress = () => {
+    setShowValidationModal(false);
+    setProcessState(2);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 150);
+  };
+
+  // Handle payment method selection from error modal: jumps to Step 3
+  const handleModalSelectPaymentMethod = () => {
+    setShowValidationModal(false);
+    setProcessState(3);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 150);
+  };
+
+  // Handle refresh pricing from error modal
+  const handleModalRefreshPricing = async () => {
+    setShowValidationModal(false);
+    await handleCalculateOrderSummary();
+  };
+
+  // Handle switch to COD from error modal
+  const handleModalSwitchToCod = () => {
+    setShowValidationModal(false);
+    if (!isCodAllowed) {
+      showNotification({
+        message: "Cash on Delivery is not available for one or more items. Please choose another payment method.",
+        type: "warning",
+      });
+      setProcessState(3);
+      return;
+    }
+    setPaymentMethod("cod");
+    showNotification({
+      message: "Switched to Cash on Delivery (COD). Processing order...",
+      type: "info",
+    });
+    setTimeout(() => {
+      handlePlaceOrder();
+    }, 300);
+  };
+
+  // Handle session expired / login from error modal
+  const handleModalLogin = () => {
+    setShowValidationModal(false);
+    openAuthModal();
+  };
+
+  // Handle direct return to cart
+  const handleModalGoToCart = () => {
+    setShowValidationModal(false);
+    navigate("/cart");
   };
 
   // Scroll to top when process state changes
@@ -1134,11 +1345,13 @@ function CheckoutPage() {
           onAddressSelect={(newAddress) => {
             selectAddress(newAddress.id);
             setShowMobileMapPicker(false);
-            // Scroll to student name field after picker closes so user sees it
-            setTimeout(() => {
-              studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              studentNameRef.current?.querySelector('input')?.focus();
-            }, 400);
+            // Scroll to student name field after picker closes so user sees it if required
+            if (isStudentNameRequired) {
+              setTimeout(() => {
+                studentNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                studentNameRef.current?.querySelector('input')?.focus();
+              }, 400);
+            }
           }}
         />
       )}
@@ -1409,8 +1622,8 @@ function CheckoutPage() {
 
                 <div className="p-5 pt-3 pb-16">
 
-                {/* Student Name for Order — shown right after address selection, before Continue */}
-                  {!showAddressForm && addresses.length > 0 && selectedAddressId && (
+                {/* Student Name for Order — shown right after address selection, before Continue if required */}
+                  {!showAddressForm && addresses.length > 0 && selectedAddressId && isStudentNameRequired && (
                     <div ref={studentNameRef} className="mb-4">
                       <div className="rounded-2xl border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50/60 p-4 shadow-sm">
                         <div className="flex items-start gap-3 mb-3">
@@ -1555,7 +1768,7 @@ function CheckoutPage() {
 
                         <button
                           onClick={() => handleDeliverHere(selectedAddressId)}
-                          disabled={!selectedAddressId || !studentNameForOrder.trim()}
+                          disabled={!selectedAddressId || (isStudentNameRequired && !studentNameForOrder.trim())}
                           className="bg-[#3B82F6] hover:bg-blue-600 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-sm"
                         >
                           Continue
@@ -2010,53 +2223,23 @@ function CheckoutPage() {
         </div>
       </div>
 
-      {/* Validation Modal */}
-      {showValidationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-red-600 text-2xl mr-3">⚠️</div>
-              <h3 className="text-lg font-semibold text-gray-800">
-                Order Issues Found
-              </h3>
-            </div>
-
-            <div className="mb-6">
-              <p className="text-gray-600 mb-3">
-                Please address the following issues before placing your order:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                {validationErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowValidationModal(false)}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg font-medium transition-colors"
-              >
-                Close
-              </button>
-
-              {!validationErrors.some(
-                (error) =>
-                  error.includes("cart is empty") ||
-                  error.includes("address") ||
-                  error.includes("address")
-              ) && (
-                  <button
-                    onClick={handleRetryOrder}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                  >
-                    Retry Order
-                  </button>
-                )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Structured Order Error Modal */}
+      <OrderErrorModal
+        isOpen={showValidationModal}
+        onClose={() => setShowValidationModal(false)}
+        errors={structuredValidationErrors}
+        onRemoveItem={handleModalRemoveItem}
+        onUpdateQuantity={handleModalUpdateQuantity}
+        onEnterStudentName={handleModalEnterStudentName}
+        onChangeAddress={handleModalChangeAddress}
+        onSelectPaymentMethod={handleModalSelectPaymentMethod}
+        onRefreshPricing={handleModalRefreshPricing}
+        onSwitchToCod={handleModalSwitchToCod}
+        onLogin={handleModalLogin}
+        onGoToCart={handleModalGoToCart}
+        onRetry={handleRetryOrder}
+        isCodAllowed={isCodAllowed}
+      />
     </div>
   );
 }
