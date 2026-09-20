@@ -44,6 +44,11 @@ const useCartStore = create((set, get) => ({
         }
       }
 
+      // Guard: Do not allow inactive products into the cart
+      if (product && (product.is_active === false || product.isActive === false)) {
+        throw new Error("This product is currently inactive and cannot be added to cart.");
+      }
+
       const { cart } = get();
       const existingItemIndex = cart.items.findIndex(
         (item) =>
@@ -232,14 +237,20 @@ const useCartStore = create((set, get) => ({
     }
   },
 
-  // Remove item from cart
-  removeFromCart: (productId, variantId = null) => {
+  // Remove item from cart (supports productId+variantId or cartItemId)
+  removeFromCart: (productIdOrCartItemId, variantId = null) => {
     try {
       const { cart } = get();
-      const updatedItems = cart.items.filter(
-        (item) =>
-          !(item.productId === productId && item.variantId === variantId)
-      );
+      const updatedItems = cart.items.filter((item) => {
+        // Match by cart item ID (e.g. clientId)
+        if (item.id === productIdOrCartItemId) return false;
+        // Match by productId and variantId
+        if (variantId !== null && variantId !== undefined) {
+          return !(item.productId === productIdOrCartItemId && item.variantId === variantId);
+        }
+        // Match by productId only
+        return item.productId !== productIdOrCartItemId;
+      });
 
       const totals = calculateCartTotals(updatedItems);
       const updatedCart = {
@@ -255,20 +266,34 @@ const useCartStore = create((set, get) => ({
     }
   },
 
-  // Update item quantity
-  updateQuantity: (productId, variantId = null, quantity) => {
+  // Update item quantity (supports (productId, variantId, qty) or (cartItemId, qty))
+  updateQuantity: (productIdOrCartItemId, variantIdOrQuantity = null, quantity) => {
     try {
-      if (quantity <= 0) {
-        get().removeFromCart(productId, variantId);
+      let targetQty = quantity;
+      let isSingleId = false;
+
+      // Handle 2-argument overload: updateQuantity(cartItemId, qty)
+      if (typeof variantIdOrQuantity === "number" && quantity === undefined) {
+        targetQty = variantIdOrQuantity;
+        isSingleId = true;
+      }
+
+      if (targetQty <= 0) {
+        get().removeFromCart(productIdOrCartItemId, isSingleId ? null : variantIdOrQuantity);
         return;
       }
 
       const { cart } = get();
-      const updatedItems = cart.items.map((item) =>
-        item.productId === productId && item.variantId === variantId
-          ? { ...item, quantity: Math.max(1, Math.min(1000, quantity)) } // Ensure quantity is between 1-1000
-          : item
-      );
+      const updatedItems = cart.items.map((item) => {
+        const isMatch = isSingleId
+          ? item.id === productIdOrCartItemId || item.productId === productIdOrCartItemId
+          : item.productId === productIdOrCartItemId &&
+            (variantIdOrQuantity ? item.variantId === variantIdOrQuantity : true);
+
+        return isMatch
+          ? { ...item, quantity: Math.max(1, Math.min(1000, targetQty)) }
+          : item;
+      });
 
       const totals = calculateCartTotals(updatedItems);
       const updatedCart = {
@@ -638,6 +663,10 @@ const useCartStore = create((set, get) => ({
   // Initiate Buy Now Flow - Swaps current cart with buy now item
   initiateBuyNowFlow: (product, variant, quantity = 1) => {
     try {
+      if (product && (product.is_active === false || product.isActive === false)) {
+        throw new Error("This product is currently inactive and cannot be ordered.");
+      }
+
       // Self-hydrate: ensure cart is loaded from localStorage before backing up.
       // Without this, a webview page reload leaves Zustand cart empty,
       // and we'd back up an empty cart — losing the real one.

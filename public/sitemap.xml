@@ -1322,6 +1322,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.bukizz.in/category?categorySlug=stationery</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.bukizz.in/category?categorySlug=school</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -1333,11 +1338,6 @@
   </url>
   <url>
     <loc>https://www.bukizz.in/category?categorySlug=uniform</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://www.bukizz.in/category?categorySlug=stationery</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
