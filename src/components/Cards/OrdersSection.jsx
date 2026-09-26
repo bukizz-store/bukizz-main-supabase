@@ -71,7 +71,182 @@ const getVariantDescription = (item) => {
   return legacyParts.length > 0 ? legacyParts.join(" • ") : null;
 };
 
-const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getStatusColor, getStatusText, formatDate, onReview, userReview }) => {
+// Currency formatter
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(amount || 0);
+};
+
+// Stream and download merged invoice PDF helper
+const downloadInvoiceFile = async (orderId, invoice, order) => {
+  const token = localStorage.getItem("access_token") || localStorage.getItem("custom_token");
+  if (!token) {
+    alert("Please log in to download the invoice.");
+    return;
+  }
+
+  // The backend default merges all order invoices (seller invoice + delivery + platform fee)
+  // into a single multi-page PDF document with sequential page numbering.
+  const invoiceId = invoice?.id;
+  const downloadUrl = invoiceId
+    ? useApiRoutesStore.getState().orders.downloadInvoice(orderId, invoiceId)
+    : `${useApiRoutesStore.getState().orders.invoices(orderId)}/download`;
+
+  const response = await fetch(downloadUrl, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || "Failed to download invoice PDF");
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  const num =
+    order?.orderNumber ||
+    order?.order_number ||
+    invoice?.metadata?.order_number ||
+    (invoice?.invoiceNumber ? invoice.invoiceNumber.replace(/[\/\\]/g, "_") : orderId);
+  a.download = `Invoice-${String(num).replace(/[\/\\]/g, "_")}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(blobUrl);
+};
+
+// Invoice Selection Modal for orders with multiple tax invoices/receipts
+const InvoiceSelectionModal = ({
+  isOpen,
+  onClose,
+  order,
+  invoices,
+  onDownloadCombined,
+  isDownloading,
+}) => {
+  if (!isOpen || !order) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative border border-gray-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-xs">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-gray-900">Tax Invoice & Receipts</h3>
+            <p className="text-xs text-gray-500">
+              Order #{order.orderNumber || order.order_number || order.id}
+            </p>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+          This order contains {invoices.length} official document{invoices.length > 1 ? "s" : ""}, merged into a single multi-page PDF:
+        </p>
+
+        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+          {invoices.map((inv, idx) => (
+            <div
+              key={inv.id}
+              className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/80 hover:bg-teal-50/30 transition-colors"
+            >
+              <div className="space-y-0.5 min-w-0 pr-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-700">
+                    Page {idx + 1}
+                  </span>
+                  <span className="text-xs font-bold text-gray-900 truncate">
+                    {inv.invoiceNumber}
+                  </span>
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      inv.invoiceType === "SELLER_TAX_INVOICE"
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                        : inv.invoiceType === "BUKIZZ_PLATFORM_RECEIPT"
+                        ? "bg-blue-100 text-blue-800 border border-blue-200"
+                        : "bg-purple-100 text-purple-800 border border-purple-200"
+                    }`}
+                  >
+                    {inv.invoiceType === "SELLER_TAX_INVOICE"
+                      ? "Seller Tax Invoice"
+                      : inv.invoiceType === "BUKIZZ_PLATFORM_RECEIPT"
+                      ? "Platform Receipt"
+                      : inv.invoiceType === "BUKIZZ_DELIVERY_RECEIPT"
+                      ? "Delivery Receipt"
+                      : inv.invoiceType}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Total: {formatCurrency(inv.totalAmount)}
+                  {inv.issuedAt &&
+                    ` • ${new Date(inv.issuedAt).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}`}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => onDownloadCombined(order.id, invoices[0], order)}
+            disabled={isDownloading}
+            className="flex-1 py-2.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-50"
+          >
+            {isDownloading ? (
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            Download Combined PDF ({invoices.length} Page{invoices.length > 1 ? "s" : ""})
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 text-xs font-medium text-gray-600 hover:text-gray-800 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const OrderItemRow = ({
+  item,
+  order,
+  onCancel,
+  onRequest,
+  setSelectedItem,
+  getStatusColor,
+  getStatusText,
+  formatDate,
+  onReview,
+  userReview,
+  onDownloadInvoice,
+  isDownloadingInvoice,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const status = item.status || order.status;
 
@@ -152,8 +327,25 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
             </div>
           )}
 
-          {/* Rating Placeholder (for visual match if not delivered, or just strictly match screenshot) */}
-          {/* The screenshot shows stars for delivered. Let's keep it simple. */}
+          {/* Mobile Actions: Invoice */}
+          <div className="mt-2.5 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDownloadInvoice) onDownloadInvoice(order);
+              }}
+              disabled={isDownloadingInvoice}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-colors shadow-2xs"
+            >
+              {isDownloadingInvoice ? (
+                <div className="w-3 h-3 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download className="w-3 h-3 text-teal-600" />
+              )}
+              Invoice
+            </button>
+          </div>
         </div>
       </div>
 
@@ -257,6 +449,25 @@ const OrderItemRow = ({ item, order, onCancel, onRequest, setSelectedItem, getSt
                   </button>
                 )}
 
+                {/* Download Invoice Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDownloadInvoice) onDownloadInvoice(order);
+                  }}
+                  disabled={isDownloadingInvoice}
+                  className="px-3 py-1.5 text-xs font-semibold text-teal-700 bg-white border border-teal-200 rounded hover:bg-teal-50 hover:border-teal-300 flex items-center gap-1.5 transition-colors shadow-2xs"
+                  title="Download Tax Invoice"
+                >
+                  {isDownloadingInvoice ? (
+                    <div className="w-3.5 h-3.5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5 text-teal-600" />
+                  )}
+                  Invoice
+                </button>
+
                 {/* View Details Button */}
                 <button
                   onClick={(e) => {
@@ -307,6 +518,65 @@ const OrdersSection = () => {
     existingReview: null,
   });
   const [userReviewsMap, setUserReviewsMap] = useState({});
+
+  // Invoice Download States
+  const [invoiceModalState, setInvoiceModalState] = useState({
+    isOpen: false,
+    order: null,
+    invoices: [],
+    loading: false,
+  });
+  const [downloadingOrderId, setDownloadingOrderId] = useState(null);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
+
+  const handleOpenInvoice = async (order) => {
+    if (!order || !order.id) return;
+    setDownloadingOrderId(order.id);
+    try {
+      const token = localStorage.getItem("access_token") || localStorage.getItem("custom_token");
+      const url = useApiRoutesStore.getState().orders.invoices(order.id);
+      const response = await fetch(url, {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch invoices for this order.");
+      }
+
+      const invoices = await response.json();
+      if (!invoices || invoices.length === 0) {
+        alert("Invoices are generated once order items are processed or delivered.");
+        return;
+      }
+
+      // Automatically download the single merged PDF with all pages (seller invoice, delivery charge, platform fee)
+      setDownloadingInvoiceId(invoices[0].id);
+      await downloadInvoiceFile(order.id, invoices[0], order);
+    } catch (err) {
+      console.error("Failed to process invoice download:", err);
+      alert(err.message || "Failed to download invoice.");
+    } finally {
+      setDownloadingOrderId(null);
+      setDownloadingInvoiceId(null);
+    }
+  };
+
+  const handleDownloadAllInvoices = async (orderId, invoices, order) => {
+    try {
+      setDownloadingOrderId(orderId);
+      await downloadInvoiceFile(orderId, invoices?.[0], order || invoiceModalState.order);
+      setInvoiceModalState({ isOpen: false, order: null, invoices: [], loading: false });
+    } catch (err) {
+      console.error("Failed to download combined invoice:", err);
+      alert(err.message || "Failed to download invoice.");
+    } finally {
+      setDownloadingOrderId(null);
+      setDownloadingInvoiceId(null);
+    }
+  };
 
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
@@ -882,7 +1152,7 @@ const OrdersSection = () => {
   };
 
   // Order Detail View - Redesigned
-  const OrderDetailView = ({ item, onBack }) => {
+  const OrderDetailView = ({ item, onBack, onDownloadInvoice, isDownloadingInvoice }) => {
     const { order } = item;
     const itemStatus = item.status || order.status;
     const [variantDetails, setVariantDetails] = useState(null);
@@ -895,6 +1165,53 @@ const OrdersSection = () => {
     const [payOnlineLoading, setPayOnlineLoading] = useState(false);
     const [showFees, setShowFees] = useState(false);
     const [showPaymentSuccessPopup, setShowPaymentSuccessPopup] = useState(false);
+
+    // Invoices state for this order
+    const [orderInvoices, setOrderInvoices] = useState([]);
+    const [loadingInvoices, setLoadingInvoices] = useState(false);
+    const [downloadingInvoiceId, setDownloadingInvoiceId] = useState(null);
+
+    const loadInvoices = async () => {
+      if (!order?.id) return;
+      try {
+        setLoadingInvoices(true);
+        const token = localStorage.getItem("access_token") || localStorage.getItem("custom_token");
+        const url = useApiRoutesStore.getState().orders.invoices(order.id);
+        const response = await fetch(url, {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+            "Content-Type": "application/json",
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setOrderInvoices(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load invoices in OrderDetailView:", err);
+      } finally {
+        setLoadingInvoices(false);
+      }
+    };
+
+    useEffect(() => {
+      loadInvoices();
+    }, [order?.id]);
+
+    const handleDownloadInvoicePdf = async (inv) => {
+      try {
+        const targetInv = inv || orderInvoices[0];
+        setDownloadingInvoiceId(targetInv ? targetInv.id : "combined");
+        await downloadInvoiceFile(order.id, targetInv, order);
+      } catch (err) {
+        console.error("Download invoice failed:", err);
+        alert(err.message || "Failed to download invoice.");
+      } finally {
+        setDownloadingInvoiceId(null);
+      }
+    };
 
     const { initiateRazorpayPayment, verifyRazorpayPayment, reportPaymentFailure } = useOrderStore();
 
@@ -1355,13 +1672,35 @@ const OrdersSection = () => {
     return (
       <div className="bg-gray-50 md:pb-0">
         {/* Header */}
-        <div className="bg-white sticky top-0 z-20 px-2 py-3 flex items-center justify-between border-b border-gray-200">
+        <div className="bg-white sticky top-0 z-20 px-3 py-3 flex items-center justify-between border-b border-gray-200">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="text-gray-700">
+            <button onClick={onBack} className="text-gray-700 hover:text-gray-900 transition-colors">
               <ArrowLeft className="w-6 h-6" />
             </button>
             <h1 className="text-lg font-semibold text-gray-900">Order Details</h1>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (orderInvoices.length > 0) {
+                handleDownloadInvoicePdf(orderInvoices[0]);
+              } else if (onDownloadInvoice) {
+                onDownloadInvoice(order);
+              } else {
+                loadInvoices();
+              }
+            }}
+            disabled={loadingInvoices || isDownloadingInvoice || downloadingInvoiceId !== null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg hover:bg-teal-100 transition-colors shadow-2xs disabled:opacity-50"
+            title="Download Invoice PDF"
+          >
+            {loadingInvoices || isDownloadingInvoice || downloadingInvoiceId !== null ? (
+              <div className="w-3.5 h-3.5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 text-teal-600" />
+            )}
+            Download Invoice
+          </button>
         </div>
 
         <div className="max-w-3xl md:max-w-full space-y-2 p-2 md:p-4 align-center justify-center">
@@ -1727,10 +2066,116 @@ const OrdersSection = () => {
               />
             )}
 
-            <p className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-              <Info className="w-3 h-3" />
-              Contact customer support for the invoice
-            </p>
+            {/* Tax Invoice & Receipts Section */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shadow-xs">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900">Tax Invoice & Receipts</h4>
+                    <p className="text-[11px] text-gray-500">Official GST documents (Combined PDF)</p>
+                  </div>
+                </div>
+                {orderInvoices.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadInvoicePdf(orderInvoices[0])}
+                    disabled={downloadingInvoiceId !== null}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors shadow-2xs disabled:opacity-50"
+                  >
+                    {downloadingInvoiceId !== null ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Download className="w-3.5 h-3.5" />
+                    )}
+                    Download PDF ({orderInvoices.length} Page{orderInvoices.length > 1 ? "s" : ""})
+                  </button>
+                )}
+              </div>
+
+              {loadingInvoices ? (
+                <div className="py-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+                  <div className="w-3.5 h-3.5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                  Loading invoices...
+                </div>
+              ) : orderInvoices.length > 0 ? (
+                <div className="space-y-2">
+                  {orderInvoices.map((inv, idx) => (
+                    <div
+                      key={inv.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50/80 hover:bg-teal-50/30 transition-colors"
+                    >
+                      <div className="space-y-0.5 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-700">
+                            Page {idx + 1}
+                          </span>
+                          <span className="text-xs font-bold text-gray-900 truncate">
+                            {inv.invoiceNumber}
+                          </span>
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                              inv.invoiceType === "SELLER_TAX_INVOICE"
+                                ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                : inv.invoiceType === "BUKIZZ_PLATFORM_RECEIPT"
+                                ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                : "bg-purple-100 text-purple-800 border border-purple-200"
+                            }`}
+                          >
+                            {inv.invoiceType === "SELLER_TAX_INVOICE"
+                              ? "Seller Tax Invoice"
+                              : inv.invoiceType === "BUKIZZ_PLATFORM_RECEIPT"
+                              ? "Platform Receipt"
+                              : inv.invoiceType === "BUKIZZ_DELIVERY_RECEIPT"
+                              ? "Delivery Receipt"
+                              : inv.invoiceType}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-500">
+                          Amount: {formatCurrency(inv.totalAmount)}
+                          {inv.issuedAt &&
+                            ` • ${new Date(inv.issuedAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}`}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadInvoicePdf(inv)}
+                        disabled={downloadingInvoiceId !== null}
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-700 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-colors shadow-2xs disabled:opacity-50"
+                      >
+                        {downloadingInvoiceId === inv.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5 text-teal-600" />
+                        )}
+                        Download PDF
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Info className="w-3.5 h-3.5 text-gray-400" />
+                    <span>Invoices are available once items are processed or delivered.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadInvoices}
+                    className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline"
+                  >
+                    Check Status
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Other Items */}
@@ -2071,7 +2516,12 @@ const OrdersSection = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm md:p-4">
       {selectedItem ? (
-        <OrderDetailView item={selectedItem} onBack={() => setSelectedItem(null)} />
+        <OrderDetailView
+          item={selectedItem}
+          onBack={() => setSelectedItem(null)}
+          onDownloadInvoice={handleOpenInvoice}
+          isDownloadingInvoice={downloadingOrderId === (selectedItem.order?.id || selectedItem.orderId)}
+        />
       ) : (
         <>
           <div className="flex items-center p-4">
@@ -2199,6 +2649,8 @@ const OrdersSection = () => {
                   formatDate={formatDate}
                   onReview={openReviewModal}
                   userReview={userReviewsMap[item.productId || item.product_id || item.productSnapshot?.id || item.productSnapshot?._id]}
+                  onDownloadInvoice={handleOpenInvoice}
+                  isDownloadingInvoice={downloadingOrderId === (item.order?.id || item.orderId)}
                 />
               ))}
 
@@ -2469,6 +2921,16 @@ const OrdersSection = () => {
           onReviewSubmitted={handleReviewSubmitted}
         />
       )}
+
+      {/* Invoice Selection Modal */}
+      <InvoiceSelectionModal
+        isOpen={invoiceModalState.isOpen}
+        onClose={() => setInvoiceModalState({ isOpen: false, order: null, invoices: [], loading: false })}
+        order={invoiceModalState.order}
+        invoices={invoiceModalState.invoices}
+        onDownloadCombined={(orderId, inv, order) => downloadInvoiceFile(orderId, inv, order)}
+        isDownloading={downloadingOrderId !== null}
+      />
     </div>
   );
 };
