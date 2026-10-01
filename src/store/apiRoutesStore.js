@@ -217,7 +217,12 @@ const useApiRoutesStore = create((set, get) => ({
     // Order Item Management
     updateItemStatus: (orderId, itemId) => `${BASE_URL}/orders/${orderId}/items/${itemId}/status`,
 
-
+    // Invoices
+    invoices: (orderId) => `${BASE_URL}/orders/${orderId}/invoices`,
+    downloadInvoice: (orderId, invoiceId) =>
+      invoiceId
+        ? `${BASE_URL}/orders/${orderId}/invoices/${invoiceId}/download`
+        : `${BASE_URL}/orders/${orderId}/invoices/download`,
   },
 
   // ============ PAYMENT ROUTES ============
