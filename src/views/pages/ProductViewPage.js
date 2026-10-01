@@ -52,6 +52,10 @@ function ProductViewPage() {
   // Reviews & Smart Prompt States
   const [userReview, setUserReview] = useState(null);
   const [isDeliveredBuyer, setIsDeliveredBuyer] = useState(false);
+  const [hasActiveOrder, setHasActiveOrder] = useState(false);
+  const [activeOrderStatus, setActiveOrderStatus] = useState(null);
+  const [deliveredOrderId, setDeliveredOrderId] = useState(null);
+  const [reviewEligibilityLoading, setReviewEligibilityLoading] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewModalInitialRating, setReviewModalInitialRating] = useState(5);
   const [reviewsRefreshKey, setReviewsRefreshKey] = useState(0);
@@ -71,12 +75,17 @@ function ProductViewPage() {
         localStorage.getItem("access_token") ||
         localStorage.getItem("custom_token");
       const prodId = productData?.id || id;
-      if (!token || !prodId) {
+      if (!token || !prodId || !isAuthenticated) {
         setUserReview(null);
         setIsDeliveredBuyer(false);
+        setHasActiveOrder(false);
+        setActiveOrderStatus(null);
+        setDeliveredOrderId(null);
+        setReviewEligibilityLoading(false);
         return;
       }
 
+      setReviewEligibilityLoading(true);
       try {
         const url = useApiRoutesStore.getState().reviews.myReview(prodId);
         const response = await fetch(url, {
@@ -86,9 +95,20 @@ function ProductViewPage() {
           const resData = await response.json();
           setUserReview(resData.data || null);
           setIsDeliveredBuyer(Boolean(resData.isDeliveredBuyer));
+          setHasActiveOrder(Boolean(resData.hasActiveOrder));
+          setActiveOrderStatus(resData.activeOrderStatus || null);
+          setDeliveredOrderId(resData.orderId || null);
+        } else {
+          setUserReview(null);
+          setIsDeliveredBuyer(false);
+          setHasActiveOrder(false);
+          setActiveOrderStatus(null);
+          setDeliveredOrderId(null);
         }
       } catch {
         // Silently ignore background review check errors
+      } finally {
+        setReviewEligibilityLoading(false);
       }
     };
 
@@ -1395,6 +1415,10 @@ function ProductViewPage() {
           productId={productData.id || id}
           product={productData}
           userReview={userReview}
+          isDeliveredBuyer={isDeliveredBuyer}
+          hasActiveOrder={hasActiveOrder}
+          activeOrderStatus={activeOrderStatus}
+          eligibilityLoading={reviewEligibilityLoading}
           onWriteReview={(initialRating = 5) => {
             setReviewModalInitialRating(initialRating);
             setReviewModalOpen(true);
@@ -1631,7 +1655,7 @@ function ProductViewPage() {
               },
             },
           }}
-          order={{ id: "Delivered" }}
+          order={{ id: deliveredOrderId || "Delivered" }}
           existingReview={userReview}
           onReviewSubmitted={(savedReview) => {
             setUserReview(savedReview);
