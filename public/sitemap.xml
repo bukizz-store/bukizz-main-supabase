@@ -635,7 +635,7 @@
   <url>
     <loc>https://www.bukizz.in/product/c022e681-ef4a-428e-b19f-2afdf4688363</loc>
     <changefreq>weekly</changefreq>
-    <lastmod>2026-09-25T18:25:54.713Z</lastmod>
+    <lastmod>2026-09-28T18:37:41.559Z</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
@@ -1353,6 +1353,36 @@
   </url>
   <url>
     <loc>https://www.bukizz.in/category?categorySlug=water-bottle</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/category?categorySlug=school-supplies</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/category?categorySlug=formal-wear</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/category?categorySlug=dress</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/category?categorySlug=shirt</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/category?categorySlug=blazer</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.bukizz.in/category?categorySlug=uniform-t-shirt</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

@@ -15,6 +15,7 @@ import {
   Loader2,
   MessageSquarePlus,
   HelpCircle,
+  Truck,
 } from "lucide-react";
 import useApiRoutesStore from "../../store/apiRoutesStore";
 import useAuthStore from "../../store/authStore";
@@ -30,6 +31,10 @@ const ProductReviewsSection = ({
   productId,
   product = {},
   userReview = null,
+  isDeliveredBuyer = false,
+  hasActiveOrder = false,
+  activeOrderStatus = null,
+  eligibilityLoading = false,
   onWriteReview,
   onEditReview,
 }) => {
@@ -227,9 +232,138 @@ const ProductReviewsSection = ({
     }
     if (userReview) {
       if (onEditReview) onEditReview(userReview);
-    } else {
-      if (onWriteReview) onWriteReview(5);
+      return;
     }
+    if (isDeliveredBuyer) {
+      if (onWriteReview) onWriteReview(5);
+      return;
+    }
+  };
+
+  const renderHeaderCTA = () => {
+    if (eligibilityLoading) {
+      return (
+        <div className="w-36 h-10 rounded-xl bg-slate-100 animate-pulse border border-slate-200/80" />
+      );
+    }
+
+    if (userReview) {
+      return (
+        <button
+          type="button"
+          onClick={handleWriteReviewClick}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 transition-all shadow-xs cursor-pointer"
+        >
+          <MessageSquarePlus className="w-4 h-4" />
+          <span>Edit Your Review ★</span>
+        </button>
+      );
+    }
+
+    if (!isAuthenticated) {
+      return (
+        <button
+          type="button"
+          onClick={handleWriteReviewClick}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 transition-all shadow-2xs cursor-pointer border border-slate-200"
+          title="Sign in to write a review for products you have purchased"
+        >
+          <MessageSquarePlus className="w-4 h-4 text-slate-500" />
+          <span>Sign in to Review</span>
+        </button>
+      );
+    }
+
+    if (isDeliveredBuyer) {
+      return (
+        <button
+          type="button"
+          onClick={handleWriteReviewClick}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 transition-all shadow-xs cursor-pointer group"
+        >
+          <MessageSquarePlus className="w-4 h-4" />
+          <span>Write a Review</span>
+          <span className="hidden sm:inline-block text-[11px] px-1.5 py-0.5 rounded-md bg-teal-500/40 text-teal-50 border border-teal-400/40 font-normal">
+            Verified Buyer
+          </span>
+        </button>
+      );
+    }
+
+    if (hasActiveOrder) {
+      return (
+        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 shadow-2xs">
+          <Truck className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>Order in transit • Review unlocks on delivery</span>
+        </div>
+      );
+    }
+
+    // Authenticated non-buyer
+    return (
+      <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 bg-slate-50 border border-slate-200/90 shadow-2xs">
+        <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
+        <span>Reviews reserved for verified buyers</span>
+      </div>
+    );
+  };
+
+  const renderEmptyStateAction = () => {
+    if (eligibilityLoading) {
+      return (
+        <div className="w-32 h-9 mx-auto rounded-xl bg-slate-100 animate-pulse border border-slate-200" />
+      );
+    }
+
+    if (userReview) {
+      return (
+        <button
+          type="button"
+          onClick={handleWriteReviewClick}
+          className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors shadow-xs cursor-pointer"
+        >
+          Edit Your Review ★
+        </button>
+      );
+    }
+
+    if (!isAuthenticated) {
+      return (
+        <button
+          type="button"
+          onClick={handleWriteReviewClick}
+          className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors shadow-2xs border border-slate-200 cursor-pointer"
+        >
+          Sign in to Review
+        </button>
+      );
+    }
+
+    if (isDeliveredBuyer) {
+      return (
+        <button
+          type="button"
+          onClick={handleWriteReviewClick}
+          className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors shadow-xs cursor-pointer"
+        >
+          Write First Review
+        </button>
+      );
+    }
+
+    if (hasActiveOrder) {
+      return (
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200/80 px-3.5 py-2 rounded-xl inline-block">
+          🚚 Your order is on the way! You can submit a review once delivered.
+        </p>
+      );
+    }
+
+    return (
+      <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl inline-block">
+        Reviews are exclusively available for verified buyers after delivery.
+      </p>
+    );
   };
 
   const formatDate = (dateString) => {
@@ -270,14 +404,7 @@ const ProductReviewsSection = ({
 
           {/* CTA WRITE REVIEW */}
           <div>
-            <button
-              type="button"
-              onClick={handleWriteReviewClick}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 transition-all shadow-xs cursor-pointer"
-            >
-              <MessageSquarePlus className="w-4 h-4" />
-              <span>{userReview ? "Edit Your Review ★" : "Write a Review"}</span>
-            </button>
+            {renderHeaderCTA()}
           </div>
         </div>
 
@@ -504,13 +631,7 @@ const ProductReviewsSection = ({
                   Clear All Filters
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleWriteReviewClick}
-                  className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors shadow-xs"
-                >
-                  Write First Review
-                </button>
+                renderEmptyStateAction()
               )}
             </div>
           ) : (
